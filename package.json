@@ -1,0 +1,23 @@
+{
+  "name": "claude-code-ssp",
+  "version": "0.1.0",
+  "description": "Claude Code statusline with a localhost web configurator, widget registry and user plugins",
+  "type": "module",
+  "license": "MIT",
+  "bin": { "claude-code-ssp": "./bin/claude-code-ssp.js" },
+  "files": ["bin", "dist", "web/dist", "README.md"],
+  "engines": { "bun": ">=1.1", "node": ">=20" },
+  "scripts": {
+    "render": "bun run src/cli/main.ts render",
+    "serve": "bun run src/cli/main.ts serve",
+    "dev:web": "bun run --cwd web dev",
+    "build:web": "bun run --cwd web build",
+    "build": "bun run build:web && bun build src/cli/main.ts --outdir dist --target bun",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.6.0"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "ssp",
+  "description": "Claude Code statusline with a localhost web configurator: /ssp:config opens it, /ssp:install wires it into settings.json",
+  "version": "0.1.0",
+  "author": { "name": "Jin Huang", "url": "https://github.com/jinhuang712" },
+  "homepage": "https://github.com/jinhuang712/claude-code-ssp",
+  "repository": "https://github.com/jinhuang712/claude-code-ssp",
+  "license": "MIT",
+  "keywords": ["statusline", "hud", "web-ui", "widgets", "claude-code"],
+  "commands": ["./commands/config.md", "./commands/install.md", "./commands/doctor.md"]
+}

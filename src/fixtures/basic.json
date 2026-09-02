@@ -1,0 +1,52 @@
+{
+  "cwd": "/Users/huangjin/dev/projects/claude-code-ssp",
+  "session_id": "fixture-basic",
+  "session_name": "ssp-design",
+  "transcript_path": "/nonexistent/fixture.jsonl",
+  "model": { "id": "claude-sonnet-5", "display_name": "Sonnet 5" },
+  "workspace": {
+    "current_dir": "/Users/huangjin/dev/projects/claude-code-ssp",
+    "project_dir": "/Users/huangjin/dev/projects/claude-code-ssp",
+    "added_dirs": [],
+    "repo": { "host": "github.com", "owner": "jinhuang712", "name": "claude-code-ssp" }
+  },
+  "version": "2.1.258",
+  "output_style": { "name": "default" },
+  "cost": {
+    "total_cost_usd": 1.27,
+    "total_duration_ms": 1620000,
+    "total_api_duration_ms": 138000,
+    "total_lines_added": 156,
+    "total_lines_removed": 23
+  },
+  "context_window": {
+    "total_input_tokens": 64000,
+    "total_output_tokens": 2100,
+    "context_window_size": 200000,
+    "used_percentage": 32,
+    "remaining_percentage": 68,
+    "current_usage": {
+      "input_tokens": 8500,
+      "output_tokens": 2100,
+      "cache_creation_input_tokens": 5000,
+      "cache_read_input_tokens": 50500
+    }
+  },
+  "exceeds_200k_tokens": false,
+  "prompt_cache": {
+    "warm": true,
+    "caching_observed": true,
+    "ttl": "1h",
+    "expires_at": 0,
+    "requests": 14,
+    "misses": 2,
+    "hit_ratio": 0.91
+  },
+  "fast_mode": false,
+  "effort": { "level": "xhigh" },
+  "thinking": { "enabled": true },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 9, "resets_at": 0 },
+    "seven_day": { "used_percentage": 4, "resets_at": 0 }
+  }
+}
