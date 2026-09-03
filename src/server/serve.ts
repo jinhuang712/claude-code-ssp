@@ -95,6 +95,8 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
     case "POST /api/render": {
       const body = (await req.json()) as { config?: Partial<FooterConfig>; sampleId?: string; payload?: unknown; columns?: number; fillEmpty?: boolean };
       const config = normalizeConfig(body.config ?? loadEffectiveConfig(cwd).config);
+      // The preview is painted by xterm.js, which speaks truecolor; "auto" would otherwise follow this server's env.
+      if (config.colorLevel === "auto") config.colorLevel = "truecolor";
       const now = Date.now();
       const sample = body.payload ?? allSamples().find((x) => x.id === body.sampleId)?.payload ?? fixtureSamples()[0]?.payload ?? {};
       const stdin = hydrate(sample, now) as StdinData;
