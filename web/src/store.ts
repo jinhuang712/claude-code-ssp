@@ -388,7 +388,7 @@ export const ZH_DESC: Record<string, string> = {
   "git.branch": "分支名，可附带改动标记、领先/落后数和文件统计。",
   "git.repo": "从 origin 解析出的 owner/name。",
   "git.pr": "当前分支对应的 PR / MR 及评审状态。",
-  "git.linesChanged": "本次会话增删的行数。",
+  "git.linesChanged": "增删行数：本会话改过的（Claude Code 统计，提交后不清零）或工作区未提交的（git diff HEAD）。",
   "context.bar": "上下文占用进度条，按阈值变色。",
   "context.value": "上下文占用，只显示数字。",
   "context.compactions": "本次会话压缩过几次，压缩前不显示。",

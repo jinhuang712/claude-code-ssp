@@ -61,6 +61,7 @@ const ZH_FIELD: Record<string, string> = {
   cacheGlyph: "cache 用的符号",
   colorMode: "颜色",
 };
+ZH_FIELD.source = "统计口径";
 
 const ZH_ENUM: Record<string, string> = {
   full: "完整",
@@ -101,6 +102,7 @@ const ZH_ENUM_BY_FIELD: Record<string, Record<string, string>> = {
   "model.effort.effortStyle": { "symbol-word": "符号 + 文字", word: "只文字", symbol: "只符号" },
   "model.badge.joiner": { space: "空格", dot: "圆点 ·" },
   "context.bar.value": { percent: "已用 %", remaining: "剩余 %" },
+  "git.linesChanged.source": { session: "本会话改过的", worktree: "工作区未提交的" },
 };
 const ZH_ENUM_GLOBAL_EXTRA: Record<string, string> = { thresholds: "按阈值：绿 → 黄 → 红", gradient: "渐变：0% 白 → 10% 蓝 → 30% 绿 → 50% 黄 → 70% 橙 → 90% 红 → 100% 深红" };
 Object.assign(ZH_ENUM, ZH_ENUM_GLOBAL_EXTRA);

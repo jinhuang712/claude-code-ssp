@@ -83,19 +83,34 @@ export const gitPr = defineWidget<{ showState: boolean }>({
   },
 });
 
-export const gitLines = defineWidget<Record<string, never>>({
+export const gitLines = defineWidget<{ source: "session" | "worktree"; hideZero: boolean }>({
   id: "git.linesChanged",
   name: "Lines changed",
-  description: "Lines added/removed this session (from Claude Code cost stats).",
+  description: "Lines added/removed: either what this session edited (Claude Code's count) or what is uncommitted in the worktree (git diff HEAD).",
   category: "git",
   sample: "+156 -23",
-  schema: { type: "object", properties: {} },
-  defaults: {},
-  render(ctx, _o, api) {
-    const c = stdin(ctx).cost;
-    const add = c?.total_lines_added ?? 0;
-    const del = c?.total_lines_removed ?? 0;
-    if (!add && !del) return null;
+  schema: {
+    type: "object",
+    properties: {
+      source: { type: "string", enum: ["session", "worktree"], default: "session", title: "Count" },
+      hideZero: { type: "boolean", default: true, title: "Hide when both are zero" },
+    },
+  },
+  defaults: { source: "session", hideZero: true },
+  render(ctx, o, api) {
+    let add = 0;
+    let del = 0;
+    if (o.source === "worktree") {
+      const d = ctx.gitStatus?.lineDiff;
+      if (!d) return null;
+      add = d.added;
+      del = d.deleted;
+    } else {
+      const c = stdin(ctx).cost;
+      add = c?.total_lines_added ?? 0;
+      del = c?.total_lines_removed ?? 0;
+    }
+    if (o.hideZero && !add && !del) return null;
     return [api.seg(`+${add}`, { fg: "ok" }), api.seg(" "), api.seg(`-${del}`, { fg: "crit" })];
   },
 });
