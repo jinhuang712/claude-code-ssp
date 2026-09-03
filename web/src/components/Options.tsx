@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FooterConfig, JsonSchema, Style, WidgetInstance } from "../api";
 import { api } from "../api";
 import { uiColor } from "../colors";
@@ -86,6 +86,11 @@ const ZH_ENUM: Record<string, string> = {
   "3": "3 级",
 };
 
+/** One-line legends shown next to a field title. */
+const ZH_FIELD_HINT: Record<string, string> = {
+  effortStyle: "符号对应：○ low · ◔ medium · ◑ high · ◕ xhigh · ● max",
+};
+
 /** Per-widget enum wording where the generic words would hide what the option actually does. */
 const ZH_ENUM_BY_FIELD: Record<string, Record<string, string>> = {
   "model.badge.format": { full: "原样", compact: "去掉 (1M context)", short: "再去掉 Claude 前缀" },
@@ -166,17 +171,18 @@ function typeOf(schema: JsonSchema) {
 }
 
 /** Every value of an enum shows what it renders to, so nobody has to guess what "compact" means. */
-function EnumField({ title, values, current, inst, name, onChange, onEffect, hidden }: { title: string; values: unknown[]; current: unknown; inst: WidgetInstance; name: string; onChange: (v: unknown) => void; onEffect: (has: boolean) => void; hidden: boolean }) {
+function EnumField({ title, values, current, inst, name, onChange }: { title: string; values: unknown[]; current: unknown; inst: WidgetInstance; name: string; onChange: (v: unknown) => void }) {
   const probes = values.map((v) => ({ ...inst, options: { ...(inst.options ?? {}), [name]: v } }));
   const samples = useProbe(probes);
-  const allSame = samples.length === values.length && samples.every((t) => t === samples[0]);
-  useEffect(() => onEffect(!allSame), [allSame, onEffect]);
   const wording = ZH_ENUM_BY_FIELD[`${inst.widget}.${name}`] ?? ZH_ENUM;
   const nameOfValue = (k: string) => wording[k] ?? ZH_ENUM[k] ?? k;
-  if (hidden) return null;
+  const hint = ZH_FIELD_HINT[name];
   return (
     <div className="enum">
-      <span className="enum-title">{title}</span>
+      <span className="enum-title">
+        {title}
+        {hint && <span className="hint ml-2">{hint}</span>}
+      </span>
       <div className="enum-options" role="radiogroup" aria-label={title}>
         {values.map((v, i) => {
           const k = String(v);
@@ -194,19 +200,16 @@ function EnumField({ title, values, current, inst, name, onChange, onEffect, hid
 }
 
 /** Booleans show both outcomes too: the row states what turning it on adds. */
-function BoolField({ title, current, inst, name, onChange, onEffect, hidden }: { title: string; current: boolean; inst: WidgetInstance; name: string; onChange: (v: boolean) => void; onEffect: (has: boolean) => void; hidden: boolean }) {
+function BoolField({ title, current, inst, name, onChange }: { title: string; current: boolean; inst: WidgetInstance; name: string; onChange: (v: boolean) => void }) {
   const samples = useProbe([
     { ...inst, options: { ...(inst.options ?? {}), [name]: true } },
     { ...inst, options: { ...(inst.options ?? {}), [name]: false } },
   ]);
-  const differs = samples.length === 2 && samples[0] !== samples[1];
-  useEffect(() => onEffect(samples.length !== 2 || differs), [samples.length, differs, onEffect]);
-  if (hidden) return null;
   return (
     <label className="row row-top">
       <span>
         {title}
-        {differs && (
+        {samples.length === 2 && (
           <span className="mono bool-sample">
             <b>开</b> {samples[0]} <b>关</b> {samples[1]}
           </span>
@@ -217,13 +220,13 @@ function BoolField({ title, current, inst, name, onChange, onEffect, hidden }: {
   );
 }
 
-function Field({ name, schema, value, fallback, inst, onChange, onEffect, hidden }: { name: string; schema: JsonSchema; value: unknown; fallback: unknown; inst: WidgetInstance; onChange: (v: unknown) => void; onEffect: (has: boolean) => void; hidden: boolean }) {
+function Field({ name, schema, value, fallback, inst, onChange }: { name: string; schema: JsonSchema; value: unknown; fallback: unknown; inst: WidgetInstance; onChange: (v: unknown) => void }) {
   const { base, nullable } = typeOf(schema);
   const title = ZH_FIELD[name] ?? schema.title ?? name;
   const effective = value === undefined ? (fallback === undefined ? schema.default : fallback) : value;
 
-  if (schema.enum) return <EnumField title={title} values={schema.enum} current={effective} inst={inst} name={name} onChange={onChange} onEffect={onEffect} hidden={hidden} />;
-  if (base === "boolean") return <BoolField title={title} current={Boolean(effective)} inst={inst} name={name} onChange={onChange} onEffect={onEffect} hidden={hidden} />;
+  if (schema.enum) return <EnumField title={title} values={schema.enum} current={effective} inst={inst} name={name} onChange={onChange} />;
+  if (base === "boolean") return <BoolField title={title} current={Boolean(effective)} inst={inst} name={name} onChange={onChange} />;
   if (base === "integer" || base === "number") {
     return (
       <label className="row">
@@ -312,14 +315,6 @@ export function Options() {
     return () => window.removeEventListener("keydown", onKey);
   }, [sel, s]);
   const live = useProbe(w ? [w] : []);
-  const [noEffect, setNoEffect] = useState<Record<string, boolean>>({});
-  const [showAll, setShowAll] = useState(false);
-  const widgetKey = w ? `${sel!.line}:${sel!.zone}:${sel!.index}:${w.widget}` : "";
-  useEffect(() => {
-    setNoEffect({});
-    setShowAll(false);
-  }, [widgetKey]);
-  const reportEffect = useCallback((name: string, has: boolean) => setNoEffect((m) => (m[name] === !has ? m : { ...m, [name]: !has })), []);
   if (!sel || !w) return null;
   const manifest = s.widgets.find((m) => m.id === w.widget);
   const props = Object.entries(manifest?.schema.properties ?? {}).filter(([name]) => name !== "label");
@@ -389,8 +384,6 @@ export function Options() {
               value={w.options?.[name]}
               fallback={manifest?.defaults[name]}
               inst={w}
-              hidden={!showAll && noEffect[name] === true}
-              onEffect={(has) => reportEffect(name, has)}
               onChange={(v) =>
                 s.updateAt(sel, (inst) => {
                   inst.options = { ...(inst.options ?? {}), [name]: v };
@@ -400,18 +393,6 @@ export function Options() {
               }
             />
           ))}
-          {(() => {
-            const names = props.filter(([n]) => noEffect[n]).map(([n, sc]) => ZH_FIELD[n] ?? sc.title ?? n);
-            if (!names.length) return null;
-            return (
-              <div className="hint muted-note">
-                {showAll ? "已显示全部选项。" : `对当前数据没有影响，已收起：${names.join("、")}。`}
-                <button className="linklike" onClick={() => setShowAll((v) => !v)}>
-                  {showAll ? "收起无影响的" : "全部显示"}
-                </button>
-              </div>
-            );
-          })()}
           <ColorField style={style} setStyle={setStyle} />
           <label className="row">
             <span>加粗</span>
