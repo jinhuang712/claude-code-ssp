@@ -87,6 +87,8 @@ const BAR_SETS: Array<{ id: string; filled: string; empty: string; name: string 
   { id: "theme", filled: "", empty: "", name: "跟随配色" },
   { id: "block", filled: "█", empty: "░", name: "整格" },
   { id: "rect", filled: "▮", empty: "▯", name: "矮一档" },
+  { id: "low", filled: "▆", empty: "▁", name: "贴底" },
+  { id: "half", filled: "▄", empty: "▁", name: "半格" },
   { id: "slant", filled: "▰", empty: "▱", name: "斜块" },
   { id: "square", filled: "■", empty: "□", name: "方块" },
   { id: "line", filled: "━", empty: "╌", name: "细线" },
