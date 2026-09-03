@@ -3,12 +3,18 @@ import { labelSchema, stdin, thresholdSchema, withLabel, pctColor, type ColorMod
 
 type Window = { key: "5h" | "7d" | "spend"; pct: number | null; resetsAt: number | null };
 
+/*
+  Claude Code drops a window from stdin right after it resets, until new usage lands. The 5h and 7d
+  windows are always listed once rate_limits exists at all, with pct null meaning "no figure yet",
+  so the line keeps its shape instead of a segment blinking out. spend_limit only exists on some plans.
+*/
 function windows(ctx: Parameters<typeof stdin>[0]): Window[] {
   const rl = stdin(ctx).rate_limits;
   if (!rl) return [];
-  const out: Window[] = [];
-  if (rl.five_hour) out.push({ key: "5h", pct: rl.five_hour.used_percentage ?? null, resetsAt: rl.five_hour.resets_at ?? null });
-  if (rl.seven_day) out.push({ key: "7d", pct: rl.seven_day.used_percentage ?? null, resetsAt: rl.seven_day.resets_at ?? null });
+  const out: Window[] = [
+    { key: "5h", pct: rl.five_hour?.used_percentage ?? null, resetsAt: rl.five_hour?.resets_at ?? null },
+    { key: "7d", pct: rl.seven_day?.used_percentage ?? null, resetsAt: rl.seven_day?.resets_at ?? null },
+  ];
   if (rl.spend_limit) out.push({ key: "spend", pct: rl.spend_limit.used_percentage ?? null, resetsAt: rl.spend_limit.resets_at ?? null });
   return out;
 }
@@ -70,7 +76,14 @@ export const usageWindows = defineWidget<{
     if (label) segs.push(api.seg(`${label} `, { fg: "muted" }));
     ws.forEach((w, i) => {
       if (i > 0) segs.push(api.seg(" │ ", { fg: "muted" }));
-      const pct = w.pct ?? 0;
+      if (w.pct === null) {
+        // Window not reported yet (just reset): keep the slot, show a dash in place of the figure.
+        segs.push(api.seg(`${w.key} `, { fg: "muted" }));
+        if (o.bar) segs.push(api.seg(api.bar(0, o.barWidth) + " ", { fg: "muted" }));
+        segs.push(api.seg("—", { fg: "muted" }));
+        return;
+      }
+      const pct = w.pct;
       const lvl = api.level(pct, o.warnAt, o.critAt);
       const shown = o.value === "remaining" ? Math.max(0, 100 - Math.round(pct)) : Math.round(pct);
       segs.push(api.seg(`${w.key} `, { fg: "muted" }));
@@ -110,9 +123,12 @@ export const usageSingle = defineWidget<{ window: "5h" | "7d"; label: string | n
   render(ctx, o, api) {
     const w = windows(ctx).find((x) => x.key === o.window);
     if (!w) return null;
-    const pct = Math.round(w.pct ?? 0);
-    const lvl = api.level(pct, o.warnAt, o.critAt);
     const label = withLabel(o.label, o.window);
+    if (w.pct === null) {
+      return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), ...(o.bar ? [api.seg(api.bar(0, o.barWidth) + " ", { fg: "muted" })] : []), api.seg("—", { fg: "muted" })];
+    }
+    const pct = Math.round(w.pct);
+    const lvl = api.level(pct, o.warnAt, o.critAt);
     const segs = label ? [api.seg(`${label} `, { fg: "muted" })] : [];
     const resetTxt = w.resetsAt ? (o.resetFormat === "absolute" ? absoluteReset(w.resetsAt * 1000, ctx.now) : api.duration(Math.max(0, w.resetsAt * 1000 - ctx.now))) : null;
     if (pct >= 100 && resetTxt) {
