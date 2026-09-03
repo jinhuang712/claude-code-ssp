@@ -87,7 +87,7 @@ export const usageWindows = defineWidget<{
   },
 });
 
-export const usageSingle = defineWidget<{ window: "5h" | "7d"; label: string | null; warnAt: number; critAt: number }>({
+export const usageSingle = defineWidget<{ window: "5h" | "7d"; label: string | null; bar: boolean; barWidth: number; showReset: boolean; resetFormat: "relative" | "absolute"; warnAt: number; critAt: number }>({
   id: "usage.single",
   name: "Single rate-limit window",
   description: "Just one window as compact text, e.g. for a narrow zone.",
@@ -98,16 +98,29 @@ export const usageSingle = defineWidget<{ window: "5h" | "7d"; label: string | n
     properties: {
       window: { type: "string", enum: ["5h", "7d"], default: "5h" },
       label: { ...labelSchema, default: null },
+      bar: { type: "boolean", default: false, title: "Show bar" },
+      barWidth: { type: "integer", default: 8, minimum: 3, maximum: 40, title: "Bar width" },
+      showReset: { type: "boolean", default: false, title: "Show reset time" },
+      resetFormat: { type: "string", enum: ["relative", "absolute"], default: "relative", title: "Reset time format" },
       ...thresholdSchema(70, 90),
     },
   },
-  defaults: { window: "5h", label: null, warnAt: 70, critAt: 90 },
+  defaults: { window: "5h", label: null, bar: false, barWidth: 8, showReset: false, resetFormat: "relative", warnAt: 70, critAt: 90 },
   render(ctx, o, api) {
     const w = windows(ctx).find((x) => x.key === o.window);
     if (!w) return null;
     const pct = Math.round(w.pct ?? 0);
     const lvl = api.level(pct, o.warnAt, o.critAt);
     const label = withLabel(o.label, o.window);
-    return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), api.seg(`${pct}%`, { fg: lvl === "ok" ? "fg" : lvl })];
+    const segs = label ? [api.seg(`${label} `, { fg: "muted" })] : [];
+    const resetTxt = w.resetsAt ? (o.resetFormat === "absolute" ? absoluteReset(w.resetsAt * 1000, ctx.now) : api.duration(Math.max(0, w.resetsAt * 1000 - ctx.now))) : null;
+    if (pct >= 100 && resetTxt) {
+      segs.push(api.seg(o.resetFormat === "absolute" ? `resets ${resetTxt}` : `resets in ${resetTxt}`, { fg: "crit", bold: true }));
+      return segs;
+    }
+    if (o.bar) segs.push(api.seg(api.bar(pct, o.barWidth) + " ", { fg: lvl === "ok" ? "usage" : lvl }));
+    segs.push(api.seg(`${pct}%`, { fg: lvl === "ok" ? "fg" : lvl, bold: lvl === "crit" }));
+    if (o.showReset && resetTxt) segs.push(api.seg(` (${resetTxt})`, { fg: "muted" }));
+    return segs;
   },
 });
