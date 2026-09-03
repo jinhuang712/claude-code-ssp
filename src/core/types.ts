@@ -113,6 +113,8 @@ export interface WidgetApi {
   level(pct: number, warnAt?: number, critAt?: number): "ok" | "warn" | "crit";
   /** Progress bar using the theme's glyphs. */
   bar(pct: number, width?: number): string;
+  /** Hex colour for a 0–100 value on a continuous spectrum: white → blue → green → yellow → orange → red → deep red. */
+  gradient(pct: number): string;
   /** 12345 → "12k", 1_234_567 → "1.2M". */
   tokens(n: number): string;
   /** Milliseconds → "3h 41m". */

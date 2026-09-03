@@ -35,6 +35,34 @@ export function level(pct: number, warnAt = 70, critAt = 85): "ok" | "warn" | "c
   return "ok";
 }
 
+/** Colour stops for the gradient mode; interpolated linearly in RGB between neighbours. */
+const GRADIENT: Array<[number, string]> = [
+  [0, "#ffffff"],
+  [10, "#7fc8ff"],
+  [30, "#62c46a"],
+  [50, "#f5e07a"],
+  [70, "#ff9e3d"],
+  [90, "#ef4444"],
+  [100, "#b91c1c"],
+];
+
+function hexToRgb(h: string): [number, number, number] {
+  return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+}
+
+export function gradient(pct: number, stops: Array<[number, string]> = GRADIENT): string {
+  const p = Math.max(0, Math.min(100, pct));
+  let i = 0;
+  while (i < stops.length - 2 && p > stops[i + 1]![0]) i++;
+  const [p0, c0] = stops[i]!;
+  const [p1, c1] = stops[i + 1]!;
+  const t = p1 === p0 ? 0 : (p - p0) / (p1 - p0);
+  const a = hexToRgb(c0);
+  const b = hexToRgb(c1);
+  const mix = a.map((v, k) => Math.round(v + (b[k]! - v) * t));
+  return `#${mix.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
 export function bar(pct: number, width: number, theme: ThemeDef): string {
   const w = Math.max(1, Math.floor(width));
   const clamped = Math.max(0, Math.min(100, pct));
@@ -47,6 +75,7 @@ export function createApi(theme: ThemeDef, now: number): WidgetApi {
   return {
     level,
     bar: (pct, width = 10) => bar(pct, width, theme),
+    gradient,
     tokens: formatTokens,
     duration: formatDuration,
     relative: (when, at = now) => formatRelative(when, at),

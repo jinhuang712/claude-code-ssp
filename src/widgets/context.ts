@@ -1,7 +1,7 @@
 import { defineWidget } from "../core/types.js";
 import { getContextPercent, getTotalTokens } from "../data/stdin.js";
 import { formatTokens } from "../core/api.js";
-import { labelSchema, stdin, thresholdSchema, withLabel } from "./_shared.js";
+import { labelSchema, pctColor, stdin, thresholdSchema, withLabel, type ColorMode } from "./_shared.js";
 
 type ValueMode = "percent" | "tokens" | "remaining" | "both";
 
@@ -20,7 +20,7 @@ function valueText(ctx: Parameters<typeof getContextPercent>[0], pct: number, mo
   }
 }
 
-export const contextBar = defineWidget<{ label: string | null; showBar: boolean; showTokens: boolean; width: number; value: ValueMode; warnAt: number; critAt: number; autoCompactWindow: number | null }>({
+export const contextBar = defineWidget<{ label: string | null; showBar: boolean; showTokens: boolean; width: number; value: ValueMode; colorMode: ColorMode; warnAt: number; critAt: number; autoCompactWindow: number | null }>({
   id: "context.bar",
   name: "Context bar",
   description: "Context window usage as a progress bar with threshold colors.",
@@ -38,7 +38,7 @@ export const contextBar = defineWidget<{ label: string | null; showBar: boolean;
       autoCompactWindow: { type: ["integer", "null"], default: null, title: "Autocompact window (tokens)", description: "Compute % against this window instead of the full model window, to match /context." },
     },
   },
-  defaults: { label: "Context", showBar: true, showTokens: false, width: 10, value: "percent", warnAt: 70, critAt: 85, autoCompactWindow: null },
+  defaults: { label: "Context", showBar: true, showTokens: false, width: 10, value: "percent", colorMode: "thresholds", warnAt: 70, critAt: 85, autoCompactWindow: null },
   numeric: (ctx, o) => getContextPercent(ctx.stdin, o.autoCompactWindow),
   render(ctx, o, api) {
     const s = stdin(ctx);
@@ -47,19 +47,20 @@ export const contextBar = defineWidget<{ label: string | null; showBar: boolean;
     const lvl = api.level(pct, o.warnAt, o.critAt);
     const label = withLabel(o.label, "Context");
     const segs = [];
-    const valueStyle = { fg: lvl === "ok" ? "fg" : lvl, bold: lvl === "crit" } as const;
+    const valueStyle = { fg: pctColor(o.colorMode, pct, lvl, "fg", api), bold: lvl === "crit" } as const;
+    const barColor = pctColor(o.colorMode, pct, lvl, "context", api);
     if (label) segs.push(api.seg(`${label} `, { fg: "muted" }));
     // Composition: [tokens] [bar] percent — with no bar the percent goes in parentheses after the tokens.
     const pctText = valueText(s, pct, o.value === "remaining" ? "remaining" : "percent");
     if (o.showTokens) segs.push(api.seg(`${valueText(s, pct, "tokens")}${o.showBar ? " " : ""}`, { fg: o.showBar ? "muted" : "fg" }));
-    if (o.showBar) segs.push(api.seg(api.bar(pct, o.width), { fg: lvl === "ok" ? "context" : lvl }));
+    if (o.showBar) segs.push(api.seg(api.bar(pct, o.width), { fg: barColor }));
     if (o.showBar) segs.push(api.seg(` ${pctText}`, valueStyle));
     else segs.push(api.seg(o.showTokens ? ` (${pctText})` : pctText, valueStyle));
     return segs;
   },
 });
 
-export const contextPercent = defineWidget<{ label: string | null; value: ValueMode; warnAt: number; critAt: number }>({
+export const contextPercent = defineWidget<{ label: string | null; value: ValueMode; colorMode: ColorMode; warnAt: number; critAt: number }>({
   id: "context.value",
   name: "Context value",
   description: "Context usage as text only (no bar).",
@@ -73,7 +74,7 @@ export const contextPercent = defineWidget<{ label: string | null; value: ValueM
       ...thresholdSchema(70, 85),
     },
   },
-  defaults: { label: "ctx", value: "percent", warnAt: 70, critAt: 85 },
+  defaults: { label: "ctx", value: "percent", colorMode: "thresholds", warnAt: 70, critAt: 85 },
   numeric: (ctx) => getContextPercent(ctx.stdin),
   render(ctx, o, api) {
     const s = stdin(ctx);
@@ -81,7 +82,7 @@ export const contextPercent = defineWidget<{ label: string | null; value: ValueM
     const pct = getContextPercent(s);
     const lvl = api.level(pct, o.warnAt, o.critAt);
     const label = withLabel(o.label, "ctx");
-    return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), api.seg(valueText(s, pct, o.value), { fg: lvl === "ok" ? "fg" : lvl })];
+    return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), api.seg(valueText(s, pct, o.value), { fg: pctColor(o.colorMode, pct, lvl, "fg", api) })];
   },
 });
 

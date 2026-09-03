@@ -49,8 +49,17 @@ export function withLabel(label: string | null | undefined, fallback: string): s
   return label;
 }
 
+export type ColorMode = "thresholds" | "gradient";
+
+/** Resolve the colour for a percentage: theme token below the thresholds, or a computed gradient hex. */
+export function pctColor(mode: ColorMode, pct: number, lvl: "ok" | "warn" | "crit", okToken: string, api: { gradient(p: number): string }): string {
+  if (mode === "gradient") return api.gradient(pct);
+  return lvl === "ok" ? okToken : lvl;
+}
+
 export function thresholdSchema(warn: number, crit: number): Record<string, JsonSchema> {
   return {
+    colorMode: { type: "string", enum: ["thresholds", "gradient"], default: "thresholds", title: "Colour" },
     warnAt: { type: "integer", title: "Warn at %", minimum: 0, maximum: 100, default: warn },
     critAt: { type: "integer", title: "Critical at %", minimum: 0, maximum: 100, default: crit },
   };
