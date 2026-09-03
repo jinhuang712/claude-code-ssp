@@ -1,22 +1,23 @@
 import { defineWidget } from "../core/types.js";
 import { labelSchema, stdin, withLabel } from "./_shared.js";
 
-export const tokensSession = defineWidget<{ label: string | null; breakdown: boolean; style: "words" | "arrows"; parens: boolean }>({
+export const tokensSession = defineWidget<{ label: string | null; breakdown: boolean; style: "words" | "arrows"; cacheGlyph: string; parens: boolean }>({
   id: "tokens.session",
   name: "Session tokens",
   description: "Cumulative tokens this session, with optional in/out/cache breakdown.",
   category: "usage",
-  sample: "Tokens 3.0M (↓80k ↑50k ⟲417k)",
+  sample: "Tokens 3M (↓80k ↑50k ↻417k)",
   schema: {
     type: "object",
     properties: {
       label: { ...labelSchema, default: "Tokens" },
       breakdown: { type: "boolean", default: true, title: "Show in/out/cache breakdown" },
-      style: { type: "string", enum: ["words", "arrows"], default: "words", title: "Breakdown style", description: "words: in/out/cache · arrows: ↓ ↑ ⟲" },
+      style: { type: "string", enum: ["words", "arrows"], default: "words", title: "Breakdown style", description: "words: in/out/cache · arrows: ↓ ↑ + cache glyph" },
+      cacheGlyph: { type: "string", enum: ["↻", "↺", "⇄", "≈", "~"], default: "↻", title: "Cache glyph (arrows style)" },
       parens: { type: "boolean", default: true, title: "Wrap breakdown in ( )" },
     },
   },
-  defaults: { label: "Tokens", breakdown: true, style: "words", parens: true },
+  defaults: { label: "Tokens", breakdown: true, style: "words", cacheGlyph: "↻", parens: true },
   render(ctx, o, api) {
     const t = ctx.transcript.sessionTokens;
     if (!t) return null;
@@ -29,7 +30,7 @@ export const tokensSession = defineWidget<{ label: string | null; breakdown: boo
     if (o.breakdown) {
       const parts =
         o.style === "arrows"
-          ? [`↓${api.tokens(t.inputTokens)}`, `↑${api.tokens(t.outputTokens)}`, ...(cache ? [`⟲${api.tokens(cache)}`] : [])]
+          ? [`↓${api.tokens(t.inputTokens)}`, `↑${api.tokens(t.outputTokens)}`, ...(cache ? [`${o.cacheGlyph}${api.tokens(cache)}`] : [])]
           : [`in: ${api.tokens(t.inputTokens)}`, `out: ${api.tokens(t.outputTokens)}`, ...(cache ? [`cache: ${api.tokens(cache)}`] : [])];
       const joined = parts.join(o.style === "arrows" ? " " : ", ");
       segs.push(api.seg(o.parens ? ` (${joined})` : ` ${joined}`, { fg: "muted" }));
