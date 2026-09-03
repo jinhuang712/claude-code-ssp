@@ -39,7 +39,7 @@ export function bar(pct: number, width: number, theme: ThemeDef): string {
   const w = Math.max(1, Math.floor(width));
   const clamped = Math.max(0, Math.min(100, pct));
   const filled = Math.round((clamped / 100) * w);
-  const glyphs = theme.bar ?? { filled: "█", empty: "░" };
+  const glyphs = theme.bar ?? { filled: "▆", empty: "▁" };
   return glyphs.filled.repeat(filled) + glyphs.empty.repeat(w - filled);
 }
 
