@@ -40,7 +40,7 @@ export const usageWindows = defineWidget<{
   name: "Rate-limit windows",
   description: "5-hour / 7-day / spend-limit usage from Claude Code (Pro/Max).",
   category: "usage",
-  sample: "Usage 5h ▆▆▁▁▁▁▁▁▁▁ 23% (3h 41m) │ 7d ▆▆▆▆▁▁▁▁▁▁ 41% (5d 2h)",
+  sample: "Usage 5h ██░░░░░░░░ 23% (3h 41m) │ 7d ████░░░░░░ 41% (5d 2h)",
   schema: {
     type: "object",
     properties: {
