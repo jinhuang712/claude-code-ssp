@@ -58,6 +58,7 @@ const ZH_FIELD: Record<string, string> = {
   showPercent: "显示百分比",
   parens: "加括号",
   date: "显示日期",
+  cacheGlyph: "cache 用的符号",
 };
 
 const ZH_ENUM: Record<string, string> = {
