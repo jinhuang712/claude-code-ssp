@@ -2,7 +2,15 @@ import { defineWidget } from "../core/types.js";
 import { formatModelName, getModelName, getProviderLabel, type ModelFormatMode } from "../data/stdin.js";
 import { stdin } from "./_shared.js";
 
-export const modelBadge = defineWidget<{ format: ModelFormatMode; brackets: boolean; showEffort: boolean; showProvider: boolean; showFastMode: boolean }>({
+type Layout = "bracket" | "plain" | "dot" | "paren";
+type EffortStyle = "symbol-word" | "word" | "symbol";
+
+function windowLabel(size: number | undefined): string | null {
+  if (!size || size <= 0) return null;
+  return size >= 1_000_000 ? `${Math.round(size / 100_000) / 10}M`.replace(".0M", "M") : `${Math.round(size / 1000)}k`;
+}
+
+export const modelBadge = defineWidget<{ format: ModelFormatMode; layout: Layout; effortStyle: EffortStyle; showWindow: boolean; brackets?: boolean; showEffort: boolean; showProvider: boolean; showFastMode: boolean }>({
   id: "model.badge",
   name: "Model badge",
   description: "Current model, optionally with effort level, provider and fast mode.",
@@ -11,28 +19,55 @@ export const modelBadge = defineWidget<{ format: ModelFormatMode; brackets: bool
   schema: {
     type: "object",
     properties: {
+      layout: { type: "string", enum: ["bracket", "plain", "dot", "paren"], default: "bracket", title: "Layout" },
       format: { type: "string", enum: ["full", "compact", "short"], default: "full", title: "Name format" },
-      brackets: { type: "boolean", default: true, title: "Wrap in [ ]" },
+      showWindow: { type: "boolean", default: false, title: "Append context window size, e.g. (1M)" },
       showEffort: { type: "boolean", default: true, title: "Show effort level" },
+      effortStyle: { type: "string", enum: ["symbol-word", "word", "symbol"], default: "symbol-word", title: "Effort style" },
       showProvider: { type: "boolean", default: false, title: "Show provider (Bedrock/Vertex/…)" },
       showFastMode: { type: "boolean", default: true, title: "Show ⚡ when fast mode is on" },
     },
   },
-  defaults: { format: "full", brackets: true, showEffort: true, showProvider: false, showFastMode: true },
+  defaults: { layout: "bracket", format: "full", showWindow: false, showEffort: true, effortStyle: "symbol-word", showProvider: false, showFastMode: true },
   render(ctx, o, api) {
     const s = stdin(ctx);
-    const name = formatModelName(getModelName(s), o.format);
+    let name = formatModelName(getModelName(s), o.format);
     if (!name) return null;
-    const parts: string[] = [];
+    // Older configs used brackets:false; honour it as the plain layout.
+    const layout: Layout = o.brackets === false && o.layout === "bracket" ? "plain" : o.layout;
+    if (o.showWindow) {
+      const w = windowLabel(s.context_window?.context_window_size);
+      if (w) name = `${name} (${w})`;
+    }
+    const head: string[] = [];
     if (o.showProvider) {
       const provider = getProviderLabel(s);
-      if (provider) parts.push(provider);
+      if (provider) head.push(provider);
     }
-    parts.push(name);
-    if (o.showEffort && ctx.effortLevel) parts.push(`${ctx.effortSymbol ?? ""} ${ctx.effortLevel}`.trim());
-    if (o.showFastMode && s.fast_mode) parts.push("⚡");
-    const body = parts.join(" ");
-    return [api.seg(o.brackets ? `[${body}]` : body, { fg: "model" })];
+    head.push(name);
+    let effort: string | null = null;
+    if (o.showEffort && ctx.effortLevel) {
+      const sym = ctx.effortSymbol ?? "";
+      effort = o.effortStyle === "word" ? ctx.effortLevel : o.effortStyle === "symbol" ? sym || ctx.effortLevel : `${sym} ${ctx.effortLevel}`.trim();
+    }
+    const fast = o.showFastMode && s.fast_mode ? "⚡" : null;
+    let body: string;
+    switch (layout) {
+      case "dot":
+        body = [head.join(" "), effort, fast].filter(Boolean).join(" · ");
+        break;
+      case "paren": {
+        const tail = [effort, fast].filter(Boolean).join(" ");
+        body = tail ? `${head.join(" ")} (${tail})` : head.join(" ");
+        break;
+      }
+      case "plain":
+        body = [...head, effort, fast].filter(Boolean).join(" ");
+        break;
+      default:
+        body = `[${[...head, effort, fast].filter(Boolean).join(" ")}]`;
+    }
+    return [api.seg(body, { fg: "model" })];
   },
 });
 

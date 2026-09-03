@@ -1,7 +1,7 @@
 import { defineWidget } from "../core/types.js";
 import { labelSchema, stdin, withLabel } from "./_shared.js";
 
-export const tokensSession = defineWidget<{ label: string | null; breakdown: boolean; style: "words" | "arrows" }>({
+export const tokensSession = defineWidget<{ label: string | null; breakdown: boolean; style: "words" | "arrows"; parens: boolean }>({
   id: "tokens.session",
   name: "Session tokens",
   description: "Cumulative tokens this session, with optional in/out/cache breakdown.",
@@ -13,9 +13,10 @@ export const tokensSession = defineWidget<{ label: string | null; breakdown: boo
       label: { ...labelSchema, default: "Tokens" },
       breakdown: { type: "boolean", default: true, title: "Show in/out/cache breakdown" },
       style: { type: "string", enum: ["words", "arrows"], default: "words", title: "Breakdown style", description: "words: in/out/cache · arrows: ↓ ↑ ⟲" },
+      parens: { type: "boolean", default: true, title: "Wrap breakdown in ( )" },
     },
   },
-  defaults: { label: "Tokens", breakdown: true, style: "words" },
+  defaults: { label: "Tokens", breakdown: true, style: "words", parens: true },
   render(ctx, o, api) {
     const t = ctx.transcript.sessionTokens;
     if (!t) return null;
@@ -30,7 +31,8 @@ export const tokensSession = defineWidget<{ label: string | null; breakdown: boo
         o.style === "arrows"
           ? [`↓${api.tokens(t.inputTokens)}`, `↑${api.tokens(t.outputTokens)}`, ...(cache ? [`⟲${api.tokens(cache)}`] : [])]
           : [`in: ${api.tokens(t.inputTokens)}`, `out: ${api.tokens(t.outputTokens)}`, ...(cache ? [`cache: ${api.tokens(cache)}`] : [])];
-      segs.push(api.seg(` (${parts.join(o.style === "arrows" ? " " : ", ")})`, { fg: "muted" }));
+      const joined = parts.join(o.style === "arrows" ? " " : ", ");
+      segs.push(api.seg(o.parens ? ` (${joined})` : ` ${joined}`, { fg: "muted" }));
     }
     return segs;
   },
