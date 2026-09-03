@@ -146,6 +146,8 @@ export interface SessionTokenUsage {
   outputTokens: number;
   cacheCreationTokens: number;
   cacheReadTokens: number;
+  /** Distinct API responses seen (streamed chunks of one message count once). */
+  apiCalls?: number;
 }
 
 export interface TranscriptData {

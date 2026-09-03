@@ -77,6 +77,7 @@ interface State {
   applyPreset(id: PresetId): void;
   saveNow(scope?: "user" | "project"): Promise<void>;
   install(): Promise<void>;
+  resetCounters(): Promise<void>;
   refreshPreview(): Promise<void>;
   setAdvanced(v: boolean): void;
   notify(msg: string | null): void;
@@ -263,6 +264,17 @@ export const useStore = create<State>((set, get) => ({
     }
   },
 
+  async resetCounters() {
+    const live = get().samples.find((x) => x.source === "live");
+    try {
+      const r = await api.reset(live?.id);
+      set({ toast: `已重置会话 ${r.sessionId.slice(0, 8)}… 的费用 / Tokens / API 次数 / 改动行数，状态栏下次刷新起从 0 累计` });
+      void get().refreshPreview();
+    } catch (err) {
+      set({ toast: `重置失败：${err instanceof Error ? err.message : String(err)}` });
+    }
+  },
+
   async refreshPreview() {
     const { config, sampleId, columns } = get();
     if (!config) return;
@@ -318,6 +330,7 @@ export const ZH: Record<string, string> = {
   "session.started": "开始时间",
   "session.lastReply": "上次回复",
   "session.clock": "时钟",
+  "session.apiCalls": "API 调用次数",
   "session.vimMode": "Vim 模式",
   "session.agent": "Agent 名",
   "cost.session": "费用",
@@ -402,6 +415,7 @@ export const ZH_DESC: Record<string, string> = {
   "session.started": "会话开始的时间。",
   "session.lastReply": "距上一次回复过了多久。",
   "session.clock": "本机当前时间。",
+  "session.apiCalls": "本次会话调了多少次模型 API，一轮回复算一次，流式分片不重复计。",
   "session.vimMode": "当前 vim 模式。",
   "session.agent": "用 --agent 启动时的 agent 名。",
   "cost.session": "本次会话费用，Claude Code 自己的统计，缺失时按价目表估算。",

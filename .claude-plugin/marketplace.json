@@ -11,7 +11,7 @@
     {
       "name": "ssp",
       "source": "./",
-      "description": "Statusline + web configurator: /ssp:config",
+      "description": "Statusline + web configurator: /ssp:config, /ssp:reset",
       "category": "monitoring",
       "tags": [
         "statusline",
@@ -21,4 +21,4 @@
       ]
     }
   ]
-}
+}\n

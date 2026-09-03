@@ -1,4 +1,5 @@
 import { defineWidget } from "../core/types.js";
+import { netTokens } from "../core/reset.js";
 import { labelSchema, stdin, withLabel } from "./_shared.js";
 
 function pad2(n: number): string {
@@ -111,5 +112,21 @@ export const sessionAgent = defineWidget<Record<string, never>>({
   render(ctx, _o, api) {
     const name = stdin(ctx).agent?.name;
     return name ? [api.seg(`🤖 ${name}`, { fg: "accent" })] : null;
+  },
+});
+
+export const sessionApiCalls = defineWidget<{ label: string | null }>({
+  id: "session.apiCalls",
+  name: "API calls",
+  description: "Number of API responses in this session (one per model turn, streamed chunks counted once).",
+  category: "session",
+  sample: "API 206",
+  schema: { type: "object", properties: { label: { ...labelSchema, default: "API" } } },
+  defaults: { label: "API" },
+  render(ctx, o, api) {
+    const n = netTokens(ctx.transcript.sessionTokens, ctx.reset)?.apiCalls ?? 0;
+    if (n <= 0) return null;
+    const label = withLabel(o.label, "API");
+    return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), api.seg(String(n))];
   },
 });

@@ -1,6 +1,6 @@
 {
   "name": "ssp",
-  "description": "Claude Code statusline with a localhost web configurator: /ssp:config opens it",
+  "description": "Claude Code statusline with a localhost web configurator: /ssp:config opens it, /ssp:reset zeroes the session counters",
   "version": "0.1.0",
   "author": {
     "name": "Jin Huang",
@@ -17,6 +17,7 @@
     "claude-code"
   ],
   "commands": [
-    "./commands/config.md"
+    "./commands/config.md",
+    "./commands/reset.md"
   ]
-}
+}\n

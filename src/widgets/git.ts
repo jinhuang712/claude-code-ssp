@@ -107,8 +107,8 @@ export const gitLines = defineWidget<{ source: "session" | "worktree"; hideZero:
       del = d.deleted;
     } else {
       const c = stdin(ctx).cost;
-      add = c?.total_lines_added ?? 0;
-      del = c?.total_lines_removed ?? 0;
+      add = Math.max(0, (c?.total_lines_added ?? 0) - (ctx.reset?.linesAdded ?? 0));
+      del = Math.max(0, (c?.total_lines_removed ?? 0) - (ctx.reset?.linesRemoved ?? 0));
     }
     if (o.hideZero && !add && !del) return null;
     return [api.seg(`+${add}`, { fg: "ok" }), api.seg(" "), api.seg(`-${del}`, { fg: "crit" })];
