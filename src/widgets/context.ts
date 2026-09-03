@@ -20,7 +20,9 @@ function valueText(ctx: Parameters<typeof getContextPercent>[0], pct: number, mo
   }
 }
 
-export const contextBar = defineWidget<{ label: string | null; width: number; value: ValueMode; warnAt: number; critAt: number; autoCompactWindow: number | null }>({
+type BarLayout = "bar-value" | "tokens-bar-value" | "text";
+
+export const contextBar = defineWidget<{ label: string | null; layout: BarLayout; width: number; value: ValueMode; warnAt: number; critAt: number; autoCompactWindow: number | null }>({
   id: "context.bar",
   name: "Context bar",
   description: "Context window usage as a progress bar with threshold colors.",
@@ -30,13 +32,14 @@ export const contextBar = defineWidget<{ label: string | null; width: number; va
     type: "object",
     properties: {
       label: { ...labelSchema, default: "Context" },
+      layout: { type: "string", enum: ["bar-value", "tokens-bar-value", "text"], default: "bar-value", title: "Layout" },
       width: { type: "integer", default: 10, minimum: 3, maximum: 40, title: "Bar width" },
       value: { type: "string", enum: ["percent", "tokens", "remaining", "both"], default: "percent", title: "Value format" },
       ...thresholdSchema(70, 85),
       autoCompactWindow: { type: ["integer", "null"], default: null, title: "Autocompact window (tokens)", description: "Compute % against this window instead of the full model window, to match /context." },
     },
   },
-  defaults: { label: "Context", width: 10, value: "percent", warnAt: 70, critAt: 85, autoCompactWindow: null },
+  defaults: { label: "Context", layout: "bar-value", width: 10, value: "percent", warnAt: 70, critAt: 85, autoCompactWindow: null },
   numeric: (ctx, o) => getContextPercent(ctx.stdin, o.autoCompactWindow),
   render(ctx, o, api) {
     const s = stdin(ctx);
@@ -45,9 +48,16 @@ export const contextBar = defineWidget<{ label: string | null; width: number; va
     const lvl = api.level(pct, o.warnAt, o.critAt);
     const label = withLabel(o.label, "Context");
     const segs = [];
+    const valueStyle = { fg: lvl === "ok" ? "fg" : lvl, bold: lvl === "crit" } as const;
     if (label) segs.push(api.seg(`${label} `, { fg: "muted" }));
+    if (o.layout === "text") {
+      // No bar: "400k/1M (41%)"
+      segs.push(api.seg(`${valueText(s, pct, "tokens")} (${valueText(s, pct, o.value === "tokens" ? "percent" : o.value)})`, valueStyle));
+      return segs;
+    }
+    if (o.layout === "tokens-bar-value") segs.push(api.seg(`${valueText(s, pct, "tokens")} `, { fg: "muted" }));
     segs.push(api.seg(api.bar(pct, o.width), { fg: lvl === "ok" ? "context" : lvl }));
-    segs.push(api.seg(` ${valueText(s, pct, o.value)}`, { fg: lvl === "ok" ? "fg" : lvl, bold: lvl === "crit" }));
+    segs.push(api.seg(` ${valueText(s, pct, o.value)}`, valueStyle));
     return segs;
   },
 });
