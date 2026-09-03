@@ -25,7 +25,7 @@ export const contextBar = defineWidget<{ label: string | null; showBar: boolean;
   name: "Context bar",
   description: "Context window usage as a progress bar with threshold colors.",
   category: "context",
-  sample: "Context ▆▆▆▁▁▁▁▁▁▁ 32%",
+  sample: "Context ███░░░░░░░ 32%",
   schema: {
     type: "object",
     properties: {
