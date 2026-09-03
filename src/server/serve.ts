@@ -15,7 +15,7 @@ import { listThemes } from "../core/theme.js";
 import type { FooterConfig } from "../core/types.js";
 import type { StdinData } from "../data/types.js";
 import { registerBuiltinWidgets } from "../widgets/index.js";
-import { install, planInstall } from "./install.js";
+import { install, planInstall, settingsPath } from "./install.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const WEB_DIST = path.resolve(here, "..", "..", "web", "dist");
@@ -83,6 +83,25 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
     }
     case "GET /api/widgets":
       return json(widgetManifest());
+    case "GET /api/doctor": {
+      // Everything the old `doctor` CLI printed, so the panel can show provenance and raw inputs.
+      const eff = loadEffectiveConfig(cwd);
+      const plugins = await loadPlugins(eff.config, cwd);
+      let statusLine: unknown = null;
+      let settingsError: string | null = null;
+      try {
+        statusLine = (JSON.parse(fs.readFileSync(settingsPath(), "utf8")) as { statusLine?: unknown }).statusLine ?? null;
+      } catch (err) {
+        settingsError = (err as Error).message;
+      }
+      const live = listLiveSamples()[0];
+      return json({
+        layers: eff.layers.map((l) => ({ name: l.name, path: l.path, exists: l.exists, error: l.error ?? null })),
+        plugins: { dirs: plugins.dirs, loaded: plugins.loaded, errors: plugins.errors },
+        settings: { path: settingsPath(), statusLine, error: settingsError },
+        lastPayload: live ? { id: live.id, capturedAt: live.capturedAt, payload: live.payload } : null,
+      });
+    }
     case "GET /api/themes":
       return json(listThemes());
     case "GET /api/samples":

@@ -1,6 +1,8 @@
 {
   "name": "claude-code-ssp",
-  "owner": { "name": "Jin Huang" },
+  "owner": {
+    "name": "Jin Huang"
+  },
   "metadata": {
     "description": "Claude Code statusline configured from a localhost web UI",
     "version": "0.1.0"
@@ -9,9 +11,14 @@
     {
       "name": "ssp",
       "source": "./",
-      "description": "Statusline + web configurator: /ssp:config, /ssp:install, /ssp:doctor",
+      "description": "Statusline + web configurator: /ssp:config",
       "category": "monitoring",
-      "tags": ["statusline", "hud", "web-ui", "widgets"]
+      "tags": [
+        "statusline",
+        "hud",
+        "web-ui",
+        "widgets"
+      ]
     }
   ]
 }
