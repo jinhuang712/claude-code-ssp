@@ -5,26 +5,43 @@ import { Layout } from "./components/Layout";
 import { Options } from "./components/Options";
 import { Picker } from "./components/Picker";
 import { Preview } from "./components/Preview";
+import { uiColor } from "./colors";
 import { PRESETS, useStore, type PresetId } from "./store";
 
 function Presets() {
   const config = useStore((s) => s.config)!;
   const applyPreset = useStore((s) => s.applyPreset);
-  const current = (Object.keys(PRESETS) as PresetId[]).find((id) => JSON.stringify(PRESETS[id].lines) === JSON.stringify(config.lines));
+  const ids = Object.keys(PRESETS) as PresetId[];
+  // Compare shape only (which widgets, in which zone, in which order); ignore empty zones and per-widget tweaks.
+  const sig = (lines: typeof config.lines) => lines.map((l) => (["left", "center", "right"] as const).map((z) => (l[z] ?? []).map((w) => w.widget).join(",")).join("|")).join("\n");
+  const current = ids.find((id) => sig(PRESETS[id].lines) === sig(config.lines));
   return (
     <section className="section">
-      <h2 className="h2">从一个预设开始</h2>
-      <div className="grid grid-cols-3 gap-3">
-        {(Object.keys(PRESETS) as PresetId[]).map((id) => (
-          <button key={id} className="card text-left" data-active={current === id} onClick={() => applyPreset(id)}>
-            <div className="font-medium">{PRESETS[id].name}</div>
-            <div className="mt-0.5 text-xs opacity-60">{PRESETS[id].blurb}</div>
+      <div className="section-head">
+        <h2 className="h2">预设</h2>
+        <span className="hint">{current ? PRESETS[current].blurb : "已在预设基础上改动"}</span>
+      </div>
+      <div className="choices">
+        {ids.map((id) => (
+          <button key={id} className="choice" data-active={current === id} onClick={() => applyPreset(id)}>
+            {PRESETS[id].name}
+            <small>{PRESETS[id].lines.length} 行</small>
           </button>
         ))}
       </div>
     </section>
   );
 }
+
+/* Six theme tokens laid out in the proportions they occupy on a real line. */
+const STRIP: Array<[string, number]> = [
+  ["project", 22],
+  ["git", 14],
+  ["accent", 14],
+  ["ok", 10],
+  ["warn", 10],
+  ["crit", 10],
+];
 
 function Themes() {
   const themes = useStore((s) => s.themes);
@@ -33,12 +50,15 @@ function Themes() {
   const current = typeof config.theme === "string" ? config.theme : "custom";
   return (
     <section className="section">
-      <h2 className="h2">配色</h2>
-      <div className="flex flex-wrap gap-2">
+      <div className="section-head">
+        <h2 className="h2">配色</h2>
+        <span className="hint">只影响终端里的颜色，面板的强调色会跟着换</span>
+      </div>
+      <div className="choices">
         {themes.map((t) => (
           <button
             key={t.name}
-            className="card flex items-center gap-2 !px-3 !py-2"
+            className="choice"
             data-active={current === t.name}
             onClick={() =>
               setConfig((c) => {
@@ -46,12 +66,12 @@ function Themes() {
               })
             }
           >
-            <span className="flex gap-0.5">
-              {["accent", "ok", "warn", "crit", "project"].map((k) => (
-                <i key={k} className="block h-3 w-3 rounded-sm" style={{ background: cssColor(t.tokens[k] ?? "#888") }} />
+            <span className="strip" aria-hidden="true">
+              {STRIP.map(([k, w]) => (
+                <i key={k} style={{ width: w, background: uiColor(t.tokens[k]) }} />
               ))}
             </span>
-            <span className="text-sm">{t.name}</span>
+            {t.name}
           </button>
         ))}
       </div>
@@ -59,17 +79,20 @@ function Themes() {
   );
 }
 
-const NAMED: Record<string, string> = {
-  black: "#000", red: "#e5484d", green: "#46a758", yellow: "#f5d90a", blue: "#3e63dd", magenta: "#ab4aba", cyan: "#05a2c2", white: "#eee",
-  gray: "#888", brightBlue: "#5b8def", brightWhite: "#fff",
-};
-function cssColor(v: string): string {
-  if (v.startsWith("#")) return v;
-  return NAMED[v] ?? "#888";
+/* The panel borrows its accent from the statusline theme being edited. */
+function useThemeAccent() {
+  const themes = useStore((s) => s.themes);
+  const theme = useStore((s) => s.config?.theme);
+  useEffect(() => {
+    const tokens = typeof theme === "string" ? themes.find((t) => t.name === theme)?.tokens : theme?.tokens;
+    const accent = uiColor(tokens?.accent, "#4cc9e0");
+    document.documentElement.style.setProperty("--accent", accent);
+  }, [themes, theme]);
 }
 
 export default function App() {
   const { loading, error, config, init, toast, notify } = useStore();
+  useThemeAccent();
 
   useEffect(() => {
     void init();
@@ -85,7 +108,7 @@ export default function App() {
   if (error || !config)
     return (
       <div className="mx-auto max-w-xl p-10 text-sm">
-        <p className="text-red-400">连不上本地服务：{error}</p>
+        <p style={{ color: "var(--danger)" }}>连不上本地服务：{error}</p>
         <p className="mt-2 opacity-70">
           在 Claude Code 里输入 <code className="mono">/ssp:config</code>，或在终端运行 <code className="mono">bun run serve</code>。
         </p>
@@ -93,9 +116,11 @@ export default function App() {
     );
 
   return (
-    <div className="mx-auto max-w-4xl px-5 pb-24">
-      <Header />
-      <Preview />
+    <div className="page">
+      <div className="masthead">
+        <Header />
+        <Preview />
+      </div>
       <Presets />
       <Layout />
       <Themes />

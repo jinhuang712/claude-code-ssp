@@ -1,47 +1,92 @@
-import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
-import { SortableContext, horizontalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  closestCenter,
+  pointerWithin,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type CollisionDetection,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { SortableContext, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { useMemo, useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import type { LineConfig, WidgetInstance, Zone } from "../api";
+import { CAT_COLOR } from "../colors";
 import { nameOf, useStore } from "../store";
 
-const CAT_COLOR: Record<string, string> = {
-  model: "#7aa2f7",
-  project: "#e0af68",
-  git: "#bb9af7",
-  context: "#9ece6a",
-  usage: "#7dcfff",
-  cost: "#f7768e",
-  session: "#c0caf5",
-  activity: "#ff9e64",
-  environment: "#73daca",
-  misc: "#9aa5ce",
+/*
+  Drag ids must survive a reorder. Positions do not, so a chip is identified by its widget id plus
+  its occurrence number across the whole config (`git.branch#0`, `git.branch#1`). Zones get their own
+  droppable id so a chip can be dropped into an empty zone.
+*/
+type Pos = { line: number; zone: Zone; index: number };
+const ZONES: Zone[] = ["left", "center", "right"];
+
+function zoneId(line: number, zone: Zone): string {
+  return `zone:${line}:${zone}`;
+}
+function parseZoneId(id: string): { line: number; zone: Zone } | null {
+  if (!id.startsWith("zone:")) return null;
+  const [, l, z] = id.split(":");
+  return { line: Number(l), zone: z as Zone };
+}
+function indexChips(lines: LineConfig[]): { ids: Map<string, Pos>; at: Map<string, string> } {
+  const seen = new Map<string, number>();
+  const ids = new Map<string, Pos>();
+  const at = new Map<string, string>();
+  lines.forEach((line, li) =>
+    ZONES.forEach((zone) =>
+      (line[zone] ?? []).forEach((w, index) => {
+        const n = seen.get(w.widget) ?? 0;
+        seen.set(w.widget, n + 1);
+        const id = `${w.widget}#${n}`;
+        ids.set(id, { line: li, zone, index });
+        at.set(`${li}:${zone}:${index}`, id);
+      }),
+    ),
+  );
+  return { ids, at };
+}
+
+/* Prefer the chip under the pointer, then the zone under the pointer, then whatever is nearest. */
+const collision: CollisionDetection = (args) => {
+  const within = pointerWithin(args);
+  const chips = within.filter((c) => !String(c.id).startsWith("zone:"));
+  if (chips.length) return chips;
+  if (within.length) return within;
+  return closestCenter(args);
 };
 
-function chipId(line: number, zone: Zone, index: number): string {
-  return `${line}:${zone}:${index}`;
-}
-function parseId(id: string) {
-  const [l, z, i] = id.split(":");
-  return { line: Number(l), zone: z as Zone, index: Number(i) };
+function ChipFace({ widget, ghost }: { widget: string; ghost?: boolean }) {
+  const manifest = useStore((s) => s.widgets.find((w) => w.id === widget));
+  const cat = CAT_COLOR[manifest?.category ?? "misc"];
+  return (
+    <span className="chip mono" data-ghost={ghost} style={{ ["--cat" as string]: cat }}>
+      <span className="chip-name">{nameOf(manifest, widget)}</span>
+    </span>
+  );
 }
 
-function Chip({ line, zone, index, item }: { line: number; zone: Zone; index: number; item: WidgetInstance }) {
-  const id = chipId(line, zone, index);
+function Chip({ id, line, zone, index, item }: { id: string; line: number; zone: Zone; index: number; item: WidgetInstance }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const s = useStore();
   const manifest = s.widgets.find((w) => w.id === item.widget);
   const selected = s.selection?.line === line && s.selection.zone === zone && s.selection.index === index;
+  const cat = CAT_COLOR[manifest?.category ?? "misc"];
   return (
     <span
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
-      className="chip group"
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1, ["--cat" as string]: cat }}
+      className="chip mono"
       data-selected={selected}
       {...attributes}
       {...listeners}
     >
-      <i className="dot" style={{ background: CAT_COLOR[manifest?.category ?? "misc"] }} />
-      <button className="chip-name" onClick={() => s.select({ line, zone, index })} title="点击修改">
+      <button className="chip-name" onClick={() => s.select({ line, zone, index })} title="修改选项">
         {nameOf(manifest, item.widget)}
       </button>
       <button
@@ -50,6 +95,7 @@ function Chip({ line, zone, index, item }: { line: number; zone: Zone; index: nu
           e.stopPropagation();
           s.removeAt({ line, zone, index });
         }}
+        aria-label="移除"
         title="移除"
       >
         ×
@@ -58,31 +104,33 @@ function Chip({ line, zone, index, item }: { line: number; zone: Zone; index: nu
   );
 }
 
-function ZoneBox({ line, zone, items }: { line: number; zone: Zone; items: WidgetInstance[] }) {
+const EMPTY_LABEL: Record<Zone, string> = { left: "左边放什么", center: "中间放什么", right: "右边放什么" };
+
+function ZoneBox({ line, zone, items, at }: { line: number; zone: Zone; items: WidgetInstance[]; at: Map<string, string> }) {
   const openPicker = useStore((s) => s.openPicker);
-  const ids = items.map((_, i) => chipId(line, zone, i));
+  const ids = items.map((_, i) => at.get(`${line}:${zone}:${i}`)!);
   const empty = items.length === 0;
+  const { setNodeRef, isOver } = useDroppable({ id: zoneId(line, zone) });
   return (
-    <SortableContext items={ids} strategy={horizontalListSortingStrategy}>
-      <div className="zone" data-zone={zone} data-empty={empty}>
+    <SortableContext items={ids} strategy={rectSortingStrategy}>
+      <div ref={setNodeRef} className="zone" data-zone={zone} data-empty={empty} data-over={isOver}>
         {items.map((it, i) => (
-          <Chip key={ids[i]} line={line} zone={zone} index={i} item={it} />
+          <Chip key={ids[i]} id={ids[i]!} line={line} zone={zone} index={i} item={it} />
         ))}
-        <button className="addchip" onClick={() => openPicker(line, zone)} title="添加">
-          {empty ? (zone === "left" ? "＋ 左边放什么" : zone === "right" ? "＋ 右边放什么" : "＋") : "＋"}
+        <button className="addchip" onClick={() => openPicker(line, zone)} aria-label={`在第 ${line + 1} 行${EMPTY_LABEL[zone].slice(0, 2)}添加`}>
+          ＋{empty && zone !== "center" && <span>{EMPTY_LABEL[zone]}</span>}
         </button>
       </div>
     </SortableContext>
   );
 }
 
-function Row({ line, index, total }: { line: LineConfig; index: number; total: number }) {
+function Row({ line, index, total, withCenter, at }: { line: LineConfig; index: number; total: number; withCenter: boolean; at: Map<string, string> }) {
   const s = useStore();
-  const showCenter = s.advanced || (line.center?.length ?? 0) > 0;
   return (
-    <div className="linerow group/row">
+    <div className="linerow">
       <div className="linerow-gutter">
-        <span className="linerow-num">{index + 1}</span>
+        <span className="linerow-num mono">{index + 1}</span>
         <div className="linerow-tools">
           <button disabled={index === 0} onClick={() => s.moveLine(index, -1)} title="上移">
             ↑
@@ -95,10 +143,10 @@ function Row({ line, index, total }: { line: LineConfig; index: number; total: n
           </button>
         </div>
       </div>
-      <div className={`linerow-body ${showCenter ? "with-center" : ""}`}>
-        <ZoneBox line={index} zone="left" items={line.left ?? []} />
-        {showCenter && <ZoneBox line={index} zone="center" items={line.center ?? []} />}
-        <ZoneBox line={index} zone="right" items={line.right ?? []} />
+      <div className={`linerow-body ${withCenter ? "with-center" : ""}`}>
+        <ZoneBox line={index} zone="left" items={line.left ?? []} at={at} />
+        {withCenter && <ZoneBox line={index} zone="center" items={line.center ?? []} at={at} />}
+        <ZoneBox line={index} zone="right" items={line.right ?? []} at={at} />
       </div>
       {s.advanced && (
         <div className="linerow-adv">
@@ -143,31 +191,60 @@ function Row({ line, index, total }: { line: LineConfig; index: number; total: n
 
 export function Layout() {
   const config = useStore((s) => s.config)!;
+  const advanced = useStore((s) => s.advanced);
   const reorder = useStore((s) => s.reorder);
   const moveWidget = useStore((s) => s.moveWidget);
   const addLine = useStore((s) => s.addLine);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const [dragging, setDragging] = useState<string | null>(null);
+  const { ids, at } = useMemo(() => indexChips(config.lines), [config.lines]);
+  // One decision for every row, so the three columns line up down the page.
+  const withCenter = advanced || config.lines.some((l) => (l.center?.length ?? 0) > 0);
 
+  function onDragStart(e: DragStartEvent) {
+    setDragging(String(e.active.id));
+  }
   function onDragEnd(e: DragEndEvent) {
+    setDragging(null);
     if (!e.over || e.active.id === e.over.id) return;
-    const a = parseId(String(e.active.id));
-    const b = parseId(String(e.over.id));
+    const a = ids.get(String(e.active.id));
+    if (!a) return;
+    const z = parseZoneId(String(e.over.id));
+    if (z) {
+      // Dropped on a zone's empty space: append there (a no-op if it is already last in that zone).
+      const len = config.lines[z.line]?.[z.zone]?.length ?? 0;
+      if (a.line === z.line && a.zone === z.zone) {
+        if (a.index !== len - 1) reorder(a.line, a.zone, a.index, len - 1);
+      } else moveWidget(a, z.line, z.zone, len);
+      return;
+    }
+    const b = ids.get(String(e.over.id));
+    if (!b) return;
     if (a.line === b.line && a.zone === b.zone) reorder(a.line, a.zone, a.index, b.index);
     else moveWidget(a, b.line, b.zone, b.index);
   }
 
   return (
     <section className="section">
-      <div className="mb-2 flex items-baseline gap-3">
-        <h2 className="h2 !mb-0">布局</h2>
-        <span className="text-xs opacity-40">每一行对应状态栏的一行。点名字修改，拖动排序。</span>
+      <div className="section-head">
+        <h2 className="h2">布局</h2>
+        <span className="hint">每一行对应状态栏的一行。点名字改选项，拖动排序，也可以拖到别的行。</span>
       </div>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <div className="linehead">
+        <span />
+        <div className={`linehead-zones ${withCenter ? "with-center" : ""}`}>
+          <span>靠左</span>
+          {withCenter && <span>居中</span>}
+          <span>靠右</span>
+        </div>
+      </div>
+      <DndContext sensors={sensors} collisionDetection={collision} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
         <div className="linelist">
           {config.lines.map((line, i) => (
-            <Row key={i} line={line} index={i} total={config.lines.length} />
+            <Row key={i} line={line} index={i} total={config.lines.length} withCenter={withCenter} at={at} />
           ))}
         </div>
+        <DragOverlay dropAnimation={null}>{dragging ? <ChipFace widget={dragging.split("#")[0]!} ghost /> : null}</DragOverlay>
       </DndContext>
       <button className="btn mt-3" onClick={addLine}>
         ＋ 加一行
