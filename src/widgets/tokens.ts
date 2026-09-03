@@ -38,14 +38,21 @@ export const tokensSession = defineWidget<{ label: string | null; breakdown: boo
   },
 });
 
-export const tokensCurrent = defineWidget<{ label: string | null }>({
+export const tokensCurrent = defineWidget<{ label: string | null; showWindow: boolean; showPercent: boolean }>({
   id: "tokens.current",
   name: "Current context tokens",
   description: "Tokens in the current context window (from the latest API response).",
   category: "context",
   sample: "ctx 84k",
-  schema: { type: "object", properties: { label: { ...labelSchema, default: "ctx" } } },
-  defaults: { label: "ctx" },
+  schema: {
+    type: "object",
+    properties: {
+      label: { ...labelSchema, default: "ctx" },
+      showWindow: { type: "boolean", default: false, title: "Append window size (84k/1M)" },
+      showPercent: { type: "boolean", default: false, title: "Append percentage (41%)" },
+    },
+  },
+  defaults: { label: "ctx", showWindow: false, showPercent: false },
   render(ctx, o, api) {
     const cw = stdin(ctx).context_window;
     const u = cw?.current_usage;
@@ -53,7 +60,10 @@ export const tokensCurrent = defineWidget<{ label: string | null }>({
     const n = (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
     if (n <= 0) return null;
     const label = withLabel(o.label, "ctx");
-    return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), api.seg(api.tokens(n))];
+    let text = api.tokens(n);
+    if (o.showWindow && cw?.context_window_size) text += `/${api.tokens(cw.context_window_size)}`;
+    if (o.showPercent && cw?.context_window_size) text += ` (${Math.round((n / cw.context_window_size) * 100)}%)`;
+    return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), api.seg(text)];
   },
 });
 

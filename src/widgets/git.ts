@@ -1,7 +1,7 @@
 import { defineWidget } from "../core/types.js";
 import { stdin } from "./_shared.js";
 
-export const gitBranch = defineWidget<{ showDirty: boolean; showAheadBehind: boolean; showFileStats: boolean; prefix: string; link: boolean }>({
+export const gitBranch = defineWidget<{ showDirty: boolean; showAheadBehind: boolean; showFileStats: boolean; prefix: string; parens: boolean; link: boolean }>({
   id: "git.branch",
   name: "Git branch",
   description: "Branch with dirty marker, ahead/behind and file stats.",
@@ -11,24 +11,25 @@ export const gitBranch = defineWidget<{ showDirty: boolean; showAheadBehind: boo
     type: "object",
     properties: {
       prefix: { type: "string", default: "git:", title: "Prefix" },
+      parens: { type: "boolean", default: true, title: "Branch in parentheses" },
       showDirty: { type: "boolean", default: true, title: "Show * when dirty" },
       showAheadBehind: { type: "boolean", default: true, title: "Show ↑N ↓N" },
       showFileStats: { type: "boolean", default: false, title: "Show !M +A ✘D ?U" },
       link: { type: "boolean", default: true, title: "Link branch to GitHub" },
     },
   },
-  defaults: { prefix: "git:", showDirty: true, showAheadBehind: true, showFileStats: false, link: true },
+  defaults: { prefix: "git:", parens: true, showDirty: true, showAheadBehind: true, showFileStats: false, link: true },
   render(ctx, o, api) {
     const g = ctx.gitStatus;
     if (!g) return null;
     const segs = [];
     const kind = g.vcs === "jj" ? "jj:" : o.prefix;
-    if (kind) segs.push(api.seg(`${kind}(`, { fg: "git" }));
+    if (kind) segs.push(api.seg(o.parens ? `${kind}(` : `${kind} `, { fg: "git" }));
     const branch = api.seg(`${g.branch}${o.showDirty && g.isDirty ? "*" : ""}`, { fg: "accent" });
     if (o.link && g.branchUrl) branch.link = g.branchUrl;
     segs.push(branch);
     if (g.conflict) segs.push(api.seg(" !conflict", { fg: "crit" }));
-    if (kind) segs.push(api.seg(")", { fg: "git" }));
+    if (kind && o.parens) segs.push(api.seg(")", { fg: "git" }));
     if (o.showAheadBehind && (g.ahead > 0 || g.behind > 0)) {
       const ab = [g.ahead > 0 ? `↑${g.ahead}` : "", g.behind > 0 ? `↓${g.behind}` : ""].filter(Boolean).join(" ");
       segs.push(api.seg(` ${ab}`, { fg: "muted" }));

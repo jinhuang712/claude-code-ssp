@@ -7,7 +7,7 @@ import { descOf, effectiveLabel, nameOf, ownsLabel, useStore, widgetAt } from ".
 const ZH_FIELD: Record<string, string> = {
   label: "标签",
   format: "格式",
-  brackets: "加方括号",
+  brackets: "整体加方括号",
   showEffort: "显示思考强度",
   showProvider: "显示供应商",
   showFastMode: "快速模式标记 ⚡",
@@ -49,10 +49,15 @@ const ZH_FIELD: Record<string, string> = {
   name: "名称",
   autoCompactWindow: "自动压缩窗口（tokens）",
   window: "窗口",
-  layout: "排版",
   effortStyle: "思考强度写法",
-  showWindow: "带上下文窗口大小 (1M)",
-  parens: "明细加括号",
+  effortParens: "思考强度加括号",
+  joiner: "各段之间用",
+  showWindow: "带上下文窗口大小",
+  showTokens: "显示已用/总量 tokens",
+  showBar: "显示进度条",
+  showPercent: "显示百分比",
+  parens: "加括号",
+  date: "显示日期",
 };
 
 const ZH_ENUM: Record<string, string> = {
@@ -84,9 +89,10 @@ const ZH_ENUM: Record<string, string> = {
 /** Per-widget enum wording where the generic words would hide what the option actually does. */
 const ZH_ENUM_BY_FIELD: Record<string, Record<string, string>> = {
   "model.badge.format": { full: "原样", compact: "去掉 (1M context)", short: "再去掉 Claude 前缀" },
-  "model.badge.layout": { bracket: "方括号", plain: "空格", dot: "圆点分隔", paren: "强度加括号" },
   "model.badge.effortStyle": { "symbol-word": "符号 + 文字", word: "只文字", symbol: "只符号" },
-  "context.bar.layout": { "bar-value": "条 + 数值", "tokens-bar-value": "tokens + 条 + 数值", text: "只文字" },
+  "model.effort.effortStyle": { "symbol-word": "符号 + 文字", word: "只文字", symbol: "只符号" },
+  "model.badge.joiner": { space: "空格", dot: "圆点 ·" },
+  "context.bar.value": { percent: "已用 %", remaining: "剩余 %" },
 };
 
 const ANSI = /\x1b\][^\x07]*\x07|\x1b\[[0-9;]*m/g; // eslint-disable-line no-control-regex

@@ -69,17 +69,17 @@ export const sessionLastReply = defineWidget<{ label: string | null }>({
   },
 });
 
-export const sessionClock = defineWidget<{ seconds: boolean }>({
+export const sessionClock = defineWidget<{ seconds: boolean; date: boolean }>({
   id: "session.clock",
   name: "Clock",
   description: "Current local time (set refreshInterval in settings for live updates).",
   category: "misc",
   sample: "23:41",
-  schema: { type: "object", properties: { seconds: { type: "boolean", default: false, title: "Show seconds" } } },
-  defaults: { seconds: false },
+  schema: { type: "object", properties: { date: { type: "boolean", default: false, title: "Show date" }, seconds: { type: "boolean", default: false, title: "Show seconds" } } },
+  defaults: { seconds: false, date: false },
   render(ctx, o, api) {
     const d = new Date(ctx.now);
-    const t = `${pad2(d.getHours())}:${pad2(d.getMinutes())}${o.seconds ? `:${pad2(d.getSeconds())}` : ""}`;
+    const t = `${o.date ? `${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ` : ""}${pad2(d.getHours())}:${pad2(d.getMinutes())}${o.seconds ? `:${pad2(d.getSeconds())}` : ""}`;
     return [api.seg(t, { fg: "muted" })];
   },
 });
