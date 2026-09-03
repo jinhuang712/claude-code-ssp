@@ -184,10 +184,17 @@ export interface RenderedLine {
   width: number;
 }
 
+export interface RenderOptions {
+  /** Preview only: when a widget has no data, print its sample text instead of dropping it. */
+  fillEmpty?: boolean;
+}
+
 export interface RenderResult {
   lines: string[];
   /** Per-widget errors swallowed during render (plugin failures etc.). */
   errors: Array<{ widget: string; message: string }>;
+  /** Widgets that rendered nothing for this payload; `filled` means the sample text stood in for it. */
+  empty: Array<{ line: number; zone: Zone; index: number; widget: string; filled?: boolean }>;
   ms: number;
 }
 

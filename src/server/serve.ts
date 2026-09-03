@@ -93,13 +93,13 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
       return s ? json(s) : json({ error: "not found" }, 404);
     }
     case "POST /api/render": {
-      const body = (await req.json()) as { config?: Partial<FooterConfig>; sampleId?: string; payload?: unknown; columns?: number };
+      const body = (await req.json()) as { config?: Partial<FooterConfig>; sampleId?: string; payload?: unknown; columns?: number; fillEmpty?: boolean };
       const config = normalizeConfig(body.config ?? loadEffectiveConfig(cwd).config);
       const now = Date.now();
       const sample = body.payload ?? allSamples().find((x) => x.id === body.sampleId)?.payload ?? fixtureSamples()[0]?.payload ?? {};
       const stdin = hydrate(sample, now) as StdinData;
       const ctx = await buildContext(stdin, config, { columns: body.columns ?? 120, now, deadlineMs: 800 });
-      const out = render(config, ctx);
+      const out = render(config, ctx, { fillEmpty: body.fillEmpty === true });
       return json(out);
     }
     case "GET /api/install":

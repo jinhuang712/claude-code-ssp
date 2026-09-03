@@ -13,6 +13,16 @@ function windows(ctx: Parameters<typeof stdin>[0]): Window[] {
   return out;
 }
 
+/** "14:40" while the reset is today, "9/6 10:00" once it lands on another day (7-day windows usually do). */
+function absoluteReset(when: number, now: number): string {
+  const d = new Date(when);
+  const n = new Date(now);
+  const two = (x: number) => String(x).padStart(2, "0");
+  const hm = `${two(d.getHours())}:${two(d.getMinutes())}`;
+  const sameDay = d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
+  return sameDay ? hm : `${d.getMonth() + 1}/${d.getDate()} ${hm}`;
+}
+
 export const usageWindows = defineWidget<{
   label: string | null;
   show5h: boolean;
@@ -67,7 +77,7 @@ export const usageWindows = defineWidget<{
       segs.push(api.seg(`${shown}%`, { fg: lvl === "ok" ? "fg" : lvl, bold: lvl === "crit" }));
       if (o.showReset && w.resetsAt) {
         const when = w.resetsAt * 1000;
-        const txt = o.resetFormat === "absolute" ? new Date(when).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : api.duration(Math.max(0, when - ctx.now));
+        const txt = o.resetFormat === "absolute" ? absoluteReset(when, ctx.now) : api.duration(Math.max(0, when - ctx.now));
         segs.push(api.seg(` (${txt})`, { fg: "muted" }));
       }
     });

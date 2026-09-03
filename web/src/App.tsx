@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Advanced } from "./components/Advanced";
 import { Header } from "./components/Header";
 import { Layout } from "./components/Layout";
@@ -19,13 +19,16 @@ function Presets() {
     <section className="section">
       <div className="section-head">
         <h2 className="h2">预设</h2>
-        <span className="hint">{current ? PRESETS[current].blurb : "已在预设基础上改动"}</span>
+        <span className="hint">{current ? "当前布局就是这个预设" : "当前布局已在预设基础上改动，点一个预设会整体替换"}</span>
       </div>
       <div className="choices">
         {ids.map((id) => (
-          <button key={id} className="choice" data-active={current === id} onClick={() => applyPreset(id)}>
-            {PRESETS[id].name}
-            <small>{PRESETS[id].lines.length} 行</small>
+          <button key={id} className="choice choice-tall" data-active={current === id} onClick={() => applyPreset(id)}>
+            <span>
+              {PRESETS[id].name}
+              <small className="ml-2">{PRESETS[id].lines.length} 行</small>
+            </span>
+            <small>{PRESETS[id].blurb}</small>
           </button>
         ))}
       </div>
@@ -90,9 +93,23 @@ function useThemeAccent() {
   }, [themes, theme]);
 }
 
+function useMastheadHeight(ref: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const apply = () => document.documentElement.style.setProperty("--mast-h", `${el.offsetHeight}px`);
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
+}
+
 export default function App() {
   const { loading, error, config, init, toast, notify } = useStore();
+  const mast = useRef<HTMLDivElement>(null);
   useThemeAccent();
+  useMastheadHeight(mast);
 
   useEffect(() => {
     void init();
@@ -117,7 +134,7 @@ export default function App() {
 
   return (
     <div className="page">
-      <div className="masthead">
+      <div className="masthead" ref={mast}>
         <Header />
         <Preview />
       </div>

@@ -81,6 +81,7 @@ export interface EffectiveConfig {
 export interface RenderResult {
   lines: string[];
   errors: Array<{ widget: string; message: string }>;
+  empty: Array<{ line: number; zone: Zone; index: number; widget: string; filled?: boolean }>;
   ms: number;
 }
 
@@ -96,8 +97,8 @@ export const api = {
   widgets: () => fetch("/api/widgets").then(j<WidgetManifest[]>),
   themes: () => fetch("/api/themes").then(j<ThemeDef[]>),
   samples: () => fetch("/api/samples").then(j<SampleMeta[]>),
-  render: (config: FooterConfig, sampleId: string | null, columns: number) =>
-    fetch("/api/render", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ config, sampleId, columns }) }).then(j<RenderResult>),
+  render: (config: FooterConfig, sampleId: string | null, columns: number, fillEmpty = true) =>
+    fetch("/api/render", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ config, sampleId, columns, fillEmpty }) }).then(j<RenderResult>),
   installPlan: () => fetch("/api/install").then(j<{ settingsFile: string; statusLine: Record<string, unknown>; previous: unknown }>),
   install: () => fetch("/api/install", { method: "POST" }).then(j<{ settingsFile: string; backup: string | null }>),
 };

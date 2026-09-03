@@ -6,12 +6,14 @@ import { detectColorLevel, renderSegments, truncateVisual, visualWidth } from ".
 import { createApi } from "./api.js";
 import { getWidget } from "./registry.js";
 import { resolveTheme } from "./theme.js";
-import type { ColorLevel, Ctx, FooterConfig, LineConfig, RenderResult, Segment, Style, WidgetInstance, Zone } from "./types.js";
+import type { ColorLevel, Ctx, FooterConfig, LineConfig, RenderOptions, RenderResult, Segment, Style, WidgetInstance, Zone } from "./types.js";
 
 interface RenderedWidget {
   text: string;
   width: number;
 }
+/** Marks rendered widgets whose text is the sample stand-in, so the caller can report them. */
+const filledOut = new WeakMap<RenderedWidget, true>();
 
 function mergeStyle(base: Style | undefined, override: Style | undefined): Style | undefined {
   if (!base) return override;
@@ -29,6 +31,7 @@ function renderInstance(
   ctx: Ctx,
   level: Exclude<ColorLevel, "auto">,
   errors: RenderResult["errors"],
+  fillEmpty = false,
 ): RenderedWidget | null {
   const def = getWidget(inst.widget);
   const api = createApi(ctx.theme, ctx.now);
@@ -41,11 +44,20 @@ function renderInstance(
     const opts = { ...def.defaults, ...(inst.options ?? {}) };
     if (inst.label !== undefined) (opts as Record<string, unknown>).label = inst.label;
     const out = def.render(ctx, opts, api);
-    if (out === null || out === undefined) return null;
-    const segs = typeof out === "string" ? [{ text: out }] : out;
-    if (segs.length === 0 || segs.every((s) => s.text === "")) return null;
+    let segs: Segment[] = out === null || out === undefined ? [] : typeof out === "string" ? [{ text: out }] : out;
+    let filled = false;
+    if (segs.length === 0 || segs.every((s) => s.text === "")) {
+      if (!fillEmpty || !def.sample) return null;
+      segs = [{ text: def.sample }];
+      filled = true;
+    }
+    // Widgets that do not know about labels still get one: a muted prefix set from the instance.
+    const ownsLabel = Boolean(def.schema.properties && "label" in def.schema.properties);
+    if (!ownsLabel && typeof inst.label === "string" && inst.label !== "") segs = [{ text: `${inst.label} `, style: { fg: "muted" } }, ...segs];
     const text = renderSegments(applyOverride(segs, inst.style), ctx.theme, level);
-    return { text, width: visualWidth(text) };
+    const rendered = { text, width: visualWidth(text) };
+    if (filled) filledOut.set(rendered, true);
+    return rendered;
   } catch (err) {
     errors.push({ widget: inst.widget, message: err instanceof Error ? err.message : String(err) });
     const text = renderSegments([{ text: `⚠ ${inst.widget}`, style: { fg: "crit", dim: true } }], ctx.theme, level);
@@ -53,8 +65,24 @@ function renderInstance(
   }
 }
 
-function renderZone(items: WidgetInstance[] | undefined, ctx: Ctx, level: Exclude<ColorLevel, "auto">, separator: string, errors: RenderResult["errors"]): RenderedWidget {
-  const rendered = (items ?? []).map((i) => renderInstance(i, ctx, level, errors)).filter((r): r is RenderedWidget => r !== null);
+function renderZone(
+  items: WidgetInstance[] | undefined,
+  ctx: Ctx,
+  level: Exclude<ColorLevel, "auto">,
+  separator: string,
+  errors: RenderResult["errors"],
+  empty: RenderResult["empty"],
+  at: { line: number; zone: Zone },
+  fillEmpty: boolean,
+): RenderedWidget {
+  const rendered: RenderedWidget[] = [];
+  (items ?? []).forEach((inst, index) => {
+    const r = renderInstance(inst, ctx, level, errors, fillEmpty);
+    if (r) {
+      rendered.push(r);
+      if (filledOut.has(r)) empty.push({ ...at, index, widget: inst.widget, filled: true });
+    } else empty.push({ ...at, index, widget: inst.widget });
+  });
   if (rendered.length === 0) return { text: "", width: 0 };
   const sepStyled = renderSegments([{ text: separator, style: { fg: "muted" } }], ctx.theme, level);
   const text = rendered.map((r) => r.text).join(sepStyled);
@@ -113,22 +141,24 @@ export function layoutLine(zones: Record<Zone, RenderedWidget>, columns: number,
   }
 }
 
-export function render(config: FooterConfig, ctx: Omit<Ctx, "theme">): RenderResult {
+export function render(config: FooterConfig, ctx: Omit<Ctx, "theme">, options: RenderOptions = {}): RenderResult {
+  const fillEmpty = options.fillEmpty === true;
   const started = performance.now();
   const theme = resolveTheme(config.theme);
   const level = config.colorLevel === "auto" ? detectColorLevel() : config.colorLevel;
   const fullCtx: Ctx = { ...ctx, theme };
   const errors: RenderResult["errors"] = [];
+  const empty: RenderResult["empty"] = [];
   const lines: string[] = [];
-  for (const line of config.lines) {
-    if (line.minColumns && ctx.columns > 0 && ctx.columns < line.minColumns) continue;
+  config.lines.forEach((line, li) => {
+    if (line.minColumns && ctx.columns > 0 && ctx.columns < line.minColumns) return;
     const sep = line.separator ?? config.separator;
     const zones: Record<Zone, RenderedWidget> = {
-      left: renderZone(line.left, fullCtx, level, sep, errors),
-      center: renderZone(line.center, fullCtx, level, sep, errors),
-      right: renderZone(line.right, fullCtx, level, sep, errors),
+      left: renderZone(line.left, fullCtx, level, sep, errors, empty, { line: li, zone: "left" }, fillEmpty),
+      center: renderZone(line.center, fullCtx, level, sep, errors, empty, { line: li, zone: "center" }, fillEmpty),
+      right: renderZone(line.right, fullCtx, level, sep, errors, empty, { line: li, zone: "right" }, fillEmpty),
     };
     lines.push(...layoutLine(zones, ctx.columns, line.overflow));
-  }
-  return { lines, errors, ms: performance.now() - started };
+  });
+  return { lines, errors, empty, ms: performance.now() - started };
 }

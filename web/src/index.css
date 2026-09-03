@@ -305,6 +305,14 @@ input[type="checkbox"] {
 .term {
   padding: 10px 14px 12px;
 }
+.term[data-fixed="true"] {
+  overflow-x: auto;
+}
+.cols {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 .term .xterm .xterm-viewport {
   overflow: hidden !important;
 }
@@ -473,9 +481,39 @@ input[type="checkbox"] {
   border-left-color: var(--cat, var(--accent));
 }
 .chip-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 0 4px;
   line-height: 1;
   color: var(--fg);
+}
+.chip-label {
+  color: var(--muted);
+}
+.chip-label::after {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 10px;
+  margin-left: 6px;
+  background: var(--line-strong);
+  vertical-align: -1px;
+}
+.chip[data-empty="true"] {
+  border-style: dashed;
+  background: transparent;
+}
+.chip[data-empty="true"] .chip-name {
+  color: var(--fg-2);
+}
+.chip-empty {
+  padding: 0 4px;
+  border-radius: 2px;
+  font-size: 10.5px;
+  line-height: 15px;
+  background: var(--panel-2);
+  color: var(--muted);
 }
 .chip-x {
   width: 18px;
@@ -513,6 +551,54 @@ input[type="checkbox"] {
   border-color: var(--fg-2);
 }
 
+/* enum options: every value shows what it renders to */
+.enum {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.enum-title {
+  color: var(--fg-2);
+}
+.enum-options {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-1);
+  overflow: hidden;
+}
+.enum-opt {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  text-align: left;
+  border-top: 1px solid var(--line);
+  background: var(--bg-deep);
+}
+.enum-opt:first-child {
+  border-top: 0;
+}
+.enum-opt:hover {
+  background: var(--panel-2);
+}
+.enum-opt[data-active="true"] {
+  background: var(--panel-2);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.enum-name {
+  color: var(--fg);
+}
+.enum-sample {
+  font-size: 12px;
+  color: var(--fg-2);
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ---- disclosure ---- */
 .disclosure {
   display: inline-flex;
@@ -542,6 +628,107 @@ input[type="checkbox"] {
   border: 1px solid var(--line);
   border-radius: var(--r-2);
   background: var(--panel);
+}
+
+/* ---- drawer: option and picker panels slide in on the right, below the sticky preview,
+   so the terminal stays visible and every change is seen as it is made ---- */
+.drawer-backdrop {
+  position: fixed;
+  top: var(--mast-h, 0px);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  background: rgba(6, 8, 12, 0.35);
+}
+.drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(520px, 100vw);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--line-strong);
+  background: var(--panel);
+  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.45);
+}
+.drawer .sheet-body,
+.drawer-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.live {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-deep);
+}
+.live-text {
+  font-size: 13px;
+  white-space: pre;
+  overflow-x: auto;
+}
+.row-top {
+  align-items: flex-start;
+}
+.bool-sample {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--fg-2);
+  white-space: pre-wrap;
+}
+.bool-sample b {
+  font-weight: 600;
+  color: var(--muted);
+  margin-right: 4px;
+}
+.bool-sample b + * + b,
+.bool-sample b:nth-of-type(2) {
+  margin-left: 10px;
+}
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 9px 0 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-1);
+  background: var(--bg-deep);
+  font-size: 12.5px;
+  color: var(--fg-2);
+}
+.swatch > i {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--line-strong);
+}
+.swatch:hover {
+  color: var(--fg);
+}
+.swatch[data-active="true"] {
+  color: var(--fg);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.choice-tall {
+  height: auto;
+  padding: 7px 11px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
 
 /* ---- overlays ---- */

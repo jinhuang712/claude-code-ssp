@@ -16,7 +16,7 @@ import { useMemo, useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import type { LineConfig, WidgetInstance, Zone } from "../api";
 import { CAT_COLOR } from "../colors";
-import { nameOf, useStore } from "../store";
+import { effectiveLabel, emptyStateAt, nameOf, useStore } from "../store";
 
 /*
   Drag ids must survive a reorder. Positions do not, so a chip is identified by its widget id plus
@@ -77,17 +77,23 @@ function Chip({ id, line, zone, index, item }: { id: string; line: number; zone:
   const manifest = s.widgets.find((w) => w.id === item.widget);
   const selected = s.selection?.line === line && s.selection.zone === zone && s.selection.index === index;
   const cat = CAT_COLOR[manifest?.category ?? "misc"];
+  const label = effectiveLabel(item, manifest);
+  const empty = emptyStateAt(s.preview, { line, zone, index });
   return (
     <span
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1, ["--cat" as string]: cat }}
       className="chip mono"
       data-selected={selected}
+      data-empty={empty ?? undefined}
+      title={empty === "filled" ? "当前数据里还没有这一项，预览里先用示例值占位" : empty === "hidden" ? "当前数据里没有这一项，也没有示例值，预览不显示" : undefined}
       {...attributes}
       {...listeners}
     >
       <button className="chip-name" onClick={() => s.select({ line, zone, index })} title="修改选项">
+        {label && <span className="chip-label">{label}</span>}
         {nameOf(manifest, item.widget)}
+        {empty && <span className="chip-empty">{empty === "filled" ? "示例值" : "无数据"}</span>}
       </button>
       <button
         className="chip-x"
