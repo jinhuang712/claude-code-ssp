@@ -16,7 +16,7 @@ const base = (name: string, t: Partial<ThemeDef["tokens"]>, bar?: ThemeDef["bar"
     context: "green",
     ...t,
   },
-  bar: bar ?? { filled: "█", empty: "░" },
+  bar: bar ?? { filled: "▆", empty: "▁" },
 });
 
 export const THEMES: Record<string, ThemeDef> = {
