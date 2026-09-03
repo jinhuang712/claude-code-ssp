@@ -691,6 +691,23 @@ input[type="checkbox"] {
 .bool-sample b:nth-of-type(2) {
   margin-left: 10px;
 }
+.muted-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-1);
+}
+.linklike {
+  color: var(--accent);
+  font-size: 12px;
+}
+.linklike:hover {
+  text-decoration: underline;
+}
+
 .swatches {
   display: flex;
   flex-wrap: wrap;

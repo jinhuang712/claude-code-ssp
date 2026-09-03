@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FooterConfig, JsonSchema, Style, WidgetInstance } from "../api";
 import { api } from "../api";
 import { uiColor } from "../colors";
@@ -153,33 +153,17 @@ function typeOf(schema: JsonSchema) {
 }
 
 /** Every value of an enum shows what it renders to, so nobody has to guess what "compact" means. */
-function EnumField({ title, values, current, inst, name, onChange }: { title: string; values: unknown[]; current: unknown; inst: WidgetInstance; name: string; onChange: (v: unknown) => void }) {
+function EnumField({ title, values, current, inst, name, onChange, onEffect, hidden }: { title: string; values: unknown[]; current: unknown; inst: WidgetInstance; name: string; onChange: (v: unknown) => void; onEffect: (has: boolean) => void; hidden: boolean }) {
   const probes = values.map((v) => ({ ...inst, options: { ...(inst.options ?? {}), [name]: v } }));
   const samples = useProbe(probes);
   const allSame = samples.length === values.length && samples.every((t) => t === samples[0]);
-  const [forceOpen, setForceOpen] = useState(false);
+  useEffect(() => onEffect(!allSame), [allSame, onEffect]);
   const wording = ZH_ENUM_BY_FIELD[`${inst.widget}.${name}`] ?? ZH_ENUM;
   const nameOfValue = (k: string) => wording[k] ?? ZH_ENUM[k] ?? k;
-  // Options that cannot change anything for this data fold into one line; the choice is still reachable.
-  if (allSame && !forceOpen) {
-    return (
-      <div className="row">
-        <span>
-          {title}
-          <span className="hint ml-2">这份数据下几档结果一样，先按「{nameOfValue(String(current ?? values[0]))}」</span>
-        </span>
-        <button className="btn" onClick={() => setForceOpen(true)}>
-          仍要改
-        </button>
-      </div>
-    );
-  }
+  if (hidden) return null;
   return (
     <div className="enum">
-      <span className="enum-title">
-        {title}
-        {allSame && <span className="hint ml-2">这份数据下几档结果一样</span>}
-      </span>
+      <span className="enum-title">{title}</span>
       <div className="enum-options" role="radiogroup" aria-label={title}>
         {values.map((v, i) => {
           const k = String(v);
@@ -197,37 +181,36 @@ function EnumField({ title, values, current, inst, name, onChange }: { title: st
 }
 
 /** Booleans show both outcomes too: the row states what turning it on adds. */
-function BoolField({ title, current, inst, name, onChange }: { title: string; current: boolean; inst: WidgetInstance; name: string; onChange: (v: boolean) => void }) {
+function BoolField({ title, current, inst, name, onChange, onEffect, hidden }: { title: string; current: boolean; inst: WidgetInstance; name: string; onChange: (v: boolean) => void; onEffect: (has: boolean) => void; hidden: boolean }) {
   const samples = useProbe([
     { ...inst, options: { ...(inst.options ?? {}), [name]: true } },
     { ...inst, options: { ...(inst.options ?? {}), [name]: false } },
   ]);
   const differs = samples.length === 2 && samples[0] !== samples[1];
+  useEffect(() => onEffect(samples.length !== 2 || differs), [samples.length, differs, onEffect]);
+  if (hidden) return null;
   return (
     <label className="row row-top">
       <span>
         {title}
-        {samples.length === 2 &&
-          (differs ? (
-            <span className="mono bool-sample">
-              <b>开</b> {samples[0]} <b>关</b> {samples[1]}
-            </span>
-          ) : (
-            <span className="hint ml-2">这份数据下开关结果一样</span>
-          ))}
+        {differs && (
+          <span className="mono bool-sample">
+            <b>开</b> {samples[0]} <b>关</b> {samples[1]}
+          </span>
+        )}
       </span>
       <input type="checkbox" className="h-4 w-4" checked={current} onChange={(e) => onChange(e.target.checked)} />
     </label>
   );
 }
 
-function Field({ name, schema, value, fallback, inst, onChange }: { name: string; schema: JsonSchema; value: unknown; fallback: unknown; inst: WidgetInstance; onChange: (v: unknown) => void }) {
+function Field({ name, schema, value, fallback, inst, onChange, onEffect, hidden }: { name: string; schema: JsonSchema; value: unknown; fallback: unknown; inst: WidgetInstance; onChange: (v: unknown) => void; onEffect: (has: boolean) => void; hidden: boolean }) {
   const { base, nullable } = typeOf(schema);
   const title = ZH_FIELD[name] ?? schema.title ?? name;
   const effective = value === undefined ? (fallback === undefined ? schema.default : fallback) : value;
 
-  if (schema.enum) return <EnumField title={title} values={schema.enum} current={effective} inst={inst} name={name} onChange={onChange} />;
-  if (base === "boolean") return <BoolField title={title} current={Boolean(effective)} inst={inst} name={name} onChange={onChange} />;
+  if (schema.enum) return <EnumField title={title} values={schema.enum} current={effective} inst={inst} name={name} onChange={onChange} onEffect={onEffect} hidden={hidden} />;
+  if (base === "boolean") return <BoolField title={title} current={Boolean(effective)} inst={inst} name={name} onChange={onChange} onEffect={onEffect} hidden={hidden} />;
   if (base === "integer" || base === "number") {
     return (
       <label className="row">
@@ -316,6 +299,14 @@ export function Options() {
     return () => window.removeEventListener("keydown", onKey);
   }, [sel, s]);
   const live = useProbe(w ? [w] : []);
+  const [noEffect, setNoEffect] = useState<Record<string, boolean>>({});
+  const [showAll, setShowAll] = useState(false);
+  const widgetKey = w ? `${sel!.line}:${sel!.zone}:${sel!.index}:${w.widget}` : "";
+  useEffect(() => {
+    setNoEffect({});
+    setShowAll(false);
+  }, [widgetKey]);
+  const reportEffect = useCallback((name: string, has: boolean) => setNoEffect((m) => (m[name] === !has ? m : { ...m, [name]: !has })), []);
   if (!sel || !w) return null;
   const manifest = s.widgets.find((m) => m.id === w.widget);
   const props = Object.entries(manifest?.schema.properties ?? {}).filter(([name]) => name !== "label");
@@ -385,6 +376,8 @@ export function Options() {
               value={w.options?.[name]}
               fallback={manifest?.defaults[name]}
               inst={w}
+              hidden={!showAll && noEffect[name] === true}
+              onEffect={(has) => reportEffect(name, has)}
               onChange={(v) =>
                 s.updateAt(sel, (inst) => {
                   inst.options = { ...(inst.options ?? {}), [name]: v };
@@ -394,6 +387,18 @@ export function Options() {
               }
             />
           ))}
+          {(() => {
+            const names = props.filter(([n]) => noEffect[n]).map(([n, sc]) => ZH_FIELD[n] ?? sc.title ?? n);
+            if (!names.length) return null;
+            return (
+              <div className="hint muted-note">
+                {showAll ? "已显示全部选项。" : `对当前数据没有影响，已收起：${names.join("、")}。`}
+                <button className="linklike" onClick={() => setShowAll((v) => !v)}>
+                  {showAll ? "收起无影响的" : "全部显示"}
+                </button>
+              </div>
+            );
+          })()}
           <ColorField style={style} setStyle={setStyle} />
           <label className="row">
             <span>加粗</span>
