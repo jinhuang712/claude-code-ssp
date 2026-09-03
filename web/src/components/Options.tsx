@@ -59,6 +59,7 @@ const ZH_FIELD: Record<string, string> = {
   parens: "加括号",
   date: "显示日期",
   cacheGlyph: "cache 用的符号",
+  colorMode: "颜色",
 };
 
 const ZH_ENUM: Record<string, string> = {
@@ -90,6 +91,7 @@ const ZH_ENUM: Record<string, string> = {
 /** One-line legends shown next to a field title. */
 const ZH_FIELD_HINT: Record<string, string> = {
   effortStyle: "符号对应：○ low · ◔ medium · ◑ high · ◕ xhigh · ● max",
+  colorMode: "选渐变后阈值不再起作用；效果看上方预览",
 };
 
 /** Per-widget enum wording where the generic words would hide what the option actually does. */
@@ -100,6 +102,8 @@ const ZH_ENUM_BY_FIELD: Record<string, Record<string, string>> = {
   "model.badge.joiner": { space: "空格", dot: "圆点 ·" },
   "context.bar.value": { percent: "已用 %", remaining: "剩余 %" },
 };
+const ZH_ENUM_GLOBAL_EXTRA: Record<string, string> = { thresholds: "按阈值：绿 → 黄 → 红", gradient: "渐变：0% 白 → 10% 蓝 → 30% 绿 → 50% 黄 → 70% 橙 → 90% 红 → 100% 深红" };
+Object.assign(ZH_ENUM, ZH_ENUM_GLOBAL_EXTRA);
 
 const ANSI = /\x1b\][^\x07]*\x07|\x1b\[[0-9;]*m/g; // eslint-disable-line no-control-regex
 
