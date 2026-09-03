@@ -35,7 +35,7 @@ COLUMNS=120 bun src/cli/main.ts render --fixture src/fixtures/basic.json
 | `render` | stdin JSON → statusline (what Claude Code runs) |
 | `serve [--port N] [--open]` | local web configurator + JSON API |
 | `install [--dry-run]` / `uninstall` | manage the `statusLine` entry in settings.json |
-| `doctor` | effective config, layers, plugins, last captured payload, timing |
+| `doctor` | same information as the panel's 高级设置 → 诊断, for terminals without a browser |
 
 ## Config
 

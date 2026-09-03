@@ -91,7 +91,15 @@ async function j<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export interface DoctorReport {
+  layers: Array<{ name: string; path: string | null; exists: boolean; error: string | null }>;
+  plugins: { dirs: string[]; loaded: Array<{ file: string; ids: string[] }>; errors: Array<{ file: string; message: string }> };
+  settings: { path: string; statusLine: unknown; error: string | null };
+  lastPayload: { id: string; capturedAt: number | null; payload: unknown } | null;
+}
+
 export const api = {
+  doctor: () => fetch("/api/doctor").then(j<DoctorReport>),
   config: () => fetch("/api/config").then(j<EffectiveConfig>),
   saveConfig: (config: Partial<FooterConfig>, scope: "user" | "project") =>
     fetch("/api/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ config, scope }) }).then(j<{ ok: true; path: string }>),
