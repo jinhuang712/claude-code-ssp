@@ -82,6 +82,52 @@ function Themes() {
   );
 }
 
+/* Bar glyph pairs; each one is shown exactly as the statusline will draw it. */
+const BAR_SETS: Array<{ id: string; filled: string; empty: string; name: string }> = [
+  { id: "theme", filled: "", empty: "", name: "跟随配色" },
+  { id: "block", filled: "█", empty: "░", name: "整格" },
+  { id: "rect", filled: "▮", empty: "▯", name: "矮一档" },
+  { id: "slant", filled: "▰", empty: "▱", name: "斜块" },
+  { id: "square", filled: "■", empty: "□", name: "方块" },
+  { id: "line", filled: "━", empty: "╌", name: "细线" },
+  { id: "dot", filled: "●", empty: "○", name: "圆点" },
+];
+
+function BarGlyphs() {
+  const config = useStore((s) => s.config)!;
+  const themes = useStore((s) => s.themes);
+  const setConfig = useStore((s) => s.setConfig);
+  const themeBar = (typeof config.theme === "string" ? themes.find((t) => t.name === config.theme)?.bar : config.theme.bar) ?? { filled: "█", empty: "░" };
+  const current = BAR_SETS.find((b) => b.id !== "theme" && config.bar?.filled === b.filled && config.bar?.empty === b.empty)?.id ?? (config.bar ? "custom" : "theme");
+  const draw = (f: string, e: string) => f.repeat(4) + e.repeat(6);
+  return (
+    <section className="section">
+      <div className="section-head">
+        <h2 className="h2">进度条字符</h2>
+        <span className="hint">上下文、用量等所有进度条共用</span>
+      </div>
+      <div className="choices">
+        {BAR_SETS.map((b) => (
+          <button
+            key={b.id}
+            className="choice"
+            data-active={current === b.id}
+            onClick={() =>
+              setConfig((c) => {
+                if (b.id === "theme") delete c.bar;
+                else c.bar = { filled: b.filled, empty: b.empty };
+              })
+            }
+          >
+            <span className="mono">{b.id === "theme" ? draw(themeBar.filled, themeBar.empty) : draw(b.filled, b.empty)}</span>
+            <small>{b.name}</small>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /* The panel borrows its accent from the statusline theme being edited. */
 function useThemeAccent() {
   const themes = useStore((s) => s.themes);
@@ -141,6 +187,7 @@ export default function App() {
       <Presets />
       <Layout />
       <Themes />
+      <BarGlyphs />
       <Advanced />
       <Picker />
       <Options />

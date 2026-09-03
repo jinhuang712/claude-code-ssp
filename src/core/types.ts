@@ -90,6 +90,8 @@ export interface FooterConfig {
   theme: string | ThemeDef;
   colorLevel: ColorLevel;
   separator: string;
+  /** Overrides the theme's bar glyphs, e.g. { filled: "▮", empty: "▯" }. */
+  bar?: { filled: string; empty: string };
   /** Cells subtracted from $COLUMNS to leave room for Claude Code's own footer padding. */
   columnsOffset: number;
   lines: LineConfig[];

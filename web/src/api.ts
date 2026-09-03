@@ -32,6 +32,7 @@ export interface FooterConfig {
   theme: string | ThemeDef;
   colorLevel: "auto" | "truecolor" | "256" | "16" | "none";
   separator: string;
+  bar?: { filled: string; empty: string };
   columnsOffset: number;
   lines: LineConfig[];
   git: { enabled: boolean; cacheMs: number };

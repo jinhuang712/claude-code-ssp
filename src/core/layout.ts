@@ -144,7 +144,8 @@ export function layoutLine(zones: Record<Zone, RenderedWidget>, columns: number,
 export function render(config: FooterConfig, ctx: Omit<Ctx, "theme">, options: RenderOptions = {}): RenderResult {
   const fillEmpty = options.fillEmpty === true;
   const started = performance.now();
-  const theme = resolveTheme(config.theme);
+  const base = resolveTheme(config.theme);
+  const theme = config.bar?.filled && config.bar.empty ? { ...base, bar: config.bar } : base;
   const level = config.colorLevel === "auto" ? detectColorLevel() : config.colorLevel;
   const fullCtx: Ctx = { ...ctx, theme };
   const errors: RenderResult["errors"] = [];
