@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { JsonSchema, Style } from "../api";
 import { nameOf, useStore, widgetAt } from "../store";
 
@@ -152,6 +153,12 @@ export function Options() {
   const s = useStore();
   const sel = s.selection;
   const w = widgetAt(s, sel);
+  useEffect(() => {
+    if (!sel) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && s.select(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sel, s]);
   if (!sel || !w) return null;
   const manifest = s.widgets.find((m) => m.id === w.widget);
   const props = manifest?.schema.properties ?? {};
@@ -166,16 +173,16 @@ export function Options() {
 
   return (
     <div className="overlay" onClick={() => s.select(null)}>
-      <div className="sheet !max-w-md" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-2 border-b border-white/10 p-4">
+      <div className="sheet !max-w-md" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="修改选项">
+        <div className="sheet-head">
           <h3 className="text-base font-semibold">{nameOf(manifest, w.widget)}</h3>
-          <span className="mono text-[11px] opacity-40">{w.widget}</span>
+          <span className="mono hint">{w.widget}</span>
           <button className="btn ml-auto" onClick={() => s.select(null)}>
             完成
           </button>
         </div>
-        <div className="flex flex-col gap-3 p-4">
-          {manifest?.description && <p className="text-xs opacity-60">{manifest.description}</p>}
+        <div className="sheet-body">
+          {manifest?.description && <p className="hint">{manifest.description}</p>}
           {Object.entries(props).map(([name, schema]) => (
             <Field
               key={name}
@@ -212,14 +219,14 @@ export function Options() {
             <span>加粗</span>
             <input type="checkbox" className="h-4 w-4" checked={!!style.bold} onChange={(e) => setStyle({ bold: e.target.checked })} />
           </label>
-          <div className="mt-2 flex justify-between border-t border-white/10 pt-3">
-            <button className="btn hover:!bg-red-500/20" onClick={() => s.removeAt(sel)}>
+          <div className="mt-2 flex justify-between pt-3" style={{ borderTop: "1px solid var(--line)" }}>
+            <button className="btn btn-danger" onClick={() => s.removeAt(sel)}>
               从状态栏移除
             </button>
             {s.advanced && (
               <details className="text-xs">
-                <summary className="cursor-pointer opacity-60">JSON</summary>
-                <pre className="mono mt-1 max-h-40 overflow-auto rounded bg-black/40 p-2 text-[11px]">{JSON.stringify(w, null, 2)}</pre>
+                <summary className="hint cursor-pointer">JSON</summary>
+                <pre className="mono mt-1 max-h-40 overflow-auto p-2 text-[11px]" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>{JSON.stringify(w, null, 2)}</pre>
               </details>
             )}
           </div>

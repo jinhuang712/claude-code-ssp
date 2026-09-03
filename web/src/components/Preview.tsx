@@ -6,15 +6,14 @@ import { useStore } from "../store";
 export function Preview() {
   const host = useRef<HTMLDivElement>(null);
   const term = useRef<Terminal | null>(null);
-  const fit = useRef<FitAddon | null>(null);
   const preview = useStore((s) => s.preview);
   const columns = useStore((s) => s.columns);
   const setColumns = useStore((s) => s.setColumns);
   const samples = useStore((s) => s.samples);
   const sampleId = useStore((s) => s.sampleId);
   const setSample = useStore((s) => s.setSample);
+  const lineCount = useStore((s) => s.config?.lines.length ?? 0);
 
-  // Mount once; columns follow the container width so the preview is never clipped.
   useEffect(() => {
     if (!host.current) return;
     const t = new Terminal({
@@ -23,15 +22,14 @@ export function Preview() {
       cursorBlink: false,
       cursorInactiveStyle: "none",
       fontFamily: 'ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace',
-      fontSize: 12.5,
-      lineHeight: 1.35,
-      theme: { background: "#0f1218", foreground: "#e6e8ee", cursor: "#0f1218" },
+      fontSize: 13,
+      lineHeight: 1.4,
+      theme: { background: "#0b0e13", foreground: "#dfe4ec", cursor: "#0b0e13" },
     });
     const f = new FitAddon();
     t.loadAddon(f);
     t.open(host.current);
     term.current = t;
-    fit.current = f;
     const refit = () => {
       const dims = f.proposeDimensions();
       if (dims?.cols && dims.cols !== useStore.getState().columns) setColumns(dims.cols);
@@ -43,27 +41,32 @@ export function Preview() {
       ro.disconnect();
       t.dispose();
       term.current = null;
-      fit.current = null;
     };
   }, [setColumns]);
 
   useEffect(() => {
     const t = term.current;
     if (!t) return;
-    const rows = Math.max(2, (preview?.lines.length ?? 1) + 1);
+    const lines = preview?.lines ?? [];
+    const rows = Math.max(1, lines.length);
     if (t.cols !== columns || t.rows !== rows) t.resize(columns, rows);
     t.reset();
-    if (preview) t.write(preview.lines.join("\r\n"));
+    t.write(lines.join("\r\n"));
   }, [preview, columns]);
 
   const live = samples.filter((s) => s.source === "live");
   const fixture = samples.find((s) => s.source === "fixture");
+  const shown = preview?.lines.length ?? 0;
+  const hidden = lineCount - shown;
 
   return (
-    <section className="section">
-      <div className="mb-2 flex flex-wrap items-center gap-3">
-        <h2 className="h2 !mb-0">预览</h2>
-        <span className="text-xs opacity-40">{columns} 列 · 随窗口宽度变化</span>
+    <div className="term-frame">
+      <div className="term-bar">
+        <span className="title">预览</span>
+        <span className="meta mono">
+          {columns} 列{preview ? ` · ${preview.ms.toFixed(1)} ms` : ""}
+        </span>
+        {hidden > 0 && <span>{hidden} 行在这份数据下没有内容，不显示</span>}
         <div className="seg ml-auto">
           {live[0] && (
             <button data-active={sampleId === live[0].id} onClick={() => setSample(live[0]!.id)} title={live[0].label}>
@@ -80,7 +83,7 @@ export function Preview() {
       <div className="term">
         <div ref={host} className="w-full" />
       </div>
-      {preview?.errors.length ? <p className="mt-2 text-xs text-amber-300">{preview.errors.map((e) => `${e.widget}: ${e.message}`).join(" · ")}</p> : null}
-    </section>
+      {preview?.errors.length ? <p className="term-errors">{preview.errors.map((e) => `${e.widget}: ${e.message}`).join("　")}</p> : null}
+    </div>
   );
 }

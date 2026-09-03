@@ -6,14 +6,13 @@ export function Advanced() {
   const project = s.layers.find((l) => l.name === "project");
   return (
     <section className="section">
-      <button className="flex items-center gap-2 text-sm opacity-60 hover:opacity-100" onClick={() => s.setAdvanced(!s.advanced)}>
-        <span className="inline-block w-3 transition-transform" style={{ transform: s.advanced ? "rotate(90deg)" : "none" }}>
-          ▸
-        </span>
+      <button className="disclosure" aria-expanded={s.advanced} onClick={() => s.setAdvanced(!s.advanced)}>
+        <i>▸</i>
         高级设置
+        <span className="hint">分隔符、颜色模式、居中区、项目级配置</span>
       </button>
       {s.advanced && (
-        <div className="mt-3 flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="panel">
           <label className="row">
             <span>项目之间的分隔符</span>
             <input
@@ -28,7 +27,7 @@ export function Advanced() {
           </label>
           <label className="row">
             <span>
-              右边留白（列）<span className="ml-1 opacity-50">Claude Code 自身边距，右侧贴边有换行时调大</span>
+              右边留白（列）<span className="hint ml-2">Claude Code 自身边距，右侧贴边有换行时调大</span>
             </span>
             <input
               className="field !w-20"
@@ -63,7 +62,7 @@ export function Advanced() {
           </label>
           <label className="row">
             <span>
-              把真实 stdin 快照存下来供预览<span className="ml-1 opacity-50">存在本机 ~/.claude/plugins/claude-code-ssp/samples</span>
+              把真实 stdin 快照存下来供预览<span className="hint ml-2">存在本机 ~/.claude/plugins/claude-code-ssp/samples</span>
             </span>
             <input
               type="checkbox"
@@ -78,17 +77,17 @@ export function Advanced() {
           </label>
           <div className="row">
             <span>
-              保存到当前项目<span className="ml-1 opacity-50">{project?.path}</span>
+              保存到当前项目<span className="hint ml-2">{project?.path}</span>
             </span>
             <button className="btn" onClick={() => void s.saveNow("project")}>
               {project?.exists ? "覆盖项目配置" : "另存为项目配置"}
             </button>
           </div>
           <details className="text-xs">
-            <summary className="cursor-pointer opacity-60">配置 JSON</summary>
-            <pre className="mono mt-1 max-h-64 overflow-auto rounded bg-black/40 p-2 text-[11px]">{JSON.stringify(c, null, 2)}</pre>
+            <summary className="hint cursor-pointer">配置 JSON</summary>
+            <pre className="mono mt-1 max-h-64 overflow-auto p-2 text-[11px]" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>{JSON.stringify(c, null, 2)}</pre>
           </details>
-          <p className="text-xs opacity-50">
+          <p className="hint">
             自定义 widget：把一个 .ts / .js 文件放进 <code className="mono">~/.config/claude-code-ssp/widgets/</code>，重启服务后会出现在"＋"列表里。示例见仓库 examples/widgets/hello.ts。
           </p>
         </div>
