@@ -73,13 +73,15 @@ export const usageWindows = defineWidget<{
       const lvl = api.level(pct, o.warnAt, o.critAt);
       const shown = o.value === "remaining" ? Math.max(0, 100 - Math.round(pct)) : Math.round(pct);
       segs.push(api.seg(`${w.key} `, { fg: "muted" }));
+      const resetTxt = w.resetsAt ? (o.resetFormat === "absolute" ? absoluteReset(w.resetsAt * 1000, ctx.now) : api.duration(Math.max(0, w.resetsAt * 1000 - ctx.now))) : null;
+      if (pct >= 100 && resetTxt) {
+        // A full bar says nothing new; the only useful fact now is when the window opens again.
+        segs.push(api.seg(o.resetFormat === "absolute" ? `resets ${resetTxt}` : `resets in ${resetTxt}`, { fg: "crit", bold: true }));
+        return;
+      }
       if (o.bar) segs.push(api.seg(api.bar(pct, o.barWidth) + " ", { fg: lvl === "ok" ? "usage" : lvl }));
       segs.push(api.seg(`${shown}%`, { fg: lvl === "ok" ? "fg" : lvl, bold: lvl === "crit" }));
-      if (o.showReset && w.resetsAt) {
-        const when = w.resetsAt * 1000;
-        const txt = o.resetFormat === "absolute" ? absoluteReset(when, ctx.now) : api.duration(Math.max(0, when - ctx.now));
-        segs.push(api.seg(` (${txt})`, { fg: "muted" }));
-      }
+      if (o.showReset && resetTxt) segs.push(api.seg(` (${resetTxt})`, { fg: "muted" }));
     });
     return segs;
   },
