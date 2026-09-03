@@ -2,6 +2,7 @@
  * Builds the widget-facing context from stdin + the harvested data collectors.
  * Collectors run concurrently and each is individually bounded so a slow git never blanks the line.
  */
+import { readBaseline } from "./reset.js";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -163,5 +164,6 @@ export async function buildContext(stdin: StdinData, config: FooterConfig, opts:
     effortSymbol: effort?.symbol,
     columns: opts.columns ?? resolveColumns(process.env, config.columnsOffset),
     now,
+    reset: readBaseline(stdin.session_id),
   };
 }

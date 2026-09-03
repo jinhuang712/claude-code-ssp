@@ -57,6 +57,25 @@ async function main(): Promise<void> {
       else uninstall();
       return;
     }
+    case "reset": {
+      const { resetLatestSession, undoReset } = await import("../server/reset.js");
+      if (argv.includes("--undo")) {
+        const { listLiveSamples } = await import("../core/capture.js");
+        const id = listLiveSamples()[0]?.id;
+        if (id) undoReset(id);
+        console.log(id ? `counters restored for session ${id}` : "no session seen yet");
+        return;
+      }
+      const r = await resetLatestSession(arg("session", argv));
+      if (!r) {
+        console.log("no captured session yet — the statusline has to render once first");
+        process.exitCode = 1;
+        return;
+      }
+      const t = r.baseline.tokens;
+      console.log(`counters reset for session ${r.sessionId}: cost $${r.baseline.costUsd.toFixed(2)}, tokens ${t.inputTokens + t.outputTokens + t.cacheCreationTokens + t.cacheReadTokens}, api calls ${t.apiCalls ?? 0}, lines +${r.baseline.linesAdded} -${r.baseline.linesRemoved}`);
+      return;
+    }
     case "doctor": {
       const { doctor } = await import("../server/doctor.js");
       return doctor();
@@ -68,6 +87,7 @@ async function main(): Promise<void> {
 
   render            read Claude Code statusline JSON on stdin, print the status line (default)
   serve [--port N] [--open]   start the local web configurator (127.0.0.1:4877)
+  reset [--undo]    zero the session counters (cost, tokens, api calls, lines) from now on
   install [--dry-run]         merge statusLine into ~/.claude/settings.json (with backup)
   uninstall                   remove the statusLine entry we installed
   doctor                      show effective config, layers, plugins, last sample, timing

@@ -14,6 +14,9 @@ export function Header() {
         {enabled && <span> · {enabled}</span>}
       </span>
       <div className="ml-auto flex items-center gap-2">
+        <button className="btn" onClick={() => void s.resetCounters()} title="费用 / Tokens / API 次数 / 改动行数从现在起重新累计，只影响当前会话">
+          重置计数
+        </button>
         <button className="btn btn-primary" onClick={() => void s.install()}>
           {s.installed ? "重新应用到 Claude Code" : "应用到 Claude Code"}
         </button>

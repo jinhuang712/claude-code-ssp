@@ -258,6 +258,7 @@ function accumulateMessageUsage(
     cacheCreationTokens: 0,
     cacheReadTokens: 0,
   };
+  if (!previous) total.apiCalls = (total.apiCalls ?? 0) + 1;
 
   total.inputTokens += Math.max(0, current.inputTokens - prior.inputTokens);
   total.outputTokens += Math.max(0, current.outputTokens - prior.outputTokens);
@@ -283,6 +284,7 @@ function normalizeSessionTokens(tokens: unknown): SessionTokenUsage | undefined 
     outputTokens: normalizeTokenCount(raw.outputTokens),
     cacheCreationTokens: normalizeTokenCount(raw.cacheCreationTokens),
     cacheReadTokens: normalizeTokenCount(raw.cacheReadTokens),
+    apiCalls: normalizeTokenCount(raw.apiCalls),
   };
 }
 
@@ -524,6 +526,7 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
     outputTokens: 0,
     cacheCreationTokens: 0,
     cacheReadTokens: 0,
+    apiCalls: 0,
   };
   const usageByMessageId = new Map<string, SessionTokenUsage>();
   let lastUsageKey: string | undefined;
@@ -629,6 +632,7 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
             const shouldCount = usageKey !== lastUsageKey;
             lastUsageKey = usageKey;
             if (shouldCount) {
+              sessionTokens.apiCalls = (sessionTokens.apiCalls ?? 0) + 1;
               sessionTokens.inputTokens += normalizedUsage.inputTokens;
               sessionTokens.outputTokens += normalizedUsage.outputTokens;
               sessionTokens.cacheCreationTokens += normalizedUsage.cacheCreationTokens;

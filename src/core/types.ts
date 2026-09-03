@@ -3,6 +3,7 @@
  * Everything here is plain data — no I/O.
  */
 import type { RenderContext as DataContext } from "../data/types.js";
+import type { ResetBaseline } from "./reset.js";
 
 /** Theme token or literal color ("#rrggbb", "208", "red", "brightBlue"). */
 export type Color = string;
@@ -106,6 +107,8 @@ export interface Ctx extends DataContext {
   columns: number;
   now: number;
   theme: ThemeDef;
+  /** Counter baseline recorded by `/ssp:reset` for this session, if any. */
+  reset: ResetBaseline | null;
 }
 
 export interface WidgetApi {

@@ -1,4 +1,5 @@
 import { defineWidget } from "../core/types.js";
+import { netTokens } from "../core/reset.js";
 import { labelSchema, stdin, withLabel } from "./_shared.js";
 
 export const tokensSession = defineWidget<{ label: string | null; breakdown: boolean; style: "words" | "arrows"; cacheGlyph: string; parens: boolean }>({
@@ -19,7 +20,7 @@ export const tokensSession = defineWidget<{ label: string | null; breakdown: boo
   },
   defaults: { label: "Tokens", breakdown: true, style: "words", cacheGlyph: "↻", parens: true },
   render(ctx, o, api) {
-    const t = ctx.transcript.sessionTokens;
+    const t = netTokens(ctx.transcript.sessionTokens, ctx.reset);
     if (!t) return null;
     const cache = t.cacheCreationTokens + t.cacheReadTokens;
     const total = t.inputTokens + t.outputTokens + cache;

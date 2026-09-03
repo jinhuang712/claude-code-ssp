@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Helper used by the /ssp:config slash command. Usage: ssp.sh <config|install|render-test>
+# Helper used by the /ssp:* slash commands. Usage: ssp.sh <config|reset|install|render-test>
 set -euo pipefail
 
 ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
@@ -40,9 +40,12 @@ case "${1:-config}" in
   install)
     "$BUN" "$ROOT/src/cli/main.ts" install "${@:2}"
     ;;
+  reset)
+    "$BUN" "$ROOT/src/cli/main.ts" reset "${@:2}"
+    ;;
   render-test)
     COLUMNS="${COLUMNS:-120}" "$BUN" "$ROOT/src/cli/main.ts" render --fixture "$ROOT/src/fixtures/basic.json"
     ;;
   *)
-    echo "usage: ssp.sh <config|install|render-test>"; exit 2 ;;
+    echo "usage: ssp.sh <config|reset|install|render-test>"; exit 2 ;;
 esac

@@ -123,6 +123,16 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
       const out = render(config, ctx, { fillEmpty: body.fillEmpty === true });
       return json(out);
     }
+    case "POST /api/reset": {
+      const { resetLatestSession, undoReset } = await import("./reset.js");
+      const body = (await req.json().catch(() => ({}))) as { sessionId?: string; undo?: boolean };
+      if (body.undo && body.sessionId) {
+        undoReset(body.sessionId);
+        return json({ ok: true, undone: body.sessionId });
+      }
+      const r = await resetLatestSession(body.sessionId);
+      return r ? json(r) : json({ error: "no captured session yet" }, 404);
+    }
     case "GET /api/install":
       return json(planInstall({ dryRun: true }));
     case "POST /api/install": {

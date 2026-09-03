@@ -1,5 +1,6 @@
 import { defineWidget } from "../core/types.js";
 import { formatUsd, resolveSessionCost } from "../data/cost.js";
+import { netTokens } from "../core/reset.js";
 import { labelSchema, stdin, withLabel } from "./_shared.js";
 
 export const costSession = defineWidget<{ label: string | null; allowRoutedCost: boolean; showSource: boolean }>({
@@ -18,11 +19,13 @@ export const costSession = defineWidget<{ label: string | null; allowRoutedCost:
   },
   defaults: { label: "Cost", allowRoutedCost: false, showSource: false },
   render(ctx, o, api) {
-    const c = resolveSessionCost(stdin(ctx), ctx.transcript.sessionTokens, { allowRoutedCost: o.allowRoutedCost });
+    const c = resolveSessionCost(stdin(ctx), netTokens(ctx.transcript.sessionTokens, ctx.reset), { allowRoutedCost: o.allowRoutedCost });
     if (!c) return null;
+    // Native totals come from stdin and only grow; subtract the baseline. Estimates already use net tokens.
+    const usd = c.source === "estimate" ? c.totalUsd : Math.max(0, c.totalUsd - (ctx.reset?.costUsd ?? 0));
     const label = withLabel(o.label, "Cost");
     const prefix = o.showSource && c.source === "estimate" ? "≈" : "";
-    return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), api.seg(`${prefix}${formatUsd(c.totalUsd)}`)];
+    return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), api.seg(`${prefix}${usd < 0.005 ? "$0.00" : formatUsd(usd)}`)];
   },
 });
 
@@ -35,7 +38,8 @@ export const costApiTime = defineWidget<{ label: string | null }>({
   schema: { type: "object", properties: { label: { ...labelSchema, default: "api" } } },
   defaults: { label: "api" },
   render(ctx, o, api) {
-    const ms = stdin(ctx).cost?.total_api_duration_ms;
+    const raw = stdin(ctx).cost?.total_api_duration_ms;
+    const ms = raw ? Math.max(0, raw - (ctx.reset?.apiMs ?? 0)) : 0;
     if (!ms) return null;
     const label = withLabel(o.label, "api");
     return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), api.seg(api.duration(ms))];
