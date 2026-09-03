@@ -570,7 +570,7 @@ input[type="checkbox"] {
 }
 .enum-opt {
   display: grid;
-  grid-template-columns: 72px 1fr;
+  grid-template-columns: minmax(72px, auto) 1fr;
   align-items: center;
   gap: 12px;
   padding: 6px 10px;

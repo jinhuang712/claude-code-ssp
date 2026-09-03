@@ -77,6 +77,11 @@ const ZH_ENUM: Record<string, string> = {
   "3": "3 级",
 };
 
+/** Per-widget enum wording where the generic words would hide what the option actually does. */
+const ZH_ENUM_BY_FIELD: Record<string, Record<string, string>> = {
+  "model.badge.format": { full: "原样", compact: "去掉 (1M context)", short: "再去掉 Claude 前缀" },
+};
+
 const ANSI = /\x1b\][^\x07]*\x07|\x1b\[[0-9;]*m/g; // eslint-disable-line no-control-regex
 
 const PROBE_BASE: Omit<FooterConfig, "theme"> = {
@@ -152,11 +157,28 @@ function EnumField({ title, values, current, inst, name, onChange }: { title: st
   const probes = values.map((v) => ({ ...inst, options: { ...(inst.options ?? {}), [name]: v } }));
   const samples = useProbe(probes);
   const allSame = samples.length === values.length && samples.every((t) => t === samples[0]);
+  const [forceOpen, setForceOpen] = useState(false);
+  const wording = ZH_ENUM_BY_FIELD[`${inst.widget}.${name}`] ?? ZH_ENUM;
+  const nameOfValue = (k: string) => wording[k] ?? ZH_ENUM[k] ?? k;
+  // Options that cannot change anything for this data fold into one line; the choice is still reachable.
+  if (allSame && !forceOpen) {
+    return (
+      <div className="row">
+        <span>
+          {title}
+          <span className="hint ml-2">这份数据下几档结果一样，先按「{nameOfValue(String(current ?? values[0]))}」</span>
+        </span>
+        <button className="btn" onClick={() => setForceOpen(true)}>
+          仍要改
+        </button>
+      </div>
+    );
+  }
   return (
     <div className="enum">
       <span className="enum-title">
         {title}
-        {allSame && <span className="hint ml-2">对当前数据没有区别</span>}
+        {allSame && <span className="hint ml-2">这份数据下几档结果一样</span>}
       </span>
       <div className="enum-options" role="radiogroup" aria-label={title}>
         {values.map((v, i) => {
@@ -164,7 +186,7 @@ function EnumField({ title, values, current, inst, name, onChange }: { title: st
           const active = String(current ?? "") === k;
           return (
             <button key={k} type="button" role="radio" aria-checked={active} className="enum-opt" data-active={active} onClick={() => onChange(v)}>
-              <span className="enum-name">{ZH_ENUM[k] ?? k}</span>
+              <span className="enum-name">{nameOfValue(k)}</span>
               <span className="mono enum-sample">{samples[i] ?? "…"}</span>
             </button>
           );
@@ -185,17 +207,14 @@ function BoolField({ title, current, inst, name, onChange }: { title: string; cu
     <label className="row row-top">
       <span>
         {title}
-        {samples.length === 2 && (
-          <span className="mono bool-sample">
-            {differs ? (
-              <>
-                <b>开</b> {samples[0]} <b>关</b> {samples[1]}
-              </>
-            ) : (
-              <span className="hint">对当前数据没有区别</span>
-            )}
-          </span>
-        )}
+        {samples.length === 2 &&
+          (differs ? (
+            <span className="mono bool-sample">
+              <b>开</b> {samples[0]} <b>关</b> {samples[1]}
+            </span>
+          ) : (
+            <span className="hint ml-2">这份数据下开关结果一样</span>
+          ))}
       </span>
       <input type="checkbox" className="h-4 w-4" checked={current} onChange={(e) => onChange(e.target.checked)} />
     </label>
