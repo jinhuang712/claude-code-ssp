@@ -46,7 +46,11 @@ interface State {
   samples: SampleMeta[];
   sampleId: string | null;
   columns: number;
+  /** "auto" follows the preview's width; a number pins the column count to match a real terminal. */
+  columnsMode: "auto" | number;
   preview: RenderResult | null;
+  /** The column count the current preview was rendered for; the terminal only redraws when it matches. */
+  previewColumns: number;
   selection: Selection | null;
   picker: { line: number; zone: Zone } | null;
   toast: string | null;
@@ -58,6 +62,7 @@ interface State {
   setConfig(mutate: (c: FooterConfig) => void): void;
   setSample(id: string | null): void;
   setColumns(n: number): void;
+  setColumnsMode(m: "auto" | number): void;
   select(sel: Selection | null): void;
   openPicker(line: number, zone: Zone): void;
   closePicker(): void;
@@ -96,7 +101,9 @@ export const useStore = create<State>((set, get) => ({
   samples: [],
   sampleId: null,
   columns: Number(localStorage.getItem("ssp.columns") ?? 120),
+  columnsMode: localStorage.getItem("ssp.columnsMode") === null || localStorage.getItem("ssp.columnsMode") === "auto" ? "auto" : Number(localStorage.getItem("ssp.columnsMode")),
   preview: null,
+  previewColumns: 0,
   selection: null,
   picker: null,
   toast: null,
@@ -143,10 +150,17 @@ export const useStore = create<State>((set, get) => ({
   },
 
   setColumns(n) {
+    if (n === get().columns) return;
     localStorage.setItem("ssp.columns", String(n));
     set({ columns: n });
     if (previewTimer) clearTimeout(previewTimer);
     previewTimer = setTimeout(() => void get().refreshPreview(), 80);
+  },
+
+  setColumnsMode(m) {
+    localStorage.setItem("ssp.columnsMode", String(m));
+    set({ columnsMode: m });
+    if (typeof m === "number") get().setColumns(m);
   },
 
   select: (selection) => set({ selection, picker: null }),
@@ -254,7 +268,8 @@ export const useStore = create<State>((set, get) => ({
     if (!config) return;
     try {
       const preview = await api.render(config, sampleId, columns);
-      set({ preview });
+      if (get().columns !== columns) return; // a newer request is on its way
+      set({ preview, previewColumns: columns });
     } catch (err) {
       set({ toast: `预览失败：${err instanceof Error ? err.message : String(err)}` });
     }
@@ -334,4 +349,75 @@ export const ZH_CATEGORY: Record<string, string> = {
 
 export function nameOf(w: WidgetManifest | undefined, id: string): string {
   return ZH[id] ?? w?.name ?? id;
+}
+
+/** Does this widget's own schema know about a label (so it has a built-in default)? */
+export function ownsLabel(w: WidgetManifest | undefined): boolean {
+  return Boolean(w?.schema.properties && "label" in w.schema.properties);
+}
+
+/**
+ * The label the engine will actually print: the instance override wins, then the widget's default.
+ * null means hidden / none. Older configs kept the override in options.label; that still counts.
+ */
+export function effectiveLabel(inst: WidgetInstance, w: WidgetManifest | undefined): string | null {
+  const override = inst.label !== undefined ? inst.label : (inst.options?.label as string | null | undefined);
+  if (override !== undefined) return override === "" ? null : override;
+  if (ownsLabel(w)) {
+    const d = w!.defaults.label;
+    return typeof d === "string" && d !== "" ? d : null;
+  }
+  return null;
+}
+
+/** null = has real data; "filled" = sample text stands in; "hidden" = nothing to show at all. */
+export function emptyStateAt(preview: RenderResult | null, sel: Selection): null | "filled" | "hidden" {
+  const e = preview?.empty?.find((x) => x.line === sel.line && x.zone === sel.zone && x.index === sel.index);
+  return e ? (e.filled ? "filled" : "hidden") : null;
+}
+
+/** Chinese one-liners for the built-in widgets (manifest descriptions are English). */
+export const ZH_DESC: Record<string, string> = {
+  "model.badge": "当前模型，可附带思考强度、供应商和快速模式标记。",
+  "model.effort": "思考强度，用符号和/或文字表示。",
+  "model.claudeVersion": "Claude Code 的版本号。",
+  "project.path": "工作目录：只显示末级、末 N 级、~ 相对或完整路径。",
+  "project.addedDirs": "用 /add-dir 加入的目录。",
+  "project.worktree": "当前 git worktree 的名字。",
+  "project.sessionName": "会话标题。Claude Code 会把最近一条提问当标题发过来，/rename 设过的优先。",
+  "git.branch": "分支名，可附带改动标记、领先/落后数和文件统计。",
+  "git.repo": "从 origin 解析出的 owner/name。",
+  "git.pr": "当前分支对应的 PR / MR 及评审状态。",
+  "git.linesChanged": "本次会话增删的行数。",
+  "context.bar": "上下文占用进度条，按阈值变色。",
+  "context.value": "上下文占用，只显示数字。",
+  "context.compactions": "本次会话压缩过几次，压缩前不显示。",
+  "context.promptCache": "Prompt 缓存是否还热、多久过期。",
+  "usage.windows": "5 小时 / 7 天 / 花费上限用量（Pro / Max 账号）。",
+  "usage.single": "只显示一个用量窗口，适合放窄的位置。",
+  "tokens.session": "本次会话累计 tokens，可展开 in / out / cache 明细。",
+  "tokens.current": "当前上下文窗口里的 tokens 数。",
+  "tokens.outputSpeed": "输出速度 tok/s，流式输出时才有值。",
+  "session.duration": "会话已进行的时长。",
+  "session.started": "会话开始的时间。",
+  "session.lastReply": "距上一次回复过了多久。",
+  "session.clock": "本机当前时间。",
+  "session.vimMode": "当前 vim 模式。",
+  "session.agent": "用 --agent 启动时的 agent 名。",
+  "cost.session": "本次会话费用，Claude Code 自己的统计，缺失时按价目表估算。",
+  "cost.apiTime": "本次会话等待 API 的总时长。",
+  "activity.agents": "正在运行的子 agent。",
+  "activity.todos": "Todo 完成数 / 总数和进行中的那一项。",
+  "activity.tools": "最近的工具调用和状态。",
+  "activity.mcp": "本次会话调用过的 MCP 服务，出错的会标出来。",
+  "environment.counts": "当前目录生效的 CLAUDE.md / 规则 / MCP / hooks 数量。",
+  "environment.outputStyle": "当前输出风格，默认风格时不显示。",
+  "environment.thinking": "开启扩展思考时显示 💭。",
+  "custom.text": "固定文本或符号，比如分隔符、你的名字。",
+  "custom.env": "某个环境变量的值。",
+  "custom.link": "可点击的文字链接。",
+};
+
+export function descOf(w: WidgetManifest | undefined, id: string): string {
+  return ZH_DESC[id] ?? w?.description ?? "";
 }

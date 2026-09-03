@@ -513,7 +513,6 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
   let latestTodos: TodoItem[] = [];
   const taskIdToIndex = new Map<string, number>();
   const queueCompletionMap = new Map<string, Date>();
-  let latestSlug: string | undefined;
   let customTitle: string | undefined;
   let latestAdvisorModel: string | undefined;
   let latestUltracodeActive: boolean | undefined;
@@ -557,8 +556,6 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
         const entry = JSON.parse(line) as TranscriptLine;
         if (entry.type === 'custom-title' && typeof entry.customTitle === 'string') {
           customTitle = entry.customTitle;
-        } else if (typeof entry.slug === 'string') {
-          latestSlug = entry.slug;
         }
         // Capture the advisor model from the top-level `advisorModel` field.
         // Claude Code stamps this onto every *assistant* record after `/advisor`
@@ -757,7 +754,8 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
   result.mcpErrors = Array.from(mcpErrorSet.values());
   result.agents = Array.from(agentMap.values()).slice(-10);
   result.todos = latestTodos;
-  result.sessionName = customTitle ?? latestSlug;
+  // Only a title the user set (/rename) is a session name; the slug is Claude Code's rolling summary.
+  result.sessionName = customTitle;
   result.sessionTokens = sessionTokens;
   result.lastCompactBoundaryAt = lastCompactBoundaryAt;
   result.lastCompactPostTokens = lastCompactPostTokens;
