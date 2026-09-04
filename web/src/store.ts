@@ -249,6 +249,17 @@ export const useStore = create<State>((set, get) => ({
       // Adopt the server's normalized shape so "dirty" compares like with like — unless the user kept editing meanwhile.
       const unchanged = JSON.stringify(get().config) === snapshot;
       set({ saved: structuredClone(eff.config), layers: eff.layers, saving: false, ...(unchanged ? { config: eff.config } : {}) });
+      // `render` re-reads the config file on every tick, but Claude Code only runs it when
+      // settings.json points at us — so the first successful save auto-applies (idempotent,
+      // no backup spam). After that the button is just a repair entry.
+      if (get().installed !== true) {
+        try {
+          await api.install();
+          set({ installed: true });
+        } catch {
+          /* keep manual button as fallback; next save retries */
+        }
+      }
     } catch (err) {
       set({ saving: false, toast: `保存失败：${err instanceof Error ? err.message : String(err)}` });
     }
