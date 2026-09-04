@@ -14,6 +14,14 @@ export function Header() {
         {enabled && <span> · {enabled}</span>}
       </span>
       <div className="ml-auto flex items-center gap-2">
+        <button
+          className="btn"
+          disabled={s.past.length === 0}
+          onClick={() => s.undo()}
+          title={s.past.length ? `撤销上一步（还可撤销 ${s.past.length} 步），快捷键 Ctrl/⌘+Z` : "没有可撤销的改动"}
+        >
+          撤销{s.past.length > 1 ? ` ${s.past.length}` : ""}
+        </button>
         <button className="btn" onClick={() => void s.resetCounters()} title="费用 / Tokens / API 次数 / 改动行数从现在起重新累计，只影响当前会话">
           重置计数
         </button>
