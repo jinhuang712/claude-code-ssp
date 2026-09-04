@@ -15,6 +15,23 @@ Requires Claude Code ≥ 2.1.251 (for `rate_limits`, `prompt_cache`, `effort` on
 ## Quick start
 
 ```bash
+claude plugin marketplace add jinhuang712/claude-code-ssp
+claude plugin install ssp@claude-code-ssp
+```
+
+Then open the configurator (it starts the local server if needed):
+
+```
+/ssp:config
+```
+
+The first change you make in the panel auto-applies the statusline to `~/.claude/settings.json`
+(backup kept); every later edit saves automatically and shows on the next refresh.
+Requires [Bun](https://bun.sh) on `PATH`.
+
+From a terminal, using a local checkout:
+
+```bash
 git clone https://github.com/jinhuang712/claude-code-ssp ~/dev/projects/claude-code-ssp
 cd ~/dev/projects/claude-code-ssp && bun install && (cd web && bun install) && bun run build:web
 
