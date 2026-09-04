@@ -4,8 +4,8 @@ export function Header() {
   const s = useStore();
   const dirty = isDirty(s);
   const state = s.saving ? "saving" : dirty ? "dirty" : "saved";
-  const status = s.saving ? "保存中" : dirty ? "有改动，稍后自动保存" : "已自动保存";
-  const enabled = s.installed === true ? "已应用到 Claude Code" : s.installed === false ? "还没应用到 Claude Code" : null;
+  const status = s.saving ? "保存中" : dirty ? "有改动，正在自动保存" : "已保存 · Claude Code 下次刷新即生效";
+  const enabled = s.installed === true ? "已应用 · 改动自动生效" : s.installed === false ? "首次改动会自动应用" : null;
   return (
     <header className="topbar">
       <h1>Claude Code 状态栏</h1>
@@ -17,8 +17,12 @@ export function Header() {
         <button className="btn" onClick={() => void s.resetCounters()} title="费用 / Tokens / API 次数 / 改动行数从现在起重新累计，只影响当前会话">
           重置计数
         </button>
-        <button className="btn btn-primary" onClick={() => void s.install()}>
-          {s.installed ? "重新应用到 Claude Code" : "应用到 Claude Code"}
+        <button
+          className={s.installed === true ? "btn" : "btn btn-primary"}
+          onClick={() => void s.install()}
+          title={s.installed === true ? "一般不需要点：每次保存会自动应用。这里只在 settings.json 被外部改坏时用来修复" : "把状态栏接到 Claude Code（只需一次，之后每次改动自动生效）"}
+        >
+          {s.installed === true ? "重新应用" : "应用到 Claude Code"}
         </button>
       </div>
     </header>

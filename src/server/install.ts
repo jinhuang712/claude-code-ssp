@@ -56,6 +56,8 @@ export interface InstallResult {
   previous: unknown;
   statusLine: Record<string, unknown>;
   dryRun: boolean;
+  /** True when settings.json already pointed at us — no write, no backup. Makes auto-ensure safe to call on every save. */
+  unchanged?: boolean;
 }
 
 export function planInstall(opts: InstallOptions = {}): InstallResult {
@@ -77,6 +79,10 @@ export function install(opts: InstallOptions = {}): InstallResult {
     return plan;
   }
   const settings = readSettings(plan.settingsFile);
+  if (plan.previous && JSON.stringify(plan.previous) === JSON.stringify(plan.statusLine)) {
+    console.log(`statusLine already installed in ${plan.settingsFile} — nothing to do`);
+    return { ...plan, unchanged: true };
+  }
   if (plan.previous && JSON.stringify(plan.previous) !== JSON.stringify(plan.statusLine)) {
     settings["statusLine.previous.claude-code-ssp"] = plan.previous;
   }

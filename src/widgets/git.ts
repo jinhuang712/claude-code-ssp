@@ -21,7 +21,14 @@ export const gitBranch = defineWidget<{ showDirty: boolean; showAheadBehind: boo
   defaults: { prefix: "git:", parens: true, showDirty: true, showAheadBehind: true, showFileStats: false, link: true },
   render(ctx, o, api) {
     const g = ctx.gitStatus;
-    if (!g) return null;
+    if (!g) {
+      // Not a repo (or git disabled): keep the label so the line reads
+      // `git:(—)` instead of a bare `—` with no context.
+      if (!o.prefix) return [api.seg("—", { fg: "muted" })];
+      if (o.parens)
+        return [api.seg(`${o.prefix}(`, { fg: "git" }), api.seg("—", { fg: "muted" }), api.seg(")", { fg: "git" })];
+      return [api.seg(`${o.prefix} `, { fg: "git" }), api.seg("—", { fg: "muted" })];
+    }
     const segs = [];
     const kind = g.vcs === "jj" ? "jj:" : o.prefix;
     if (kind) segs.push(api.seg(o.parens ? `${kind}(` : `${kind} `, { fg: "git" }));
@@ -101,10 +108,10 @@ export const gitLines = defineWidget<{ source: "session" | "worktree"; hideZero:
     let add = 0;
     let del = 0;
     if (o.source === "worktree") {
-      const d = ctx.gitStatus?.lineDiff;
-      if (!d) return null;
-      add = d.added;
-      del = d.deleted;
+      // No repo → no worktree diff: hide instead of emitting a bare `—`.
+      if (!ctx.gitStatus) return null;
+      add = ctx.gitStatus.lineDiff?.added ?? 0;
+      del = ctx.gitStatus.lineDiff?.deleted ?? 0;
     } else {
       const c = stdin(ctx).cost;
       add = Math.max(0, (c?.total_lines_added ?? 0) - (ctx.reset?.linesAdded ?? 0));
