@@ -57,9 +57,12 @@ interface State {
   saving: boolean;
   installed: boolean | null;
   advanced: boolean;
+  /** Undo stack of pre-edit snapshots (cap 30); typing bursts coalesce into one step. */
+  past: FooterConfig[];
 
   init(): Promise<void>;
   setConfig(mutate: (c: FooterConfig) => void): void;
+  undo(): void;
   setSample(id: string | null): void;
   setColumns(n: number): void;
   setColumnsMode(m: "auto" | number): void;
@@ -111,6 +114,7 @@ export const useStore = create<State>((set, get) => ({
   saving: false,
   installed: null,
   advanced: localStorage.getItem("ssp.advanced") === "1",
+  past: [],
 
   async init() {
     try {
@@ -135,9 +139,20 @@ export const useStore = create<State>((set, get) => ({
     }
   },
 
-  setConfig(mutate) {
-    const c = structuredClone(get().config!);
+  setConfig(mutate, undoable = true) {
+    const before = get().config!;
+    const c = structuredClone(before);
     mutate(c);
+    if (JSON.stringify(c) === JSON.stringify(before)) return;
+    if (undoable) {
+      // Coalesce keystroke bursts: one undo step per 1.5s of continuous editing.
+      const past = get().past;
+      const lastPush = (get() as unknown as { _lastPushAt?: number })._lastPushAt ?? 0;
+      if (Date.now() - lastPush > 1500 || past.length === 0 || JSON.stringify(past[past.length - 1]) !== JSON.stringify(before)) {
+        (get() as unknown as { _lastPushAt?: number })._lastPushAt = Date.now();
+        set({ past: [...past.slice(-29), structuredClone(before)] });
+      }
+    }
     set({ config: c });
     if (previewTimer) clearTimeout(previewTimer);
     previewTimer = setTimeout(() => void get().refreshPreview(), 120);
@@ -164,6 +179,17 @@ export const useStore = create<State>((set, get) => ({
     if (typeof m === "number") get().setColumns(m);
   },
 
+  undo() {
+    const past = get().past;
+    const prev = past[past.length - 1];
+    if (!prev) return;
+    set({ past: past.slice(0, -1), config: structuredClone(prev), selection: null });
+    if (previewTimer) clearTimeout(previewTimer);
+    previewTimer = setTimeout(() => void get().refreshPreview(), 120);
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => void get().saveNow(), 800);
+  },
+
   select: (selection) => set({ selection, picker: null }),
   openPicker: (line, zone) => set({ picker: { line, zone }, selection: null }),
   closePicker: () => set({ picker: null }),
@@ -180,7 +206,7 @@ export const useStore = create<State>((set, get) => ({
     get().setConfig((c) => {
       zoneOf(c.lines[sel.line]!, sel.zone).splice(sel.index, 1);
     });
-    set({ selection: null });
+    set({ selection: null, toast: "已移除，可按 Ctrl/⌘+Z 撤销" });
   },
 
   moveWidget(from, toLine, toZone, toIndex) {
@@ -212,7 +238,7 @@ export const useStore = create<State>((set, get) => ({
     get().setConfig((c) => {
       c.lines.splice(i, 1);
     });
-    set({ selection: null });
+    set({ selection: null, toast: "已删除整行，可按 Ctrl/⌘+Z 撤销" });
   },
 
   moveLine(i, dir) {
@@ -236,7 +262,7 @@ export const useStore = create<State>((set, get) => ({
     get().setConfig((c) => {
       c.lines = structuredClone(PRESETS[id].lines);
     });
-    set({ selection: null });
+    set({ selection: null, toast: "已整体替换布局，可按 Ctrl/⌘+Z 撤销" });
   },
 
   async saveNow(scope = "user") {
@@ -249,6 +275,11 @@ export const useStore = create<State>((set, get) => ({
       // Adopt the server's normalized shape so "dirty" compares like with like — unless the user kept editing meanwhile.
       const unchanged = JSON.stringify(get().config) === snapshot;
       set({ saved: structuredClone(eff.config), layers: eff.layers, saving: false, ...(unchanged ? { config: eff.config } : {}) });
+      if (scope === "project") {
+        // Project `lines` replaces the user layer wholesale: later panel edits keep
+        // going to the user file and will NOT show in the row layout. Say so once.
+        set({ toast: "已存为项目配置：它的行布局会整体覆盖用户级，之后面板里的改动只影响非行布局部分" });
+      }
       // `render` re-reads the config file on every tick, but Claude Code only runs it when
       // settings.json points at us — so the first successful save auto-applies (idempotent,
       // no backup spam). After that the button is just a repair entry.

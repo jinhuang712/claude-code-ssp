@@ -68,8 +68,6 @@ export function Preview() {
     t.write(lines.join("\r\n"));
   }, [preview, previewColumns, columns]);
 
-  const live = samples.filter((s) => s.source === "live");
-  const fixture = samples.find((s) => s.source === "fixture");
   const shown = preview?.lines.length ?? 0;
   const hidden = Math.max(0, lineCount - shown);
   const filledCount = preview?.empty?.filter((e) => e.filled).length ?? 0;
@@ -108,18 +106,19 @@ export function Preview() {
             />
           )}
         </div>
-        <div className="seg">
-          {live[0] && (
-            <button data-active={sampleId === live[0].id} onClick={() => setSample(live[0]!.id)} title={live[0].label}>
-              我的会话
-            </button>
-          )}
-          {fixture && (
-            <button data-active={sampleId === fixture.id} onClick={() => setSample(fixture.id)}>
-              示例数据
-            </button>
-          )}
-        </div>
+        <select
+          className="field !w-auto !py-0.5"
+          value={sampleId ?? ""}
+          onChange={(e) => setSample(e.target.value || null)}
+          title="预览用哪份数据：你的真实会话快照，或内置示例"
+        >
+          {samples.length === 0 && <option value="">没有可用数据</option>}
+          {samples.map((sm) => (
+            <option key={sm.id} value={sm.id}>
+              {sm.source === "live" ? `我的会话 · ${sm.label}` : `示例 · ${sm.label}`}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="term" data-fixed={columnsMode !== "auto"}>
         <div ref={host} className="w-full" />
