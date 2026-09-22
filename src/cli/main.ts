@@ -50,11 +50,30 @@ async function main(): Promise<void> {
       const { serve } = await import("../server/serve.js");
       return serve({ port: Number(arg("port", argv) ?? 4877), open: argv.includes("--open") });
     }
-    case "install":
+    case "install": {
+      const { install, planInstall, NeedsConfirmError } = await import("../server/install.js");
+      if (argv.includes("--dry-run")) {
+        console.log(JSON.stringify(planInstall(), null, 2));
+        return;
+      }
+      try {
+        const r = install({ confirmReplace: argv.includes("--replace") });
+        if (r.unchanged) console.log(`statusLine already installed in ${r.settingsFile} — nothing to do`);
+        else console.log(`installed statusLine → ${r.settingsFile}${r.backup ? ` (backup: ${r.backup})` : ""}`);
+      } catch (err) {
+        if (!(err instanceof NeedsConfirmError)) throw err;
+        const cmdText = (err.current as { command?: unknown } | null)?.command;
+        console.log(`settings.json already has another statusLine${typeof cmdText === "string" ? `: ${cmdText}` : ""}`);
+        console.log("re-run with --replace to use claude-code-ssp instead; `uninstall` puts the old one back");
+        process.exitCode = 1;
+      }
+      return;
+    }
     case "uninstall": {
-      const { install, uninstall } = await import("../server/install.js");
-      if (cmd === "install") install({ dryRun: argv.includes("--dry-run") });
-      else uninstall();
+      const { uninstall } = await import("../server/install.js");
+      const r = uninstall();
+      if (!r.removed) console.log(`the statusLine in ${r.settingsFile} isn't claude-code-ssp's — left untouched`);
+      else console.log(`statusLine ${r.restored ? "restored to the previous one" : "removed"} in ${r.settingsFile}${r.backup ? ` (backup: ${r.backup})` : ""}`);
       return;
     }
     case "reset": {
@@ -88,8 +107,9 @@ async function main(): Promise<void> {
   render            read Claude Code statusline JSON on stdin, print the status line (default)
   serve [--port N] [--open]   start the local web configurator (127.0.0.1:4877)
   reset [--undo]    zero the session counters (cost, tokens, api calls, lines) from now on
-  install [--dry-run]         merge statusLine into ~/.claude/settings.json (with backup)
-  uninstall                   remove the statusLine entry we installed
+  install [--dry-run] [--replace]  merge statusLine into ~/.claude/settings.json (with backup);
+                              --replace is needed when another statusline is set (kept for uninstall)
+  uninstall                   remove our statusLine entry and restore the one it replaced
   doctor                      show effective config, layers, plugins, last sample, timing
 `);
       return;

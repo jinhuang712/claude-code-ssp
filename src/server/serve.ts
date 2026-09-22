@@ -207,7 +207,7 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
       return r ? json(r) : json({ error: "no captured session yet" }, 404);
     }
     case "GET /api/install":
-      return json(planInstall({ dryRun: true }));
+      return json(planInstall());
     case "POST /api/install": {
       const r = install();
       return json(r);
