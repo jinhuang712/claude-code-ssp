@@ -11,7 +11,7 @@
     "serve": "bun run src/cli/main.ts serve",
     "serve:sandbox": "bun run src/cli/main.ts serve --sandbox",
     "dev:web": "bun run --cwd web dev",
-    "build:web": "bun run --cwd web build",
+    "build:web": "bun run --cwd web build && bun scripts/web-hash.ts --write",
     "build": "bun run build:web",
     "test": "bun test",
     "typecheck": "tsc --noEmit -p tsconfig.json"
