@@ -180,6 +180,7 @@ export const zh: Messages = {
     on: "开",
     off: "关",
     noDifference: "当前数据下看不出区别",
+    needs: (field, value) => `仅在「${field}」为「${value}」时生效`,
     position: "位置",
     lineN: (n) => `第 ${n} 行`,
     color: "颜色",

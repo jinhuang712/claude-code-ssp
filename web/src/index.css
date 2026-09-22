@@ -848,6 +848,19 @@ input[type="checkbox"] {
 .row-top {
   align-items: flex-start;
 }
+/* An option that can't affect the output right now (x-requires unmet): dimmed, reason underneath. */
+.field-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.field-wrap[data-inactive="true"] > :first-child {
+  opacity: 0.5;
+}
+.needs {
+  font-style: italic;
+}
+
 /* Boolean options: the two outcomes stacked, tagged On / Off, the current one emphasised. */
 .bool {
   display: flex;

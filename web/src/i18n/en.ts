@@ -186,6 +186,7 @@ export const en = {
     on: "On",
     off: "Off",
     noDifference: "No visible difference with the current data",
+    needs: (field: string, value: string) => `Only applies when “${field}” is ${value}`,
     position: "Position",
     lineN: (n: number) => `Line ${n}`,
     color: "Color",

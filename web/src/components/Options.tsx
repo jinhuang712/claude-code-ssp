@@ -79,7 +79,35 @@ function BoolField({ title, current, inst, name, onChange }: { title: string; cu
   );
 }
 
-function Field({ name, schema, value, fallback, inst, onChange }: { name: string; schema: JsonSchema; value: unknown; fallback: unknown; inst: WidgetInstance; onChange: (v: unknown) => void }) {
+/**
+ * Why an option currently has no effect, from its schema's `x-requires` (e.g. cacheGlyph needs
+ * style = arrows): the first unmet requirement as a sentence, or null when it applies.
+ */
+function unmetRequirement(t: ReturnType<typeof useT>, widgetId: string, schema: JsonSchema, inst: WidgetInstance, defaults: Record<string, unknown>, siblings: Record<string, JsonSchema>): string | null {
+  const req = schema["x-requires"];
+  if (!req || typeof req !== "object") return null;
+  for (const [k, want] of Object.entries(req as Record<string, unknown>)) {
+    const cur = inst.options?.[k] !== undefined ? inst.options[k] : defaults[k];
+    if (cur === want) continue;
+    const valueLabel = typeof want === "boolean" ? (want ? t.options.on : t.options.off) : enumLabel(t, widgetId, k, String(want));
+    return t.options.needs(fieldTitle(t, k, siblings[k] ?? {}), valueLabel);
+  }
+  return null;
+}
+
+/** An option row, dimmed with a one-line reason when it can't affect the output right now. */
+function Field(props: { name: string; schema: JsonSchema; value: unknown; fallback: unknown; inst: WidgetInstance; defaults: Record<string, unknown>; siblings: Record<string, JsonSchema>; onChange: (v: unknown) => void }) {
+  const t = useT();
+  const needs = unmetRequirement(t, props.inst.widget, props.schema, props.inst, props.defaults, props.siblings);
+  return (
+    <div className="field-wrap" data-inactive={needs !== null}>
+      <FieldControl {...props} />
+      {needs && <span className="hint needs">{needs}</span>}
+    </div>
+  );
+}
+
+function FieldControl({ name, schema, value, fallback, inst, onChange }: { name: string; schema: JsonSchema; value: unknown; fallback: unknown; inst: WidgetInstance; onChange: (v: unknown) => void }) {
   const t = useT();
   const id = useId();
   const { base, nullable } = typeOf(schema);
@@ -271,6 +299,8 @@ function OptionsBody() {
             value={w.options?.[name]}
             fallback={manifest?.defaults[name]}
             inst={w}
+            defaults={manifest?.defaults ?? {}}
+            siblings={manifest?.schema.properties ?? {}}
             onChange={(v) =>
               s.updateAt(sel, (inst) => {
                 inst.options = { ...(inst.options ?? {}), [name]: v };
