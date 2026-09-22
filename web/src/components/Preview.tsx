@@ -3,6 +3,7 @@ import { Terminal } from "@xterm/xterm";
 import { useEffect, useRef } from "react";
 import { useT } from "../i18n";
 import { useStore } from "../store";
+import { TERM_THEMES, termScheme, useTheme, type TermBg } from "../theme";
 
 export function Preview() {
   const t = useT();
@@ -18,6 +19,9 @@ export function Preview() {
   const sampleId = useStore((s) => s.sampleId);
   const setSample = useStore((s) => s.setSample);
   const lineCount = useStore((s) => s.config?.lines.length ?? 0);
+  const termBg = useTheme((s) => s.termBg);
+  const setTermBg = useTheme((s) => s.setTermBg);
+  const scheme = useTheme(termScheme);
 
   useEffect(() => {
     if (!host.current) return;
@@ -29,7 +33,7 @@ export function Preview() {
       fontFamily: 'ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace',
       fontSize: 13,
       lineHeight: 1.25,
-      theme: { background: "#0b0e13", foreground: "#dfe4ec", cursor: "#0b0e13" },
+      theme: TERM_THEMES[termScheme(useTheme.getState())],
     });
     const f = new FitAddon();
     xt.loadAddon(f);
@@ -49,6 +53,11 @@ export function Preview() {
       term.current = null;
     };
   }, [setColumns]);
+
+  // Repaint in place when the terminal background changes; xterm re-renders the buffer itself.
+  useEffect(() => {
+    if (term.current) term.current.options.theme = TERM_THEMES[scheme];
+  }, [scheme]);
 
   // Switching back to "auto" re-measures immediately instead of waiting for a resize.
   useEffect(() => {
@@ -112,6 +121,11 @@ export function Preview() {
             />
           )}
         </div>
+        <select className="field !w-auto !py-0.5" value={termBg} onChange={(e) => setTermBg(e.target.value as TermBg)} title={t.preview.terminal} aria-label={t.preview.terminal}>
+          <option value="auto">{t.preview.termAuto}</option>
+          <option value="dark">{t.preview.termDark}</option>
+          <option value="light">{t.preview.termLight}</option>
+        </select>
         <select className="field !w-auto !py-0.5" value={sampleId ?? ""} onChange={(e) => setSample(e.target.value || null)} title={t.preview.sample} aria-label={t.preview.sample}>
           {samples.length === 0 && <option value="">{t.preview.noSamples}</option>}
           {samples.map((sm) => (
@@ -121,7 +135,7 @@ export function Preview() {
           ))}
         </select>
       </div>
-      <div className="term" data-fixed={columnsMode !== "auto"}>
+      <div className="term" data-fixed={columnsMode !== "auto"} data-scheme={scheme}>
         <div ref={host} className="w-full" />
       </div>
       {preview?.errors.length ? <p className="term-errors">{preview.errors.map((e) => `${e.widget}: ${e.message}`).join("　")}</p> : null}
