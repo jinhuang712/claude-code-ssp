@@ -47,6 +47,8 @@
 
   --bg: #1f1e1c;
   --bg-deep: #181715;
+  /* Recessed wells inside a panel: layout rows, sketches, code. */
+  --sunken: #1c1b19;
   --panel: #262523;
   --panel-2: #302f2c;
   --line: #34332f;
@@ -80,6 +82,7 @@
   color-scheme: light;
   --bg: #faf9f5;
   --bg-deep: #ffffff;
+  --sunken: #f7f6f1;
   --panel: #ffffff;
   --panel-2: #f0eee6;
   --line: #e8e6dc;
@@ -259,20 +262,28 @@ button:disabled {
   background: var(--danger);
 }
 
+/* Sections: a serif title with its one-line explanation underneath, then the content. */
 .section {
-  margin-top: 40px;
+  margin-top: var(--sp-7);
 }
 .section-head {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-bottom: 10px;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--sp-3);
+}
+.section-head > .hint {
+  margin: 0;
+  max-width: 75ch;
+  font-size: var(--fs-sm);
 }
 .h2 {
   margin: 0;
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  color: var(--fg-2);
+  font-family: var(--font-serif);
+  font-size: var(--fs-xl);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--fg);
 }
 .hint {
   font-size: var(--fs-xs);
@@ -1082,12 +1093,81 @@ input[type="checkbox"] {
   border-color: var(--clay);
   box-shadow: inset 0 0 0 1px var(--clay);
 }
-.choice-tall {
-  height: auto;
-  padding: 7px 11px;
+/* Preset cards: a sketch of the layout on top, name and what it adds underneath. */
+.presets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+.preset {
+  display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-2);
+  background: var(--panel);
+  text-align: left;
+  transition: border-color 0.12s, background 0.12s;
+}
+.preset:hover {
+  border-color: var(--field-line);
+}
+.preset[data-active="true"] {
+  border-color: var(--clay);
+  background: color-mix(in srgb, var(--clay) 7%, var(--panel));
+  box-shadow: inset 0 0 0 1px var(--clay);
+}
+.preset-text {
+  display: flex;
+  flex-direction: column;
   gap: 2px;
+  padding: 0 2px;
+}
+.preset-name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.preset-name small,
+.preset-blurb {
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--muted);
+}
+.sketch {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 12px;
+  border-radius: var(--r-1);
+  background: var(--sunken);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.sk-line {
+  display: flex;
+  gap: 12px;
+  height: 6px;
+}
+.sk-zone {
+  display: flex;
+  flex: 1 1 0;
+  gap: 3px;
+  min-width: 0;
+}
+.sk-zone:last-child {
+  justify-content: flex-end;
+}
+.sk-zone > i {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 4px;
+  height: 100%;
+  border-radius: 3px;
+  opacity: 0.9;
 }
 
 /* ---- overlays ---- */
@@ -1280,6 +1360,20 @@ input[type="checkbox"] {
 @media (max-width: 720px) {
   .wrap {
     padding: 0 16px;
+  }
+  /* Presets become a list: sketch on the left, text beside it. */
+  .presets {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-2);
+  }
+  .preset {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  .preset .sketch {
+    flex: none;
+    width: 112px;
   }
   .masthead {
     padding: 12px 0;

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { FooterConfig } from "./api";
+import type { FooterConfig, LineConfig } from "./api";
 import { Advanced, Diagnostics } from "./components/Advanced";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
@@ -8,7 +8,7 @@ import { Options } from "./components/Options";
 import { Picker } from "./components/Picker";
 import { Preview } from "./components/Preview";
 import { TextField } from "./components/TextField";
-import { uiColor } from "./colors";
+import { CAT_COLOR, uiColor } from "./colors";
 import { HTML_LANG, useLang, useT, type Messages } from "./i18n";
 import { PRESETS, useStore, type PresetId } from "./store";
 import { useTheme } from "./theme";
@@ -66,6 +66,39 @@ function Welcome() {
   );
 }
 
+/** The most lines any preset has: every sketch reserves this many rows so the cards line up. */
+const SKETCH_ROWS = Math.max(...Object.values(PRESETS).map((p) => p.lines.length));
+
+/**
+ * A preset's layout drawn as a thumbnail: one row per line, one bar per widget in its category
+ * colour, left and right zones pushed apart as on the real line. Bar widths follow the length of
+ * each widget's sample output, so a wide widget (a context bar) reads wider than a short one.
+ */
+function PresetSketch({ lines }: { lines: LineConfig[] }) {
+  const widgets = useStore((s) => s.widgets);
+  const bar = (id: string, i: number) => {
+    const m = widgets.find((w) => w.id === id);
+    const cat = m?.category ?? id.split(".")[0] ?? "misc";
+    // A sample's length ≈ its rendered width in columns; as a share of a ~60-column line it scales
+    // with the card. Bars may shrink (flex) when a busy line would overflow, but keep their ratios.
+    const share = Math.min(40, Math.max(6, ((m?.sample?.length ?? 10) / 60) * 100));
+    return <i key={i} style={{ flexBasis: `${share}%`, background: CAT_COLOR[cat] ?? CAT_COLOR.misc }} />;
+  };
+  return (
+    <span className="sketch" aria-hidden="true">
+      {Array.from({ length: SKETCH_ROWS }, (_, r) => {
+        const l = lines[r];
+        return (
+          <span key={r} className="sk-line" data-empty={!l}>
+            <span className="sk-zone">{(l?.left ?? []).map((w, i) => bar(w.widget, i))}</span>
+            <span className="sk-zone">{(l?.right ?? []).map((w, i) => bar(w.widget, i))}</span>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 function Presets() {
   const t = useT();
   const config = useStore((s) => s.config)!;
@@ -77,30 +110,36 @@ function Presets() {
   const sig = (lines: typeof config.lines) => lines.map((l) => (["left", "center", "right"] as const).map((z) => (l[z] ?? []).map((w) => w.widget).join(",")).join("|")).join("\n");
   const current = ids.find((id) => sig(PRESETS[id].lines) === sig(config.lines));
   return (
-    <section className="section">
+    <section className="section" aria-labelledby="presets-title">
       <div className="section-head">
-        <h2 className="h2">{t.presets.title}</h2>
-        <span className="hint">
+        <h2 id="presets-title" className="h2">
+          {t.presets.title}
+        </h2>
+        <p className="hint">
           {current ? t.presets.matches : t.presets.customised} · {t.presets.hoverHint}
-        </span>
+        </p>
       </div>
-      <div className="choices">
+      <div className="presets">
         {ids.map((id) => (
           <button
             key={id}
-            className="choice choice-tall"
+            className="preset"
             data-active={current === id}
+            aria-pressed={current === id}
             {...tryOn({ lines: PRESETS[id].lines }, t.presets[id].name)}
             onClick={() => {
               applyPreset(id);
               setTryOn(null);
             }}
           >
-            <span>
-              {t.presets[id].name}
-              <small className="ml-2">{t.presets.lines(PRESETS[id].lines.length)}</small>
+            <PresetSketch lines={PRESETS[id].lines} />
+            <span className="preset-text">
+              <span className="preset-name">
+                {t.presets[id].name}
+                <small>{t.presets.lines(PRESETS[id].lines.length)}</small>
+              </span>
+              <span className="preset-blurb">{t.presets[id].blurb}</span>
             </span>
-            <small>{t.presets[id].blurb}</small>
           </button>
         ))}
       </div>
