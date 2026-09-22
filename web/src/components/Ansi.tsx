@@ -1,21 +1,18 @@
 import type { CSSProperties, ReactNode } from "react";
-import { termScheme, useTheme } from "../theme";
+import { PALETTES, termScheme, useTheme, type Palette16 } from "../theme";
 
 /**
  * Renders a line of statusline output (SGR colours + OSC 8 links) as styled spans, for the small
  * samples in the options drawer and picker. The big preview uses xterm.js; this is its lightweight
  * sibling, so samples show real colours instead of stripped plain text.
  *
- * The 16 base colours match xterm.js's default palette so a sample and the preview agree.
+ * Named colours come from the same per-background palette as the preview (theme.ts PALETTES), so
+ * a sample and the preview agree on both dark and light terminals.
  */
-const BASE16 = [
-  "#2e3436", "#cc0000", "#4e9a06", "#c4a000", "#3465a4", "#75507b", "#06989a", "#d3d7cf",
-  "#555753", "#ef2929", "#8ae234", "#fce94f", "#729fcf", "#ad7fa8", "#34e2e2", "#eeeeec",
-];
 
-/** xterm 256-colour index → hex: 0–15 base, 16–231 a 6×6×6 cube, 232–255 a grey ramp. */
-function color256(n: number): string {
-  if (n < 16) return BASE16[n]!;
+/** xterm 256-colour index → hex: 0–15 the palette, 16–231 a 6×6×6 cube, 232–255 a grey ramp. */
+function color256(n: number, base: Palette16): string {
+  if (n < 16) return base[n]!;
   if (n < 232) {
     const i = n - 16;
     const step = (v: number) => (v === 0 ? 0 : 55 + v * 40);
@@ -38,7 +35,7 @@ interface Sgr {
 }
 
 /** Apply one SGR parameter list to the running style (mutates and returns it). */
-function applySgr(st: Sgr, params: number[]): Sgr {
+function applySgr(st: Sgr, params: number[], BASE16: Palette16): Sgr {
   if (params.length === 0) params = [0];
   for (let i = 0; i < params.length; i++) {
     const p = params[i]!;
@@ -64,7 +61,7 @@ function applySgr(st: Sgr, params: number[]): Sgr {
       // Extended colour: 38;5;n (256) or 38;2;r;g;b (truecolor). Consumes the extra parameters.
       const key = p === 38 ? "fg" : "bg";
       if (params[i + 1] === 5) {
-        st[key] = color256(params[i + 2] ?? 0);
+        st[key] = color256(params[i + 2] ?? 0, BASE16);
         i += 2;
       } else if (params[i + 1] === 2) {
         st[key] = `rgb(${params[i + 2] ?? 0},${params[i + 3] ?? 0},${params[i + 4] ?? 0})`;
@@ -95,14 +92,14 @@ function styleOf(st: Sgr): CSSProperties {
 const TOKEN = /\x1b\[([0-9;]*)m|\x1b\]8;[^;\x07\x1b]*;([^\x07\x1b]*)(?:\x07|\x1b\\)/g;
 
 /** Parse into [text, style, href] runs. Exported for tests and for plain-text fallbacks. */
-export function parseAnsi(input: string): Array<{ text: string; style: CSSProperties; href: string | null }> {
+export function parseAnsi(input: string, palette: Palette16 = PALETTES.dark): Array<{ text: string; style: CSSProperties; href: string | null }> {
   const runs: Array<{ text: string; style: CSSProperties; href: string | null }> = [];
   const st: Sgr = {};
   let href: string | null = null;
   let last = 0;
   for (const m of input.matchAll(TOKEN)) {
     if (m.index! > last) runs.push({ text: input.slice(last, m.index), style: styleOf(st), href });
-    if (m[1] !== undefined) applySgr(st, m[1] === "" ? [] : m[1].split(";").map(Number));
+    if (m[1] !== undefined) applySgr(st, m[1] === "" ? [] : m[1].split(";").map(Number), palette);
     else href = m[2] ? m[2] : null;
     last = m.index! + m[0].length;
   }
@@ -113,7 +110,7 @@ export function parseAnsi(input: string): Array<{ text: string; style: CSSProper
 /** One sample on a patch of terminal ground (dark or light, following the preview's setting). */
 export function Ansi({ text, className, fallback }: { text: string; className?: string; fallback?: ReactNode }) {
   const scheme = useTheme(termScheme);
-  const runs = parseAnsi(text);
+  const runs = parseAnsi(text, PALETTES[scheme]);
   const empty = runs.every((r) => r.text.trim() === "");
   return (
     <span className={`ansi mono ${className ?? ""}`} data-scheme={scheme}>

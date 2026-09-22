@@ -22,6 +22,8 @@ const NAMED: Record<string, string> = {
 
 export function uiColor(v: string | undefined, fallback = "#8a94a6"): string {
   if (!v) return fallback;
+  // The terminal's own foreground: in the panel that is simply the current text colour.
+  if (v === "default") return "currentColor";
   if (v.startsWith("#")) return v;
   return NAMED[v] ?? fallback;
 }

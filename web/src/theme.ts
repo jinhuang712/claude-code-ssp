@@ -75,12 +75,31 @@ export function termScheme(s: Pick<ThemeState, "termBg" | "scheme">): Scheme {
   return s.termBg === "auto" ? s.scheme : s.termBg;
 }
 
+/** The 16 ANSI colours in xterm order: black red green yellow blue magenta cyan white, then bright. */
+export type Palette16 = readonly [string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string];
+
 /**
- * xterm palettes for the two terminal backgrounds. Foregrounds mirror common terminal defaults
- * (light ≈ macOS Terminal "Basic", dark ≈ the panel's own deep background) so dim/muted segments
- * are judged against a realistic ground.
+ * ANSI palettes for the two grounds. Named colours ("yellow", "green"…) are drawn from the
+ * *terminal's* palette, so the preview must use a realistic one per background:
+ * - dark: xterm.js's defaults;
+ * - light: macOS Terminal "Basic" — light-background terminals ship darker ANSI colours (yellow
+ *   #999900, not #c4a000), and using the dark palette on white would understate contrast problems.
  */
-export const TERM_THEMES: Record<Scheme, { background: string; foreground: string; cursor: string; selectionBackground: string }> = {
-  dark: { background: "#0b0e13", foreground: "#dfe4ec", cursor: "#0b0e13", selectionBackground: "#2a3342" },
-  light: { background: "#ffffff", foreground: "#1f2328", cursor: "#ffffff", selectionBackground: "#cfe3ff" },
+export const PALETTES: Record<Scheme, Palette16> = {
+  dark: ["#2e3436", "#cc0000", "#4e9a06", "#c4a000", "#3465a4", "#75507b", "#06989a", "#d3d7cf", "#555753", "#ef2929", "#8ae234", "#fce94f", "#729fcf", "#ad7fa8", "#34e2e2", "#eeeeec"],
+  light: ["#000000", "#990000", "#00a600", "#999900", "#0000b2", "#b200b2", "#00a6b2", "#bfbfbf", "#666666", "#e50000", "#00d900", "#e5e500", "#0000ff", "#e500e5", "#00e5e5", "#e5e5e5"],
+};
+
+const xtermPalette = (p: Palette16) => ({
+  black: p[0], red: p[1], green: p[2], yellow: p[3], blue: p[4], magenta: p[5], cyan: p[6], white: p[7],
+  brightBlack: p[8], brightRed: p[9], brightGreen: p[10], brightYellow: p[11], brightBlue: p[12], brightMagenta: p[13], brightCyan: p[14], brightWhite: p[15],
+});
+
+/**
+ * xterm themes for the two terminal backgrounds. Foregrounds mirror common terminal defaults so
+ * dim/muted segments are judged against a realistic ground.
+ */
+export const TERM_THEMES: Record<Scheme, Record<string, string>> = {
+  dark: { background: "#0b0e13", foreground: "#dfe4ec", cursor: "#0b0e13", selectionBackground: "#2a3342", ...xtermPalette(PALETTES.dark) },
+  light: { background: "#ffffff", foreground: "#1f2328", cursor: "#ffffff", selectionBackground: "#cfe3ff", ...xtermPalette(PALETTES.light) },
 };
