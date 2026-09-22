@@ -129,7 +129,13 @@ export function Preview() {
         word, so voice-control users can say what they see (WCAG 2.5.3 Label in Name).
       */}
       <div className="term-bar">
-        <span className="term-title">{t.preview.title}</span>
+        {/* Title and render time stay together; only the controls wrap (a lone "0.1 ms" row read as a bug). */}
+        <span className="term-title">
+          {t.preview.title}
+          <span className="meta mono" title={t.preview.renderTime}>
+            {preview ? `${preview.ms.toFixed(1)} ms` : ""}
+          </span>
+        </span>
         <div className="term-controls">
           <label className="tb tb-grow">
             <span className="tb-label">{t.preview.dataLabel}</span>
@@ -176,9 +182,6 @@ export function Preview() {
             </select>
           </label>
         </div>
-        <span className="meta mono" title={t.preview.renderTime}>
-          {preview ? `${preview.ms.toFixed(1)} ms` : ""}
-        </span>
       </div>
       <div className="term" data-fixed={columnsMode !== "auto"} data-scheme={scheme}>
         {/*

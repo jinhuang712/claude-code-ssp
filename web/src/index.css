@@ -548,11 +548,18 @@ input[type="checkbox"] {
   color: var(--muted);
 }
 .term-title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
   font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--fg);
+  white-space: nowrap;
 }
 .term-bar .meta {
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 /* One labelled toolbar control: a muted word, then the select. */
@@ -566,8 +573,10 @@ input[type="checkbox"] {
   color: var(--muted);
   white-space: nowrap;
 }
+/* The data picker gives way first: it shrinks toward 200px before any control wraps. */
 .tb-grow {
-  flex: 0 1 380px;
+  flex: 1 1 200px;
+  max-width: 420px;
 }
 .term {
   padding: 10px 16px 14px;
