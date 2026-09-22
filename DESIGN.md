@@ -124,4 +124,4 @@ Claude Code debounces at 300 ms and kills in-flight scripts. Target **< 40 ms wa
 ## Data root
 
 `$CLAUDE_CONFIG_DIR/plugins/claude-code-ssp/` (defaults to `~/.claude/plugins/claude-code-ssp/`): transcript-cache,
-context-cache, speed-cache, config-cache, samples. Files 0600, dirs 0700, temp+rename writes (inherited conventions).
+context-cache, config-cache, samples. Files 0600, dirs 0700, temp+rename writes (inherited conventions).

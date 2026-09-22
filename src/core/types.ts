@@ -3,6 +3,7 @@
  * Everything here is plain data — no I/O.
  */
 import type { RenderContext as DataContext } from "../data/types.js";
+import type { ResponseSpeed } from "./response-speed.js";
 import type { ResetBaseline } from "./reset.js";
 
 /** Theme token or literal color ("#rrggbb", "208", "red", "brightBlue"). */
@@ -120,6 +121,8 @@ export interface Ctx extends DataContext {
   theme: ThemeDef;
   /** Counter baseline recorded by `/ssp:reset` for this session, if any. */
   reset: ResetBaseline | null;
+  /** Output speed of the latest long-enough response, from the transcript tail (see response-speed.ts). */
+  responseSpeed?: ResponseSpeed | null;
 }
 
 export interface WidgetApi {

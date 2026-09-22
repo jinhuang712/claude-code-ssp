@@ -72,14 +72,14 @@ export const tokensCurrent = defineWidget<{ label: string | null; showWindow: bo
 export const tokensSpeed = defineWidget<{ label: string | null }>({
   id: "tokens.outputSpeed",
   name: "Output speed",
-  description: "Output tokens per second (needs two consecutive renders during streaming).",
+  description: "Output speed of the latest response, in tokens per second (end to end, so time to first token is included; replies under 200 tokens are skipped).",
   category: "usage",
   sample: "42 tok/s",
   schema: { type: "object", properties: { label: { ...labelSchema, default: null } } },
   defaults: { label: null },
   render(ctx, o, api) {
-    const speed = (ctx as unknown as { outputSpeed?: number | null }).outputSpeed;
-    if (typeof speed !== "number") return null;
+    const speed = ctx.responseSpeed?.tokensPerSecond;
+    if (typeof speed !== "number" || !Number.isFinite(speed)) return null;
     const label = withLabel(o.label, "");
     return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), api.seg(`${speed.toFixed(speed < 10 ? 1 : 0)} tok/s`, { fg: "muted" })];
   },

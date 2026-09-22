@@ -8,6 +8,7 @@ import { countConfigs } from "../data/config-reader.js";
 import { resolveEffortLevel } from "../data/effort.js";
 import { getUsageFromStdin } from "../data/stdin.js";
 import { parseTranscript } from "../data/transcript.js";
+import { lastResponseSpeed } from "./response-speed.js";
 import type { StdinData, TranscriptData } from "../data/types.js";
 import { formatDuration } from "./api.js";
 import type { Ctx, FooterConfig } from "./types.js";
@@ -95,5 +96,7 @@ export async function buildContext(stdin: StdinData, config: FooterConfig, opts:
     columns: opts.columns ?? resolveColumns(process.env, config.columnsOffset),
     now,
     reset: readBaseline(stdin.session_id),
+    // A single tail read of the transcript; cheap enough to do on every render.
+    responseSpeed: lastResponseSpeed(stdin.transcript_path),
   };
 }
