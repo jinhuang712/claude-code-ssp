@@ -1,0 +1,4 @@
+{
+  "check": "bun run typecheck && bun run --cwd web build",
+  "test": "bun test"
+}
