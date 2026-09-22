@@ -36,11 +36,19 @@ async function cmdRender(argv: string[]): Promise<void> {
   const columnsArg = arg("columns", argv);
   const ctx = await buildContext(stdin!, config, { columns: columnsArg ? Number(columnsArg) : undefined });
   const result = render(config, ctx);
-  for (const line of result.lines) console.log(line);
+  // One write, awaited until flushed: main() exits right after this returns, and a pipe write
+  // still sitting in a buffer would be cut off.
+  await writeFully(process.stdout, result.lines.map((line) => `${line}\n`).join(""));
   if (process.env.CLAUDE_CODE_SSP_DEBUG) {
-    console.error(`[claude-code-ssp] render ${result.ms.toFixed(1)}ms total ${(performance.now() - started).toFixed(1)}ms`);
-    for (const e of result.errors) console.error(`[claude-code-ssp] ${e.widget}: ${e.message}`);
+    const debug = [`[claude-code-ssp] render ${result.ms.toFixed(1)}ms total ${(performance.now() - started).toFixed(1)}ms`, ...result.errors.map((e) => `[claude-code-ssp] ${e.widget}: ${e.message}`)];
+    await writeFully(process.stderr, debug.map((l) => `${l}\n`).join(""));
   }
+}
+
+/** Resolve once `text` has been handed to the OS, so exiting afterwards can't truncate it. */
+function writeFully(stream: NodeJS.WriteStream, text: string): Promise<void> {
+  if (!text) return Promise.resolve();
+  return new Promise((resolve) => stream.write(text, () => resolve()));
 }
 
 async function main(): Promise<void> {
@@ -48,7 +56,13 @@ async function main(): Promise<void> {
   const cmd = argv[0] ?? "render";
   switch (cmd) {
     case "render":
-      return cmdRender(argv);
+      await cmdRender(argv);
+      // Exit now rather than when the event loop drains. Work that lost a deadline race (a git call
+      // past the VCS deadline, a slow transcript read, their timeout timers) would otherwise keep
+      // this process alive for seconds after the line is printed, and Claude Code treats the
+      // statusline as busy until it exits. Nothing is lost: a late git status is finished by the
+      // detached helper (see core/vcs-cache.ts), and the transcript is re-read incrementally.
+      process.exit(0);
     case "serve": {
       const { serve } = await import("../server/serve.js");
       const sandbox = argv.includes("--sandbox");
