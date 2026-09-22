@@ -445,19 +445,75 @@ input[type="checkbox"] {
   color: var(--fg-2);
 }
 
-/* theme strip: the theme's own tokens laid out like a tiny statusline */
+/* ---- style card: one labelled row per setting ---- */
+/* Rows carry their own padding so the rules between them run edge to edge (beats .card's padding). */
+.card.style-card {
+  padding: 0;
+}
+.style-row {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: var(--sp-2) var(--sp-5);
+  align-items: start;
+  padding: var(--sp-4);
+}
+.style-row + .style-row {
+  border-top: 1px solid var(--line);
+}
+.style-label h3 {
+  margin: 6px 0 2px;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--fg);
+}
+.style-label .hint {
+  margin: 0;
+}
+
+/*
+  Theme strip: the theme's own tokens laid out like a tiny statusline, on a patch of the preview's
+  terminal ground (data-scheme) so colours are judged where they will be seen.
+*/
 .strip {
   display: inline-flex;
-  height: 10px;
-  border-radius: 2px;
-  overflow: hidden;
-  background: var(--bg-deep);
-  /* Keeps near-white themes (mono) visible on the light panel. */
-  box-shadow: 0 0 0 1px var(--line);
+  gap: 2px;
+  height: 18px;
+  padding: 5px 6px;
+  border-radius: 4px;
+  background: var(--term-dark);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.strip[data-scheme="light"] {
+  background: var(--term-light);
 }
 .strip > i {
   display: block;
   height: 100%;
+  border-radius: 1px;
+}
+/* The custom separator slot is its text field: no second box around it. */
+.choice-custom {
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.choice-custom .field {
+  min-height: 36px;
+}
+.choice-custom[data-active="true"] {
+  background: none;
+  box-shadow: none;
+}
+.choice-custom[data-active="true"] .field {
+  border-color: var(--clay);
+  box-shadow: inset 0 0 0 1px var(--clay);
+}
+/* Bar glyphs are text: keep them one unbreakable run at the sample size. */
+.glyphs {
+  font-size: var(--fs-sm);
+  letter-spacing: 0;
+  white-space: pre;
 }
 
 .row {
@@ -1391,6 +1447,13 @@ input[type="checkbox"] {
 @media (max-width: 720px) {
   .wrap {
     padding: 0 16px;
+  }
+  .style-row {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--sp-3);
+  }
+  .style-label h3 {
+    margin-top: 0;
   }
   /* Presets become a list: sketch on the left, text beside it. */
   .presets {

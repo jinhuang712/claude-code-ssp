@@ -122,6 +122,11 @@ export const zh: Messages = {
     addLine: "加一行",
   },
 
+  style: {
+    title: "样式",
+    hint: "在终端里的样子。悬停或键盘聚焦即可预览，点击才会应用。",
+  },
+
   themes: {
     title: "配色",
     hint: "终端里每一项用的颜色",

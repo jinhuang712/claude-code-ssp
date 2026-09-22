@@ -11,7 +11,7 @@ import { TextField } from "./components/TextField";
 import { CAT_COLOR, uiColor } from "./colors";
 import { HTML_LANG, useLang, useT, type Messages } from "./i18n";
 import { PRESETS, useStore, type PresetId } from "./store";
-import { useTheme } from "./theme";
+import { termScheme, useTheme } from "./theme";
 
 /**
  * Hover or focus a choice to see it in the preview before committing to it (the try-on never
@@ -157,6 +157,24 @@ const STRIP: Array<[string, number]> = [
   ["crit", 10],
 ];
 
+/**
+ * One labelled row of the Style card: title and explanation on the left (above, on a phone), the
+ * choices on the right. The row is a named group so a screen reader announces what the choices are for.
+ */
+function StyleRow({ id, title, hint, children }: { id: string; title: string; hint: string; children: React.ReactNode }) {
+  return (
+    <div className="style-row" role="group" aria-labelledby={`${id}-title`} aria-describedby={`${id}-hint`}>
+      <div className="style-label">
+        <h3 id={`${id}-title`}>{title}</h3>
+        <p id={`${id}-hint`} className="hint">
+          {hint}
+        </p>
+      </div>
+      <div className="choices">{children}</div>
+    </div>
+  );
+}
+
 function Themes() {
   const t = useT();
   const themes = useStore((s) => s.themes);
@@ -164,19 +182,18 @@ function Themes() {
   const setConfig = useStore((s) => s.setConfig);
   const setTryOn = useStore((s) => s.setTryOn);
   const tryOn = useTryOn();
+  // Swatches sit on the preview's terminal ground: theme colours are made for a terminal, and a
+  // pale theme on the light panel (or a dark one on the dark panel) would misrepresent them.
+  const ground = useTheme(termScheme);
   const current = typeof config.theme === "string" ? config.theme : "custom";
   return (
-    <section className="section">
-      <div className="section-head">
-        <h2 className="h2">{t.themes.title}</h2>
-        <span className="hint">{t.themes.hint}</span>
-      </div>
-      <div className="choices">
+    <StyleRow id="themes" title={t.themes.title} hint={t.themes.hint}>
         {themes.map((th) => (
           <button
             key={th.name}
             className="choice"
             data-active={current === th.name}
+            aria-pressed={current === th.name}
             {...tryOn({ theme: th.name }, th.name)}
             onClick={() => {
               setConfig((c) => {
@@ -185,7 +202,7 @@ function Themes() {
               setTryOn(null);
             }}
           >
-            <span className="strip" aria-hidden="true">
+            <span className="strip" data-scheme={ground} aria-hidden="true">
               {STRIP.map(([k, w]) => (
                 <i key={k} style={{ width: w, background: uiColor(th.tokens[k]) }} />
               ))}
@@ -193,8 +210,7 @@ function Themes() {
             {th.name}
           </button>
         ))}
-      </div>
-    </section>
+    </StyleRow>
   );
 }
 
@@ -222,17 +238,13 @@ function BarGlyphs() {
   const current = BAR_SETS.find((b) => b.id !== "theme" && config.bar?.filled === b.filled && config.bar?.empty === b.empty)?.id ?? (config.bar ? "custom" : "theme");
   const draw = (f: string, e: string) => f.repeat(4) + e.repeat(6);
   return (
-    <section className="section">
-      <div className="section-head">
-        <h2 className="h2">{t.bars.title}</h2>
-        <span className="hint">{t.bars.hint}</span>
-      </div>
-      <div className="choices">
+    <StyleRow id="bars" title={t.bars.title} hint={t.bars.hint}>
         {BAR_SETS.map((b) => (
           <button
             key={b.id}
             className="choice"
             data-active={current === b.id}
+            aria-pressed={current === b.id}
             // "Theme default" previews as the theme's own glyphs: patch them in explicitly.
             {...tryOn({ bar: b.id === "theme" ? themeBar : { filled: b.filled, empty: b.empty } }, t.bars.names[b.id])}
             onClick={() => {
@@ -243,12 +255,11 @@ function BarGlyphs() {
               setTryOn(null);
             }}
           >
-            <span className="mono">{b.id === "theme" ? draw(themeBar.filled, themeBar.empty) : draw(b.filled, b.empty)}</span>
+            <span className="mono glyphs">{b.id === "theme" ? draw(themeBar.filled, themeBar.empty) : draw(b.filled, b.empty)}</span>
             <small>{t.bars.names[b.id]}</small>
           </button>
         ))}
-      </div>
-    </section>
+    </StyleRow>
   );
 }
 
@@ -271,28 +282,42 @@ function Separators() {
     setTryOn(null);
   };
   return (
-    <section className="section">
-      <div className="section-head">
-        <h2 className="h2">{t.separators.title}</h2>
-        <span className="hint">{t.separators.hint}</span>
-      </div>
-      <div className="choices">
+    <StyleRow id="separators" title={t.separators.title} hint={t.separators.hint}>
         {SEPARATORS.map((v) => (
-          <button key={v} className="choice" data-active={sep === v} {...tryOn({ separator: v }, showSpaces(v))} onClick={() => set(v)} aria-label={showSpaces(v)}>
+          <button key={v} className="choice" data-active={sep === v} aria-pressed={sep === v} {...tryOn({ separator: v }, showSpaces(v))} onClick={() => set(v)} aria-label={showSpaces(v)}>
             <span className="mono sep-sample">
               main<b>{v}</b>42%
             </span>
           </button>
         ))}
-        <span className="choice" data-active={custom}>
+        <span className="choice choice-custom" data-active={custom}>
           {/* Empty unless the value really is custom: a preset like " │ " in a text box reads as an empty field with a caret. */}
-          <TextField className="field mono !w-24 !py-0.5" value={custom ? sep : ""} onChange={(v) => setConfig((c) => void (c.separator = v))} ariaLabel={t.separators.customLabel} placeholder={t.separators.custom} />
+          <TextField className="field mono !w-28" value={custom ? sep : ""} onChange={(v) => setConfig((c) => void (c.separator = v))} ariaLabel={t.separators.customLabel} placeholder={t.separators.custom} />
           {custom && (
             <span className="mono hint" title={t.separators.spacesShown}>
               {showSpaces(sep)}
             </span>
           )}
         </span>
+    </StyleRow>
+  );
+}
+
+/** How the statusline looks: colours, bar glyphs and the separator, as one card of labelled rows. */
+function Style() {
+  const t = useT();
+  return (
+    <section className="section" aria-labelledby="style-title">
+      <div className="section-head">
+        <h2 id="style-title" className="h2">
+          {t.style.title}
+        </h2>
+        <p className="hint">{t.style.hint}</p>
+      </div>
+      <div className="card style-card">
+        <Themes />
+        <BarGlyphs />
+        <Separators />
       </div>
     </section>
   );
@@ -391,9 +416,7 @@ export default function App() {
         <Welcome />
         <Presets />
         <Layout />
-        <Themes />
-        <BarGlyphs />
-        <Separators />
+        <Style />
         <Advanced />
         <Diagnostics />
       </main>

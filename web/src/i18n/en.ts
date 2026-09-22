@@ -130,13 +130,18 @@ export const en = {
     addLine: "Add line",
   },
 
+  style: {
+    title: "Style",
+    hint: "How it looks in your terminal. Hover or focus a choice to preview it; click to apply.",
+  },
+
   themes: {
     title: "Color theme",
     hint: "The colors every widget uses in your terminal",
   },
 
   bars: {
-    title: "Progress bar style",
+    title: "Progress bars",
     hint: "Shared by every bar (context, usage, …)",
     names: {
       theme: "Theme default",
