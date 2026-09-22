@@ -13,12 +13,18 @@ import * as usage from "./usage.js";
 
 let registered = false;
 
+function isWidgetDefinition(v: unknown): v is Parameters<typeof registerWidget>[0] {
+  return typeof v === "object" && v !== null && typeof (v as { id?: unknown }).id === "string" && typeof (v as { render?: unknown }).render === "function";
+}
+
 export function registerBuiltinWidgets(): void {
   // The flag alone isn't enough: tests call _resetRegistry(), after which a stale `true` would leave
   // the registry empty for every later caller in the same process.
   if (registered && getWidget("model.badge")) return;
   registered = true;
   for (const mod of [model, project, git, context, usage, tokens, session, cost, activity, environment, misc]) {
-    for (const def of Object.values(mod)) registerWidget(def, "builtin");
+    // Only widget definitions: a helper exported from a widget module must not reach registerWidget,
+    // which throws on anything without an id — and a throw here blanks the whole statusline.
+    for (const def of Object.values(mod)) if (isWidgetDefinition(def)) registerWidget(def, "builtin");
   }
 }

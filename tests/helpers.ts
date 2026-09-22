@@ -28,7 +28,10 @@ import * as usage from "../src/widgets/usage.ts";
 export function ensureBuiltins(): void {
   if (getWidget("model.badge")) return;
   for (const mod of [model, project, git, context, usage, tokens, session, cost, activity, environment, misc]) {
-    for (const def of Object.values(mod)) registerWidget(def, "builtin");
+    for (const def of Object.values(mod)) {
+      // Same filter as registerBuiltinWidgets: helpers exported next to widgets aren't widgets.
+      if (typeof def === "object" && def !== null && "id" in def && "render" in def) registerWidget(def as never, "builtin");
+    }
   }
 }
 
