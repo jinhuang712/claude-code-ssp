@@ -1,74 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import type { FooterConfig, JsonSchema, Style, WidgetInstance } from "../api";
-import { api } from "../api";
+import { useId } from "react";
+import type { JsonSchema, Style, WidgetInstance, Zone } from "../api";
 import { uiColor } from "../colors";
 import { enumLabel, fieldTitle, useT, widgetDesc, widgetName } from "../i18n";
-import { effectiveLabel, ownsLabel, useStore, widgetAt } from "../store";
-
-const ANSI = /\x1b\][^\x07]*\x07|\x1b\[[0-9;]*m/g; // eslint-disable-line no-control-regex
-
-const PROBE_BASE: Omit<FooterConfig, "theme"> = {
-  version: 1,
-  colorLevel: "none",
-  separator: " ",
-  columnsOffset: 0,
-  lines: [],
-  git: { enabled: true, cacheMs: 2000 },
-  plugins: { dirs: [] },
-  captureSamples: false,
-};
-
-/** Render one widget instance against the current sample and return plain text. */
-function useProbe(insts: WidgetInstance[]): string[] {
-  const sampleId = useStore((s) => s.sampleId);
-  const theme = useStore((s) => s.config?.theme);
-  const [out, setOut] = useState<string[]>([]);
-  const key = JSON.stringify([insts, sampleId]);
-  useEffect(() => {
-    let alive = true;
-    Promise.all(
-      insts.map(async (probe) => {
-        const r = await api.render({ ...PROBE_BASE, theme: theme ?? "default", lines: [{ left: [probe] }] }, sampleId, 0, true).catch(() => null);
-        return r?.lines[0]?.replace(ANSI, "").trim() ?? "";
-      }),
-    ).then((texts) => alive && setOut(texts));
-    return () => {
-      alive = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
-  return out;
-}
-
-/*
-  Text inputs keep a local draft while focused. Driving the value straight from the store
-  re-renders the whole config on every keystroke, which interrupts IME composition and can
-  swallow characters; the store is still updated on every change, the draft just owns the caret.
-*/
-function TextField({ value, onChange, className, disabled, placeholder }: { value: string; onChange: (v: string) => void; className?: string; disabled?: boolean; placeholder?: string }) {
-  const [draft, setDraft] = useState(value);
-  const focused = useRef(false);
-  useEffect(() => {
-    if (!focused.current) setDraft(value);
-  }, [value]);
-  return (
-    <input
-      className={className}
-      disabled={disabled}
-      placeholder={placeholder}
-      value={draft}
-      onFocus={() => (focused.current = true)}
-      onBlur={() => {
-        focused.current = false;
-        setDraft(value);
-      }}
-      onChange={(e) => {
-        setDraft(e.target.value);
-        onChange(e.target.value);
-      }}
-    />
-  );
-}
+import { useProbe } from "../probe";
+import { effectiveLabel, hasCenter, ownsLabel, useStore, widgetAt } from "../store";
+import { Ansi } from "./Ansi";
+import { Drawer } from "./Drawer";
+import { TextField } from "./TextField";
 
 function typeOf(schema: JsonSchema) {
   const t = Array.isArray(schema.type) ? schema.type : [schema.type ?? "string"];
@@ -94,7 +32,7 @@ function EnumField({ title, values, current, inst, name, onChange }: { title: st
           return (
             <button key={k} type="button" role="radio" aria-checked={active} className="enum-opt" data-active={active} onClick={() => onChange(v)}>
               <span className="enum-name">{enumLabel(t, inst.widget, name, k)}</span>
-              <span className="mono enum-sample">{samples[i] ?? "…"}</span>
+              <span className="enum-sample">{samples[i] === undefined ? "…" : <Ansi text={samples[i]!} fallback="—" />}</span>
             </button>
           );
         })}
@@ -103,30 +41,47 @@ function EnumField({ title, values, current, inst, name, onChange }: { title: st
   );
 }
 
-/** Booleans show both outcomes too: the row states what turning it on adds. */
+/**
+ * Booleans show both outcomes, one under the other, so the difference reads at a glance — and say
+ * so plainly when the current data makes them look identical (e.g. a link toggle on plain text).
+ */
 function BoolField({ title, current, inst, name, onChange }: { title: string; current: boolean; inst: WidgetInstance; name: string; onChange: (v: boolean) => void }) {
   const t = useT();
+  const id = useId();
   const samples = useProbe([
     { ...inst, options: { ...(inst.options ?? {}), [name]: true } },
     { ...inst, options: { ...(inst.options ?? {}), [name]: false } },
   ]);
+  const ready = samples.length === 2;
+  const same = ready && samples[0] === samples[1];
   return (
-    <label className="row row-top">
-      <span>
-        {title}
-        {samples.length === 2 && (
-          <span className="mono bool-sample">
-            <b>{t.options.on}</b> {samples[0]} <b>{t.options.off}</b> {samples[1]}
-          </span>
-        )}
-      </span>
-      <input type="checkbox" className="h-4 w-4" checked={current} onChange={(e) => onChange(e.target.checked)} />
-    </label>
+    <div className="bool">
+      <div className="row">
+        <label htmlFor={id}>{title}</label>
+        <input id={id} type="checkbox" className="h-4 w-4" checked={current} onChange={(e) => onChange(e.target.checked)} />
+      </div>
+      {ready &&
+        (same ? (
+          <span className="hint">{t.options.noDifference}</span>
+        ) : (
+          <div className="bool-compare" aria-hidden="true">
+            <span className="bool-tag" data-active={current}>
+              {t.options.on}
+            </span>
+            <Ansi text={samples[0]!} fallback="—" />
+            <span className="bool-tag" data-active={!current}>
+              {t.options.off}
+            </span>
+            <Ansi text={samples[1]!} fallback="—" />
+          </div>
+        ))}
+    </div>
   );
 }
 
 function Field({ name, schema, value, fallback, inst, onChange }: { name: string; schema: JsonSchema; value: unknown; fallback: unknown; inst: WidgetInstance; onChange: (v: unknown) => void }) {
   const t = useT();
+  const id = useId();
   const { base, nullable } = typeOf(schema);
   const title = fieldTitle(t, name, schema);
   const effective = value === undefined ? (fallback === undefined ? schema.default : fallback) : value;
@@ -135,9 +90,10 @@ function Field({ name, schema, value, fallback, inst, onChange }: { name: string
   if (base === "boolean") return <BoolField title={title} current={Boolean(effective)} inst={inst} name={name} onChange={onChange} />;
   if (base === "integer" || base === "number") {
     return (
-      <label className="row">
-        <span>{title}</span>
+      <div className="row">
+        <label htmlFor={id}>{title}</label>
         <input
+          id={id}
           className="field !w-24"
           type="number"
           min={schema.minimum}
@@ -145,14 +101,15 @@ function Field({ name, schema, value, fallback, inst, onChange }: { name: string
           value={effective === null || effective === undefined ? "" : Number(effective)}
           onChange={(e) => onChange(e.target.value === "" ? (nullable ? null : schema.default) : Number(e.target.value))}
         />
-      </label>
+      </div>
     );
   }
   return (
-    <label className="row">
-      <span>{title}</span>
+    <div className="row">
+      <label htmlFor={id}>{title}</label>
       <span className="flex items-center gap-1.5">
         <TextField
+          id={id}
           className="field mono !w-40"
           disabled={effective === null}
           value={effective === null || effective === undefined ? "" : String(effective)}
@@ -165,7 +122,7 @@ function Field({ name, schema, value, fallback, inst, onChange }: { name: string
           </button>
         )}
       </span>
-    </label>
+    </div>
   );
 }
 
@@ -176,7 +133,7 @@ function ColorField({ style, setStyle }: { style: Style; setStyle: (p: Partial<S
   const t = useT();
   const themes = useStore((s) => s.themes);
   const theme = useStore((s) => s.config?.theme);
-  const tokens = typeof theme === "string" ? themes.find((t) => t.name === theme)?.tokens : theme?.tokens;
+  const tokens = typeof theme === "string" ? themes.find((th) => th.name === theme)?.tokens : theme?.tokens;
   const fg = style.fg ?? "";
   const custom = fg !== "" && !TOKENS.includes(fg);
   return (
@@ -197,26 +154,54 @@ function ColorField({ style, setStyle }: { style: Style; setStyle: (p: Partial<S
       {custom && (
         <div className="flex items-center gap-2">
           <input type="color" value={/^#[0-9a-f]{6}$/i.test(fg) ? fg : "#ffffff"} onChange={(e) => setStyle({ fg: e.target.value })} aria-label={t.options.pickColor} />
-          <TextField className="field mono !w-32" value={fg} onChange={(v) => setStyle({ fg: v })} placeholder="#rrggbb" />
+          <TextField className="field mono !w-32" value={fg} onChange={(v) => setStyle({ fg: v })} placeholder="#rrggbb" ariaLabel={t.options.pickColor} />
         </div>
       )}
     </div>
   );
 }
 
-export function Options() {
+/** Move the widget with two selects — the mouse-free, drag-free way to put it anywhere. */
+function PositionField({ line, zone }: { line: number; zone: Zone }) {
   const t = useT();
   const s = useStore();
-  const sel = s.selection;
-  const w = widgetAt(s, sel);
-  useEffect(() => {
-    if (!sel) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && s.select(null);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [sel, s]);
-  const live = useProbe(w ? [w] : []);
-  if (!sel || !w) return null;
+  const zones: Zone[] = hasCenter(s) ? ["left", "center", "right"] : ["left", "right"];
+  const moveTo = (l: number, z: Zone) => {
+    if (l === line && z === zone) return;
+    const len = s.config!.lines[l]?.[z]?.length ?? 0;
+    s.moveWidget(s.selection!, l, z, len);
+    s.select({ line: l, zone: z, index: len }); // appended at the end of the target zone
+  };
+  return (
+    <div className="row">
+      <span>{t.options.position}</span>
+      <span className="flex items-center gap-1.5">
+        <select className="field !w-auto" value={line} onChange={(e) => moveTo(Number(e.target.value), zone)} aria-label={t.options.position}>
+          {s.config!.lines.map((_, i) => (
+            <option key={i} value={i}>
+              {t.options.lineN(i + 1)}
+            </option>
+          ))}
+        </select>
+        <select className="field !w-auto" value={zone} onChange={(e) => moveTo(line, e.target.value as Zone)} aria-label={t.layout.zones[zone]}>
+          {zones.map((z) => (
+            <option key={z} value={z}>
+              {t.layout.zones[z]}
+            </option>
+          ))}
+        </select>
+      </span>
+    </div>
+  );
+}
+
+function OptionsBody() {
+  const t = useT();
+  const s = useStore();
+  const labelId = useId();
+  const sel = s.selection!;
+  const w = widgetAt(s, sel)!;
+  const live = useProbe([w]);
   const manifest = s.widgets.find((m) => m.id === w.widget);
   const props = Object.entries(manifest?.schema.properties ?? {}).filter(([name]) => name !== "label");
   const style: Style = w.style ?? {};
@@ -240,80 +225,101 @@ export function Options() {
     });
 
   return (
-    <div className="drawer-backdrop" onClick={() => s.select(null)}>
-      <aside className="drawer" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={t.options.dialog}>
-        <div className="sheet-head">
-          <div className="min-w-0">
-            <h3 className="text-base font-semibold">{widgetName(t, manifest, w.widget)}</h3>
-            <div className="hint">
-              {t.options.where(sel.line + 1, t.layout.zones[sel.zone])} · <span className="mono">{w.widget}</span>
-            </div>
+    <>
+      <div className="sheet-head">
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold">{widgetName(t, manifest, w.widget)}</h3>
+          <div className="hint">
+            {t.options.where(sel.line + 1, t.layout.zones[sel.zone])} · <span className="mono">{w.widget}</span>
           </div>
-          <button className="btn ml-auto" onClick={() => s.select(null)}>
-            {t.options.done}
-          </button>
         </div>
-        <div className="live">
-          <span className="hint">{t.options.now}</span>
-          <span className="mono live-text">{live[0] || t.options.nothingNow}</span>
-        </div>
-        <div className="sheet-body">
-          <p className="hint">{widgetDesc(t, manifest, w.widget)}</p>
-          <label className="row">
-            <span>
-              {t.options.label}
-              <span className="hint ml-2">{t.options.labelHint}</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <TextField
-                className="field mono !w-40"
-                disabled={label === null}
-                value={label ?? ""}
-                placeholder={label === null ? t.options.hidden : ""}
-                onChange={(v) => setLabel(v === defaultLabel ? undefined : v)}
-              />
-              <button className="btn" onClick={() => setLabel(label === null ? defaultLabel || widgetName(t, manifest, w.widget) : null)}>
-                {label === null ? t.options.show : t.options.hide}
-              </button>
-            </span>
+        <button className="btn ml-auto" onClick={() => s.select(null)}>
+          {t.options.done}
+        </button>
+      </div>
+      <div className="live">
+        <span className="hint">{t.options.now}</span>
+        <span className="live-text">{live[0] === undefined ? "…" : <Ansi text={live[0]} fallback={t.options.nothingNow} />}</span>
+      </div>
+      <div className="sheet-body">
+        <p className="hint">{widgetDesc(t, manifest, w.widget)}</p>
+        <PositionField line={sel.line} zone={sel.zone} />
+        <div className="row">
+          <label htmlFor={labelId}>
+            {t.options.label}
+            <span className="hint ml-2">{t.options.labelHint}</span>
           </label>
-          {props.map(([name, schema]) => (
-            <Field
-              key={name}
-              name={name}
-              schema={schema}
-              value={w.options?.[name]}
-              fallback={manifest?.defaults[name]}
-              inst={w}
-              onChange={(v) =>
-                s.updateAt(sel, (inst) => {
-                  inst.options = { ...(inst.options ?? {}), [name]: v };
-                  if (v === (manifest?.defaults[name] ?? schema.default)) delete inst.options[name];
-                  if (Object.keys(inst.options).length === 0) delete inst.options;
-                })
-              }
+          <span className="flex items-center gap-1.5">
+            <TextField
+              id={labelId}
+              className="field mono !w-40"
+              disabled={label === null}
+              value={label ?? ""}
+              placeholder={label === null ? t.options.hidden : ""}
+              onChange={(v) => setLabel(v === defaultLabel ? undefined : v)}
             />
-          ))}
-          <ColorField style={style} setStyle={setStyle} />
-          <label className="row">
-            <span>{t.options.bold}</span>
-            <input type="checkbox" className="h-4 w-4" checked={!!style.bold} onChange={(e) => setStyle({ bold: e.target.checked })} />
-          </label>
-          <div className="mt-2 flex justify-between pt-3" style={{ borderTop: "1px solid var(--line)" }}>
-            <button className="btn btn-danger" onClick={() => s.removeAt(sel)}>
-              {t.options.removeWidget}
+            <button className="btn" onClick={() => setLabel(label === null ? defaultLabel || widgetName(t, manifest, w.widget) : null)}>
+              {label === null ? t.options.show : t.options.hide}
             </button>
-            {s.advanced && (
-              <details className="text-xs">
-                <summary className="hint cursor-pointer">JSON</summary>
-                <pre className="mono mt-1 max-h-40 overflow-auto p-2 text-xs" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
-                  {JSON.stringify(w, null, 2)}
-                </pre>
-              </details>
-            )}
-          </div>
+          </span>
         </div>
-      </aside>
+        {props.map(([name, schema]) => (
+          <Field
+            key={name}
+            name={name}
+            schema={schema}
+            value={w.options?.[name]}
+            fallback={manifest?.defaults[name]}
+            inst={w}
+            onChange={(v) =>
+              s.updateAt(sel, (inst) => {
+                inst.options = { ...(inst.options ?? {}), [name]: v };
+                if (v === (manifest?.defaults[name] ?? schema.default)) delete inst.options[name];
+                if (Object.keys(inst.options).length === 0) delete inst.options;
+              })
+            }
+          />
+        ))}
+        <ColorField style={style} setStyle={setStyle} />
+        <BoldField bold={!!style.bold} onChange={(b) => setStyle({ bold: b })} />
+        <div className="mt-2 flex justify-between pt-3" style={{ borderTop: "1px solid var(--line)" }}>
+          <button className="btn btn-danger" onClick={() => s.removeAt(sel)}>
+            {t.options.removeWidget}
+          </button>
+          {s.advanced && (
+            <details className="text-xs">
+              <summary className="hint cursor-pointer">JSON</summary>
+              <pre className="mono mt-1 max-h-40 overflow-auto p-2 text-xs" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
+                {JSON.stringify(w, null, 2)}
+              </pre>
+            </details>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function BoldField({ bold, onChange }: { bold: boolean; onChange: (b: boolean) => void }) {
+  const t = useT();
+  const id = useId();
+  return (
+    <div className="row">
+      <label htmlFor={id}>{t.options.bold}</label>
+      <input id={id} type="checkbox" className="h-4 w-4" checked={bold} onChange={(e) => onChange(e.target.checked)} />
     </div>
+  );
+}
+
+export function Options() {
+  const t = useT();
+  const selection = useStore((s) => s.selection);
+  const select = useStore((s) => s.select);
+  const hasWidget = useStore((s) => widgetAt(s, s.selection) !== null);
+  if (!selection || !hasWidget) return null;
+  return (
+    <Drawer label={t.options.dialog} onClose={() => select(null)}>
+      <OptionsBody />
+    </Drawer>
   );
 }
