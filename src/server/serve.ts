@@ -18,8 +18,20 @@ import { registerBuiltinWidgets } from "../widgets/index.js";
 import { install, planInstall, settingsPath } from "./install.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const WEB_DIST = path.resolve(here, "..", "..", "web", "dist");
-const FIXTURES_DIR = path.resolve(here, "..", "fixtures");
+const ROOT = fs.realpathSync(path.resolve(here, "..", ".."));
+const WEB_DIST = path.join(ROOT, "web", "dist");
+const STARTED_AT = Date.now();
+const SRC_DIR = path.join(ROOT, "src");
+const FIXTURES_DIR = path.join(SRC_DIR, "fixtures");
+
+/** True once any server source file is newer than this process, e.g. after a git pull. */
+function changedSince(dir: string, since: number): boolean {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory() ? changedSince(p, since) : fs.statSync(p).mtimeMs > since) return true;
+  }
+  return false;
+}
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -81,6 +93,16 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
       const written = body.scope === "project" ? writeProjectConfig(cwd, toWrite) : writeUserConfig(toWrite);
       return json({ ok: true, path: written, config: normalized });
     }
+    case "GET /api/health":
+      // ssp.sh uses this to tell a server from another checkout (or one started before a pull) from this one.
+      return json({
+        ok: true,
+        root: ROOT,
+        pid: process.pid,
+        startedAt: STARTED_AT,
+        codeChanged: fs.existsSync(SRC_DIR) ? changedSince(SRC_DIR, STARTED_AT) : true,
+        webBuilt: fs.existsSync(path.join(WEB_DIST, "index.html")),
+      });
     case "GET /api/widgets":
       return json(widgetManifest());
     case "GET /api/doctor": {
