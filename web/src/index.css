@@ -838,6 +838,9 @@ input[type="checkbox"] {
   cursor: grab;
   user-select: none;
   transition: border-color 0.12s, background 0.12s;
+  /* One line, never taller than 28px: a chip wider than its zone truncates its name (below). */
+  max-width: 100%;
+  white-space: nowrap;
 }
 .chip:hover {
   border-color: var(--field-line);
@@ -858,10 +861,20 @@ input[type="checkbox"] {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   height: 100%;
   padding: 0 4px 0 0;
   line-height: 1;
   color: var(--fg);
+}
+.chip-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chip-label,
+.chip-empty {
+  flex: none;
 }
 .chip-name::before {
   content: "";

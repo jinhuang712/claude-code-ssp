@@ -127,7 +127,8 @@ function Chip({ id, line, zone, index, item }: { id: string; line: number; zone:
         aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown"
       >
         {label && <span className="chip-label">{label}</span>}
-        {name}
+        {/* Its own span so a name too long for a phone-width zone truncates instead of wrapping. */}
+        <span className="chip-text">{name}</span>
         {empty && <span className="chip-empty">{empty === "filled" ? t.layout.sampleTag : t.layout.noDataTag}</span>}
       </button>
       <button
