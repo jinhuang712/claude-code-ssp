@@ -112,13 +112,17 @@ export default {
 };
 ```
 
+An option that only matters while another one is set can say so with `"x-requires"` — e.g.
+`barWidth: { type: "integer", "x-requires": { bar: true } }` — and the panel dims it with a hint instead of
+showing a control that seems to do nothing.
+
 See `examples/widgets/hello.ts` and `src/widgets/*` for the built-ins; `DESIGN.md` for the architecture.
 Restart the configurator to see a new widget in the “+” list (the statusline picks it up immediately).
 
 ## Development
 
 ```bash
-bun test                  # layout, config, server security, install, transcript, git cache, web build freshness…
+bun test                  # layout, config, server security, install, transcript, git cache, option sweep, web build freshness…
 bun run typecheck
 bun run serve:sandbox     # configurator on :4878 against temp copies — safe to click around or automate
 bun run dev:web           # Vite dev server on :5178 proxying /api → :4877 (run `bun run serve` alongside)

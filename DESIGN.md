@@ -63,6 +63,11 @@ defineWidget({
 });
 ```
 
+An option schema may carry `"x-requires": { sibling: value }` when it only affects the output while
+another option has that value (cacheGlyph needs `style: "arrows"`, barWidth needs `bar: true`). The panel dims
+it and names the requirement; `tests/option-sweep.test.ts` renders every value of every option — requirements
+met — against every built-in sample and fails when an option can never change the output.
+
 `Segment = { text, style?: { fg, bg, bold, dim, italic, underline }, link? }`. Colors are theme tokens
 (`fg muted accent ok warn crit model project git usage context`), literals (`#rrggbb`, `208`, `red`) or `default`
 (no colour code: the terminal's own foreground). Every theme maps `fg` to `default`, so plain values stay readable on
@@ -97,9 +102,12 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   coalesced into one `POST /api/render/batch` per tick (`web/src/probe.ts`) and drawn in colour (`Ansi.tsx`).
 * **Try-on**: hovering/focusing a preset, theme, bar style or separator previews it without saving. The preview's
   height is sticky during try-ons (a shrinking preview moved the hovered chip away and looped).
-* **Samples**: bundled fixtures (fresh session, post-compact null usage, 1M context, no rate_limits, worktree, vim mode)
-  plus **live captures**: `render` persists the last stdin payload per `session_id` to `<data>/samples/` (throttled), so
-  you preview against your real session.
+* **Samples**: bundled fixtures (fresh session, post-compact null usage, 1M context, no rate_limits, worktree, vim mode,
+  Bedrock). `basic` and `post-compact` point at bundled sample transcripts whose timestamps are seconds relative to
+  now; `src/core/fixtures.ts` writes a real copy with ISO times, so agents, todos, tools, MCP, output speed and
+  compactions preview as if live.
+  Plus **live captures**: `render` persists the last stdin payload per `session_id` to `<data>/samples/` (throttled), so
+  you preview against your real session. Live samples are shown exactly as captured — no synthetic values.
 * **Widget picker** renders option forms from each widget's JSON Schema. Drag widgets between zones and lines, or
   move them with Alt+Arrow keys; drawers are focus-trapped dialogs.
 * **Install**: the first save auto-applies unless another tool's statusLine is set — then the server answers 409 and
@@ -119,6 +127,8 @@ Claude Code debounces at 300 ms and kills in-flight scripts. Target **< 40 ms wa
   detached helper (`src/core/vcs-refresh.ts`, one per repo via a lock file) finishes the work for the next render.
   The cache honours `git.cacheMs` and is invalidated by `.git/HEAD` / `.git/index` changes;
 * `render` exits as soon as stdout is flushed — nothing lingering keeps Claude Code waiting;
+* output speed is measured from the transcript tail (latest response: output tokens ÷ request→last entry), not from
+  consecutive renders — Claude Code re-runs the statusline per message, not while a response streams;
 * `tests/render-budget.test.ts` times the whole CLI (startup included), not just `render()`.
 
 ## Data root
