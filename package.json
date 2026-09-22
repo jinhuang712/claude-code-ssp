@@ -9,6 +9,7 @@
   "scripts": {
     "render": "bun run src/cli/main.ts render",
     "serve": "bun run src/cli/main.ts serve",
+    "serve:sandbox": "bun run src/cli/main.ts serve --sandbox",
     "dev:web": "bun run --cwd web dev",
     "build:web": "bun run --cwd web build",
     "build": "bun run build:web",

@@ -19,6 +19,7 @@ import type { StdinData } from "../data/types.js";
 import { registerBuiltinWidgets } from "../widgets/index.js";
 import { guardRequest, HttpError, MAX_BODY_BYTES, readJson } from "./guard.js";
 import { install, NeedsConfirmError, planInstall, settingsPath, uninstall } from "./install.js";
+import { currentSandbox, enterServeSandbox, isInsideSandbox } from "./sandbox.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = fs.realpathSync(path.resolve(here, "..", ".."));
@@ -220,6 +221,9 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
       const body = await readJson<{ scope?: "user" | "project"; config: Partial<FooterConfig> }>(req);
       const normalized = normalizeConfig(body.config ?? {});
       const { $schema: _s, ...toWrite } = { ...body.config, version: normalized.version } as Partial<FooterConfig>;
+      if (body.scope === "project" && !isInsideSandbox(cwd)) {
+        throw new HttpError(403, "sandbox: project-scope saves outside the sandbox are disabled (this would write into a real project)");
+      }
       const written = body.scope === "project" ? writeProjectConfig(cwd, toWrite) : writeUserConfig(toWrite);
       return json({ ok: true, path: written, config: normalized });
     }
@@ -232,6 +236,8 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
         startedAt: STARTED_AT,
         codeChanged: fs.existsSync(SRC_DIR) ? changedSince(SRC_DIR, STARTED_AT) : true,
         webBuilt: fs.existsSync(path.join(WEB_DIST, "index.html")),
+        // A sandbox server edits throwaway copies; ssp.sh must not mistake it for the real configurator.
+        sandbox: currentSandbox() !== null,
       });
     case "GET /api/widgets":
       return json(widgetManifest());
@@ -367,7 +373,12 @@ function openBrowser(url: string): void {
   }
 }
 
-export async function serve(opts: { port: number; open?: boolean }): Promise<void> {
+export async function serve(opts: { port: number; open?: boolean; sandbox?: boolean }): Promise<void> {
+  if (opts.sandbox) {
+    const { root, seeded } = enterServeSandbox();
+    console.log(`sandbox → ${root}`);
+    console.log(`  seeded from your real setup: ${seeded.length ? seeded.join(", ") : "nothing (fresh install)"}; nothing outside this dir is written`);
+  }
   registerBuiltinWidgets();
   const { config } = loadEffectiveConfig(process.cwd());
   const plugins = await loadPlugins(config, process.cwd());

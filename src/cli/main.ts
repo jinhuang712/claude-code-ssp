@@ -48,7 +48,9 @@ async function main(): Promise<void> {
       return cmdRender(argv);
     case "serve": {
       const { serve } = await import("../server/serve.js");
-      return serve({ port: Number(arg("port", argv) ?? 4877), open: argv.includes("--open") });
+      const sandbox = argv.includes("--sandbox");
+      // A sandbox gets its own default port so it never answers where /ssp:config expects the real one.
+      return serve({ port: Number(arg("port", argv) ?? (sandbox ? 4878 : 4877)), open: argv.includes("--open"), sandbox });
     }
     case "install": {
       const { install, planInstall, NeedsConfirmError } = await import("../server/install.js");
@@ -106,6 +108,7 @@ async function main(): Promise<void> {
 
   render            read Claude Code statusline JSON on stdin, print the status line (default)
   serve [--port N] [--open]   start the local web configurator (127.0.0.1:4877)
+  serve --sandbox             same, on :4878, against temp copies of your config/samples/statusLine
   reset [--undo]    zero the session counters (cost, tokens, api calls, lines) from now on
   install [--dry-run] [--replace]  merge statusLine into ~/.claude/settings.json (with backup);
                               --replace is needed when another statusline is set (kept for uninstall)
