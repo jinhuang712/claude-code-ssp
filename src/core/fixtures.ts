@@ -23,6 +23,7 @@ function hydrateTimes(p: Record<string, any>, now: number): void {
   const sec = Math.floor(now / 1000);
   if (p.rate_limits?.five_hour && !p.rate_limits.five_hour.resets_at) p.rate_limits.five_hour.resets_at = sec + 3 * 3600 + 41 * 60;
   if (p.rate_limits?.seven_day && !p.rate_limits.seven_day.resets_at) p.rate_limits.seven_day.resets_at = sec + 5 * 86400 + 2 * 3600;
+  if (p.rate_limits?.spend_limit && !p.rate_limits.spend_limit.resets_at) p.rate_limits.spend_limit.resets_at = sec + 12 * 86400;
   if (p.prompt_cache && !p.prompt_cache.expires_at) p.prompt_cache.expires_at = sec + 42 * 60;
 }
 

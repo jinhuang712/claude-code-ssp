@@ -31,7 +31,7 @@ describe("prepareFixture", () => {
   test("the transcript widgets render from the bundled sample", async () => {
     const p = prepareFixture(payload, FIXTURE);
     expect(await renderWidget(p, { widget: "activity.todos" })).toBe("Todos 1/3 → Write tests");
-    expect(await renderWidget(p, { widget: "activity.agents" })).toBe("Agents ● Explore (haiku)");
+    expect(await renderWidget(p, { widget: "activity.agents" })).toBe("Agents ● Explore (haiku) ● general-purpose (sonnet)");
     expect(await renderWidget(p, { widget: "activity.mcp" })).toBe("MCP github ⚠ linear");
     expect(await renderWidget(p, { widget: "tokens.outputSpeed" })).toBe("120 tok/s");
   });

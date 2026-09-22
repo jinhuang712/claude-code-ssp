@@ -68,6 +68,7 @@ export const en = {
     otherProject: "Other",
     fixtures: {
       basic: "Typical session",
+      bedrock: "Amazon Bedrock (no cost reported)",
       "fresh-session": "Fresh session",
       "context-1m": "1M context window",
       "no-rate-limits": "API key (no usage limits)",

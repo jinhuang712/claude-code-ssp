@@ -62,6 +62,7 @@ export const zh: Messages = {
     otherProject: "其他",
     fixtures: {
       basic: "常规会话",
+      bedrock: "Amazon Bedrock（不上报费用）",
       "fresh-session": "刚开的会话",
       "context-1m": "1M 上下文窗口",
       "no-rate-limits": "API key（没有用量限制）",

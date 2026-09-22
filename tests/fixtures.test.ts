@@ -16,8 +16,8 @@ const fixtures = Object.fromEntries(
 ) as Record<string, Record<string, unknown>>;
 
 describe("bundled fixtures", () => {
-  test("the six scenarios from DESIGN.md exist next to basic", () => {
-    expect(Object.keys(fixtures).sort()).toEqual(["basic", "context-1m", "fresh-session", "no-rate-limits", "post-compact", "vim-mode", "worktree"]);
+  test("the six scenarios from DESIGN.md exist next to basic, plus a routed (Bedrock) session", () => {
+    expect(new Set(Object.keys(fixtures))).toEqual(new Set(["basic", "bedrock", "context-1m", "fresh-session", "no-rate-limits", "post-compact", "vim-mode", "worktree"]));
   });
 
   test("every fixture uses a fixture-* session id (so it is never listed as a live session)", () => {

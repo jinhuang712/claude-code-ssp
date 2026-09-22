@@ -3,15 +3,28 @@
   "session_id": "fixture-context-1m",
   "session_name": "migrate warehouse",
   "transcript_path": "/nonexistent/fixture-1m.jsonl",
-  "model": { "id": "claude-opus-5-5[1m]", "display_name": "Opus 5.5 (1M context)" },
+  "model": {
+    "id": "claude-opus-5-5[1m]",
+    "display_name": "Opus 5.5 (1M context)"
+  },
   "workspace": {
     "current_dir": "/Users/you/projects/data-pipeline",
     "project_dir": "/Users/you/projects/data-pipeline",
-    "added_dirs": ["/Users/you/projects/shared-schemas"],
-    "repo": { "host": "github.com", "owner": "acme", "name": "data-pipeline" }
+    "added_dirs": [
+      "/Users/you/projects/shared-schemas",
+      "/Users/you/projects/design-tokens",
+      "/Users/you/projects/infra"
+    ],
+    "repo": {
+      "host": "github.com",
+      "owner": "acme",
+      "name": "data-pipeline"
+    }
   },
   "version": "2.1.280",
-  "output_style": { "name": "default" },
+  "output_style": {
+    "name": "default"
+  },
   "cost": {
     "total_cost_usd": 23.6,
     "total_duration_ms": 14400000,
@@ -33,12 +46,34 @@
     }
   },
   "exceeds_200k_tokens": true,
-  "prompt_cache": { "warm": true, "caching_observed": true, "ttl": "1h", "expires_at": 0, "requests": 402, "misses": 11, "hit_ratio": 0.97 },
+  "prompt_cache": {
+    "warm": true,
+    "caching_observed": true,
+    "ttl": "1h",
+    "expires_at": 0,
+    "requests": 402,
+    "misses": 11,
+    "hit_ratio": 0.97
+  },
   "fast_mode": false,
-  "effort": { "level": "xhigh" },
-  "thinking": { "enabled": true },
+  "effort": {
+    "level": "xhigh"
+  },
+  "thinking": {
+    "enabled": true
+  },
   "rate_limits": {
-    "five_hour": { "used_percentage": 38, "resets_at": 0 },
-    "seven_day": { "used_percentage": 71, "resets_at": 0 }
+    "five_hour": {
+      "used_percentage": 38,
+      "resets_at": 0
+    },
+    "seven_day": {
+      "used_percentage": 71,
+      "resets_at": 0
+    },
+    "spend_limit": {
+      "used_percentage": 12,
+      "resets_at": 0
+    }
   }
 }

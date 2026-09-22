@@ -1,0 +1,60 @@
+{
+  "cwd": "/Users/you/dev/webapp",
+  "session_id": "fixture-bedrock",
+  "session_name": "bedrock-demo",
+  "transcript_path": "transcripts/basic.jsonl",
+  "model": {
+    "id": "us.anthropic.claude-sonnet-5-v1:0",
+    "display_name": "Sonnet 5"
+  },
+  "workspace": {
+    "current_dir": "/Users/you/dev/webapp",
+    "project_dir": "/Users/you/dev/webapp",
+    "added_dirs": [],
+    "repo": {
+      "host": "github.com",
+      "owner": "acme",
+      "name": "webapp"
+    }
+  },
+  "version": "2.1.258",
+  "output_style": {
+    "name": "default"
+  },
+  "context_window": {
+    "total_input_tokens": 64000,
+    "total_output_tokens": 2100,
+    "context_window_size": 200000,
+    "used_percentage": 32,
+    "remaining_percentage": 68,
+    "current_usage": {
+      "input_tokens": 8500,
+      "output_tokens": 2100,
+      "cache_creation_input_tokens": 5000,
+      "cache_read_input_tokens": 50500
+    }
+  },
+  "exceeds_200k_tokens": false,
+  "prompt_cache": {
+    "warm": true,
+    "caching_observed": true,
+    "ttl": "1h",
+    "expires_at": 0,
+    "requests": 14,
+    "misses": 2,
+    "hit_ratio": 0.91
+  },
+  "fast_mode": false,
+  "effort": {
+    "level": "xhigh"
+  },
+  "thinking": {
+    "enabled": true
+  },
+  "cost": {
+    "total_duration_ms": 900000,
+    "total_api_duration_ms": 120000,
+    "total_lines_added": 40,
+    "total_lines_removed": 3
+  }
+}
