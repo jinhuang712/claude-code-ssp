@@ -3,9 +3,10 @@
  * The preview endpoint runs the exact same render engine as the statusline.
  */
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { listLiveSamples, type Sample } from "../core/capture.js";
+import { listLiveSamples, samplesDir, type Sample } from "../core/capture.js";
 import { loadEffectiveConfig, normalizeConfig, projectConfigPath, userConfigPath, writeProjectConfig, writeUserConfig } from "../core/config.js";
 import { buildContext } from "../core/context.js";
 import { render } from "../core/layout.js";
@@ -13,6 +14,7 @@ import { loadPlugins } from "../core/plugins.js";
 import { widgetManifest } from "../core/registry.js";
 import { listThemes } from "../core/theme.js";
 import type { FooterConfig, RenderResult } from "../core/types.js";
+import { getHudPluginDir } from "../data/claude-config-dir.js";
 import type { StdinData } from "../data/types.js";
 import { registerBuiltinWidgets } from "../widgets/index.js";
 import { guardRequest, HttpError, MAX_BODY_BYTES, readJson } from "./guard.js";
@@ -158,12 +160,61 @@ async function renderPreviews(configs: Array<Partial<FooterConfig>>, sampleId: s
   );
 }
 
+/** What the panel's sample picker needs to group and label a sample, without the payload itself. */
+export interface SampleMeta {
+  id: string;
+  label: string;
+  capturedAt: number | null;
+  source: "live" | "fixture";
+  /** Claude Code session the capture came from; null for bundled fixtures. */
+  sessionId: string | null;
+  /** Project directory of that session; null for fixtures (their paths are made up). */
+  cwd: string | null;
+  /** basename(cwd), for grouping by project. */
+  project: string | null;
+  /** Model display name as Claude Code reported it. */
+  model: string | null;
+}
+
+/**
+ * Samples for the picker: live captures first, newest first, one per session (a session that was
+ * captured under two file names — e.g. before and after a rename — shows once), then fixtures.
+ */
+export function listSampleMeta(samples: Sample[] = allSamples()): SampleMeta[] {
+  const seen = new Set<string>();
+  const out: SampleMeta[] = [];
+  const ordered = [...samples.filter((s) => s.source === "live").sort((a, b) => (b.capturedAt ?? 0) - (a.capturedAt ?? 0)), ...samples.filter((s) => s.source === "fixture")];
+  for (const s of ordered) {
+    const p = s.payload as { session_id?: unknown; model?: { display_name?: unknown } } | null;
+    const live = s.source === "live";
+    const sessionId = live ? (typeof p?.session_id === "string" && p.session_id ? p.session_id : s.id) : null;
+    if (sessionId) {
+      if (seen.has(sessionId)) continue;
+      seen.add(sessionId);
+    }
+    const cwd = live ? sampleCwd(s.payload) : null;
+    out.push({
+      id: s.id,
+      label: s.label,
+      capturedAt: s.capturedAt,
+      source: s.source,
+      sessionId,
+      cwd,
+      project: cwd ? path.basename(cwd) : null,
+      model: typeof p?.model?.display_name === "string" ? p.model.display_name : null,
+    });
+  }
+  return out;
+}
+
 async function handleApi(req: Request, url: URL): Promise<Response> {
   const cwd = resolveCwd(url);
   switch (`${req.method} ${url.pathname}`) {
     case "GET /api/config": {
       const eff = loadEffectiveConfig(cwd);
-      return json({ ...eff, paths: { user: userConfigPath(), project: projectConfigPath(cwd) } });
+      // samples / dataDir follow $CLAUDE_CONFIG_DIR, so the panel shows where things really are
+      // instead of assuming ~/.claude.
+      return json({ ...eff, paths: { user: userConfigPath(), project: projectConfigPath(cwd), samples: samplesDir(), dataDir: getHudPluginDir(os.homedir()) } });
     }
     case "PUT /api/config": {
       const body = await readJson<{ scope?: "user" | "project"; config: Partial<FooterConfig> }>(req);
@@ -206,7 +257,7 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
     case "GET /api/themes":
       return json(listThemes());
     case "GET /api/samples":
-      return json(allSamples().map(({ payload: _p, ...rest }) => rest));
+      return json(listSampleMeta());
     case "GET /api/sample": {
       const id = url.searchParams.get("id");
       const s = allSamples().find((x) => x.id === id);

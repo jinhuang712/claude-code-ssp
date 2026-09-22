@@ -7,7 +7,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { PREVIOUS_KEY, settingsPath } from "../src/server/install.ts";
 import { handleRequest } from "../src/server/serve.ts";
-import { enterSandbox, type Sandbox } from "./server-sandbox.ts";
+import { enterSandbox, writeSample, type Sandbox } from "./server-sandbox.ts";
 
 const PORT = 4877;
 function call(pathname: string, method = "GET", body?: unknown): Promise<Response> {
@@ -23,6 +23,31 @@ beforeAll(() => {
 });
 afterEach(() => fs.rmSync(path.dirname(settingsPath()), { recursive: true, force: true }));
 afterAll(() => sb.restore());
+
+describe("samples and paths", () => {
+  test("GET /api/samples: live first (newest first, one per session) with project/model metadata, fixtures last", async () => {
+    const proj = path.join(sb.root, "repo-a");
+    writeSample(sb.claudeDir, "older", { workspace: { current_dir: proj }, model: { display_name: "Sonnet 5" } }, 1_000);
+    writeSample(sb.claudeDir, "newer", { workspace: { current_dir: proj }, model: { display_name: "Opus 5.5" } }, 2_000);
+    // Same session captured under a second file name must not show twice.
+    const dup = path.join(sb.claudeDir, "plugins", "claude-code-ssp", "samples", "newer-copy.json");
+    fs.writeFileSync(dup, JSON.stringify({ capturedAt: 1_500, payload: { session_id: "newer", workspace: { current_dir: proj } } }));
+    const list = (await (await call("/api/samples")).json()) as Array<Record<string, unknown>>;
+    const live = list.filter((s) => s.source === "live");
+    expect(live.map((s) => s.sessionId)).toEqual(["newer", "older"]);
+    expect(live[0]).toMatchObject({ id: "newer", cwd: proj, project: "repo-a", model: "Opus 5.5", capturedAt: 2_000 });
+    const fixtures = list.filter((s) => s.source === "fixture");
+    expect(fixtures.length).toBeGreaterThan(0);
+    expect(fixtures[0]).toMatchObject({ sessionId: null, cwd: null, project: null });
+    expect(list.indexOf(fixtures[0]!)).toBeGreaterThan(list.indexOf(live[live.length - 1]!));
+  });
+
+  test("GET /api/config reports the real samples dir and data dir (they follow CLAUDE_CONFIG_DIR)", async () => {
+    const { paths } = (await (await call("/api/config")).json()) as { paths: Record<string, string> };
+    expect(paths.dataDir).toBe(path.join(sb.claudeDir, "plugins", "claude-code-ssp"));
+    expect(paths.samples).toBe(path.join(sb.claudeDir, "plugins", "claude-code-ssp", "samples"));
+  });
+});
 
 describe("render batch", () => {
   const probe = (text: string) => ({ colorLevel: "none", lines: [{ left: [{ widget: "custom.text", options: { text } }] }] });
