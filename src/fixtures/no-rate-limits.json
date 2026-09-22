@@ -1,0 +1,38 @@
+{
+  "cwd": "/Users/you/projects/api-gateway",
+  "session_id": "fixture-no-rate-limits",
+  "transcript_path": "/nonexistent/fixture-no-rate-limits.jsonl",
+  "model": { "id": "claude-sonnet-5", "display_name": "Sonnet 5" },
+  "workspace": {
+    "current_dir": "/Users/you/projects/api-gateway",
+    "project_dir": "/Users/you/projects/api-gateway",
+    "added_dirs": []
+  },
+  "version": "2.1.280",
+  "output_style": { "name": "default" },
+  "cost": {
+    "total_cost_usd": 0.42,
+    "total_duration_ms": 780000,
+    "total_api_duration_ms": 61000,
+    "total_lines_added": 38,
+    "total_lines_removed": 5
+  },
+  "context_window": {
+    "total_input_tokens": 21000,
+    "total_output_tokens": 1800,
+    "context_window_size": 200000,
+    "used_percentage": 11,
+    "remaining_percentage": 89,
+    "current_usage": {
+      "input_tokens": 2100,
+      "output_tokens": 1800,
+      "cache_creation_input_tokens": 4000,
+      "cache_read_input_tokens": 14900
+    }
+  },
+  "exceeds_200k_tokens": false,
+  "prompt_cache": { "warm": true, "caching_observed": true, "ttl": "5m", "expires_at": 0, "requests": 9, "misses": 1, "hit_ratio": 0.89 },
+  "fast_mode": false,
+  "effort": { "level": "high" },
+  "thinking": { "enabled": false }
+}

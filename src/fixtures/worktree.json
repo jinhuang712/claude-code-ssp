@@ -1,0 +1,51 @@
+{
+  "cwd": "/Users/you/projects/acme-web/.claude/worktrees/search-ranking",
+  "session_id": "fixture-worktree",
+  "session_name": "search ranking",
+  "transcript_path": "/nonexistent/fixture-worktree.jsonl",
+  "model": { "id": "claude-opus-5-5", "display_name": "Opus 5.5" },
+  "workspace": {
+    "current_dir": "/Users/you/projects/acme-web/.claude/worktrees/search-ranking",
+    "project_dir": "/Users/you/projects/acme-web",
+    "added_dirs": [],
+    "git_worktree": "search-ranking",
+    "repo": { "host": "github.com", "owner": "acme", "name": "acme-web" }
+  },
+  "worktree": {
+    "name": "search-ranking",
+    "path": "/Users/you/projects/acme-web/.claude/worktrees/search-ranking",
+    "branch": "wt-search-ranking"
+  },
+  "pr": { "number": 1287, "url": "https://github.com/acme/acme-web/pull/1287", "review_state": "changes_requested", "kind": "pr" },
+  "version": "2.1.280",
+  "output_style": { "name": "default" },
+  "cost": {
+    "total_cost_usd": 3.05,
+    "total_duration_ms": 3960000,
+    "total_api_duration_ms": 402000,
+    "total_lines_added": 274,
+    "total_lines_removed": 96
+  },
+  "context_window": {
+    "total_input_tokens": 88000,
+    "total_output_tokens": 9100,
+    "context_window_size": 200000,
+    "used_percentage": 49,
+    "remaining_percentage": 51,
+    "current_usage": {
+      "input_tokens": 3100,
+      "output_tokens": 2200,
+      "cache_creation_input_tokens": 6100,
+      "cache_read_input_tokens": 86600
+    }
+  },
+  "exceeds_200k_tokens": false,
+  "prompt_cache": { "warm": true, "caching_observed": true, "ttl": "1h", "expires_at": 0, "requests": 57, "misses": 4, "hit_ratio": 0.93 },
+  "fast_mode": false,
+  "effort": { "level": "high" },
+  "thinking": { "enabled": true },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 27, "resets_at": 0 },
+    "seven_day": { "used_percentage": 58, "resets_at": 0 }
+  }
+}

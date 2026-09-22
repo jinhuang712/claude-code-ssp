@@ -1,0 +1,44 @@
+{
+  "cwd": "/Users/you/dotfiles",
+  "session_id": "fixture-vim-mode",
+  "transcript_path": "/nonexistent/fixture-vim.jsonl",
+  "model": { "id": "claude-haiku-4-5-20251001", "display_name": "Haiku 4.5" },
+  "workspace": {
+    "current_dir": "/Users/you/dotfiles",
+    "project_dir": "/Users/you/dotfiles",
+    "added_dirs": []
+  },
+  "vim": { "mode": "NORMAL" },
+  "agent": { "name": "shell-helper" },
+  "version": "2.1.280",
+  "output_style": { "name": "Explanatory" },
+  "cost": {
+    "total_cost_usd": 0.08,
+    "total_duration_ms": 610000,
+    "total_api_duration_ms": 22000,
+    "total_lines_added": 12,
+    "total_lines_removed": 3
+  },
+  "context_window": {
+    "total_input_tokens": 9000,
+    "total_output_tokens": 700,
+    "context_window_size": 200000,
+    "used_percentage": 5,
+    "remaining_percentage": 95,
+    "current_usage": {
+      "input_tokens": 900,
+      "output_tokens": 700,
+      "cache_creation_input_tokens": 1200,
+      "cache_read_input_tokens": 6900
+    }
+  },
+  "exceeds_200k_tokens": false,
+  "prompt_cache": { "warm": true, "caching_observed": true, "ttl": "5m", "expires_at": 0, "requests": 6, "misses": 1, "hit_ratio": 0.83 },
+  "fast_mode": true,
+  "effort": { "level": "low" },
+  "thinking": { "enabled": false },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 3, "resets_at": 0 },
+    "seven_day": { "used_percentage": 12, "resets_at": 0 }
+  }
+}

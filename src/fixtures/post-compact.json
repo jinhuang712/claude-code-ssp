@@ -1,0 +1,39 @@
+{
+  "cwd": "/Users/you/projects/acme-web",
+  "session_id": "fixture-post-compact",
+  "session_name": "checkout refactor",
+  "transcript_path": "/nonexistent/fixture-post-compact.jsonl",
+  "model": { "id": "claude-sonnet-5", "display_name": "Sonnet 5" },
+  "workspace": {
+    "current_dir": "/Users/you/projects/acme-web/packages/checkout",
+    "project_dir": "/Users/you/projects/acme-web",
+    "added_dirs": [],
+    "repo": { "host": "github.com", "owner": "acme", "name": "acme-web" }
+  },
+  "version": "2.1.280",
+  "output_style": { "name": "default" },
+  "cost": {
+    "total_cost_usd": 7.84,
+    "total_duration_ms": 9540000,
+    "total_api_duration_ms": 1310000,
+    "total_lines_added": 912,
+    "total_lines_removed": 388
+  },
+  "context_window": {
+    "total_input_tokens": null,
+    "total_output_tokens": null,
+    "context_window_size": 200000,
+    "used_percentage": null,
+    "remaining_percentage": null,
+    "current_usage": null
+  },
+  "exceeds_200k_tokens": false,
+  "prompt_cache": { "warm": false, "caching_observed": true, "ttl": "5m", "expires_at": null, "requests": 181, "misses": 23, "hit_ratio": 0.87 },
+  "fast_mode": false,
+  "effort": { "level": "medium" },
+  "thinking": { "enabled": true },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 64, "resets_at": 0 },
+    "seven_day": { "used_percentage": 41, "resets_at": 0 }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "cwd": "/Users/you/projects/acme-web",
+  "session_id": "fixture-fresh-session",
+  "transcript_path": "/nonexistent/fixture-fresh.jsonl",
+  "model": { "id": "claude-opus-5-5", "display_name": "Opus 5.5" },
+  "workspace": {
+    "current_dir": "/Users/you/projects/acme-web",
+    "project_dir": "/Users/you/projects/acme-web",
+    "added_dirs": [],
+    "repo": { "host": "github.com", "owner": "acme", "name": "acme-web" }
+  },
+  "version": "2.1.280",
+  "output_style": { "name": "default" },
+  "cost": {
+    "total_cost_usd": 0,
+    "total_duration_ms": 4200,
+    "total_api_duration_ms": 0,
+    "total_lines_added": 0,
+    "total_lines_removed": 0
+  },
+  "context_window": {
+    "total_input_tokens": 0,
+    "total_output_tokens": 0,
+    "context_window_size": 200000,
+    "used_percentage": 0,
+    "remaining_percentage": 100,
+    "current_usage": null
+  },
+  "exceeds_200k_tokens": false,
+  "prompt_cache": { "warm": false, "caching_observed": false, "requests": 0, "misses": 0, "hit_ratio": null },
+  "fast_mode": false,
+  "effort": { "level": "high" },
+  "thinking": { "enabled": false },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 1, "resets_at": 0 },
+    "seven_day": { "used_percentage": 22, "resets_at": 0 }
+  }
+}
