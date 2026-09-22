@@ -80,8 +80,56 @@ function allSamples(): Sample[] {
   return [...listLiveSamples(), ...fixtureSamples()];
 }
 
+/** The project directory a captured stdin payload belongs to, if it says. */
+export function sampleCwd(payload: unknown): string | null {
+  const p = payload as { workspace?: { current_dir?: unknown }; cwd?: unknown } | null | undefined;
+  const dir = p?.workspace?.current_dir ?? p?.cwd;
+  return typeof dir === "string" && dir !== "" ? dir : null;
+}
+
+/** Canonical form for comparing directories: symlinks resolved when the path exists. */
+function canonicalDir(dir: string): string {
+  try {
+    return fs.realpathSync(dir);
+  } catch {
+    return path.resolve(dir);
+  }
+}
+
+/**
+ * `?cwd=` picks which project's config layer the API reads and writes. Left open, any caller could
+ * make us read — or, through a project-scope save, write — `.claude/claude-code-ssp.json` in an
+ * arbitrary directory. So it may only name the directory the server runs in or the project of a
+ * session Claude Code has actually rendered a statusline for (a captured sample).
+ */
+function resolveCwd(url: URL): string {
+  const asked = url.searchParams.get("cwd");
+  if (asked === null || asked === "") return process.cwd();
+  const wanted = canonicalDir(asked);
+  const known = new Set([canonicalDir(process.cwd())]);
+  for (const s of listLiveSamples()) {
+    const dir = sampleCwd(s.payload);
+    if (dir) known.add(canonicalDir(dir));
+  }
+  if (!known.has(wanted)) throw new HttpError(400, "cwd must be the server's directory or the project of a captured session");
+  return wanted;
+}
+
+/**
+ * Preview width in terminal cells. 0 is the unbounded single-line probe the options drawer uses;
+ * anything else is clamped to a plausible terminal so a request can't ask for a 10-million-column
+ * render (which once produced a 20 MB response). Missing → 120, like a typical wide terminal.
+ */
+export function parseColumns(value: unknown): number {
+  if (value === undefined || value === null) return 120;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) throw new HttpError(400, "columns must be 0 or a positive number");
+  if (n === 0) return 0;
+  return Math.min(500, Math.max(20, Math.floor(n)));
+}
+
 async function handleApi(req: Request, url: URL): Promise<Response> {
-  const cwd = url.searchParams.get("cwd") ?? process.cwd();
+  const cwd = resolveCwd(url);
   switch (`${req.method} ${url.pathname}`) {
     case "GET /api/config": {
       const eff = loadEffectiveConfig(cwd);
@@ -135,14 +183,16 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
       return s ? json(s) : json({ error: "not found" }, 404);
     }
     case "POST /api/render": {
-      const body = await readJson<{ config?: Partial<FooterConfig>; sampleId?: string; payload?: unknown; columns?: number; fillEmpty?: boolean }>(req);
+      // No client-supplied stdin payload: it could name any transcript_path / cwd on disk and turn the
+      // preview into a file and git-status oracle. Previews render captured samples or fixtures only.
+      const body = await readJson<{ config?: Partial<FooterConfig>; sampleId?: string; columns?: number; fillEmpty?: boolean }>(req);
       const config = normalizeConfig(body.config ?? loadEffectiveConfig(cwd).config);
       // The preview is painted by xterm.js, which speaks truecolor; "auto" would otherwise follow this server's env.
       if (config.colorLevel === "auto") config.colorLevel = "truecolor";
       const now = Date.now();
-      const sample = body.payload ?? allSamples().find((x) => x.id === body.sampleId)?.payload ?? fixtureSamples()[0]?.payload ?? {};
+      const sample = allSamples().find((x) => x.id === body.sampleId)?.payload ?? fixtureSamples()[0]?.payload ?? {};
       const stdin = hydrate(sample, now) as StdinData;
-      const ctx = await buildContext(stdin, config, { columns: body.columns ?? 120, now, deadlineMs: 800 });
+      const ctx = await buildContext(stdin, config, { columns: parseColumns(body.columns), now, deadlineMs: 800 });
       const out = render(config, ctx, { fillEmpty: body.fillEmpty === true });
       return json(out);
     }
