@@ -51,6 +51,8 @@ interface State {
   picker: { line: number; zone: Zone } | null;
   toast: string | null;
   saving: boolean;
+  /** Last save failure, shown in the header until a save succeeds (a toast alone is too easy to miss). */
+  saveError: string | null;
   installed: boolean | null;
   advanced: boolean;
   /** Undo stack of pre-edit snapshots (cap 30); typing bursts coalesce into one step. */
@@ -108,6 +110,7 @@ export const useStore = create<State>((set, get) => ({
   picker: null,
   toast: null,
   saving: false,
+  saveError: null,
   installed: null,
   advanced: localStorage.getItem("ssp.advanced") === "1",
   past: [],
@@ -270,7 +273,7 @@ export const useStore = create<State>((set, get) => ({
       const eff = await api.config();
       // Adopt the server's normalized shape so "dirty" compares like with like — unless the user kept editing meanwhile.
       const unchanged = JSON.stringify(get().config) === snapshot;
-      set({ saved: structuredClone(eff.config), layers: eff.layers, saving: false, ...(unchanged ? { config: eff.config } : {}) });
+      set({ saved: structuredClone(eff.config), layers: eff.layers, saving: false, saveError: null, ...(unchanged ? { config: eff.config } : {}) });
       if (scope === "project") {
         // Project `lines` replaces the user layer wholesale: later panel edits keep
         // going to the user file and will NOT show in the row layout. Say so once.
@@ -288,7 +291,8 @@ export const useStore = create<State>((set, get) => ({
         }
       }
     } catch (err) {
-      set({ saving: false, toast: tr().toast.saveFailed(err instanceof Error ? err.message : String(err)) });
+      const msg = err instanceof Error ? err.message : String(err);
+      set({ saving: false, saveError: msg, toast: tr().toast.saveFailed(msg) });
     }
   },
 

@@ -120,40 +120,74 @@ button {
   border-bottom: 1px solid var(--line);
 }
 
+/*
+  Header: identity + status on the left, actions on the right. It wraps as whole groups (never
+  mid-label) so a half-width browser beside the terminal still reads cleanly.
+*/
 .topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+.topbar-id {
   display: flex;
   align-items: baseline;
   gap: 14px;
-  margin-bottom: 12px;
+  min-width: 0;
+  flex: 1 1 320px;
 }
 .topbar h1 {
   margin: 0;
   font-size: var(--fs-lg);
   font-weight: 600;
   letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.topbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .status {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  min-width: 0;
   font-size: var(--fs-sm);
   color: var(--muted);
 }
+.status-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .status::before {
   content: "";
+  flex: none;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--muted);
 }
+.status[data-state="live"]::before,
 .status[data-state="saved"]::before {
   background: var(--ok);
 }
-.status[data-state="dirty"]::before {
+.status[data-state="dirty"]::before,
+.status[data-state="unapplied"]::before {
   background: var(--warn);
 }
 .status[data-state="saving"]::before {
   background: var(--accent);
+}
+.status[data-state="error"] {
+  color: var(--danger);
+}
+.status[data-state="error"]::before {
+  background: var(--danger);
 }
 
 .section {
@@ -181,6 +215,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
   border: 1px solid var(--line-strong);
   background: var(--panel);
   border-radius: var(--r-1);
@@ -330,8 +365,9 @@ input[type="checkbox"] {
 }
 .term-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 6px 12px;
   padding: 6px 10px 6px 14px;
   border-bottom: 1px solid var(--line);
   background: var(--panel);
@@ -360,6 +396,31 @@ input[type="checkbox"] {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+/* Controls wrap as one group under the title; the session picker is the only part allowed to shrink. */
+.term-controls {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px 8px;
+  min-width: 0;
+}
+.sample-select {
+  flex: 0 1 380px;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+.term-note {
+  margin: 0;
+  padding: 5px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  font-size: var(--fs-xs);
+  color: var(--muted);
 }
 .term .xterm .xterm-viewport {
   overflow: hidden !important;
@@ -895,6 +956,19 @@ input[type="checkbox"] {
 }
 .footer-link:hover {
   color: var(--fg);
+}
+
+/*
+  A sticky preview is the point of the layout on a desktop, but on a phone or a short window it
+  would eat half the screen. There it scrolls away, and drawers take the whole viewport.
+*/
+@media (max-width: 560px), (max-height: 640px) {
+  .masthead {
+    position: static;
+  }
+  .drawer-backdrop {
+    top: 0;
+  }
 }
 
 @media (max-width: 720px) {
