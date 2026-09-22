@@ -2,6 +2,21 @@
 
 Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace installs update when it changes.
 
+## Unreleased
+
+A redesign of the web configurator in Claude Code's own design language.
+
+- Warm ivory/slate surfaces, one clay accent, serif titles, soft corners, the ✻ mark and a clay favicon.
+  The panel's accent no longer changes with the statusline theme (a yellow or grey theme took the focus
+  rings and the Apply button's contrast with it); themes show their colours in their swatches and the preview.
+- The preview draws the statusline under a mock Claude Code prompt, and its toolbar controls have labels.
+- Presets are cards with a sketch of each layout; theme, bar style and separator are one *Style* card; the
+  layout editor is one card with category dots on the chips.
+- Option values read like a Claude Code menu (`❯` marks the current one); the picker has a search field.
+- Accessibility: every text colour checked for WCAG AA in both schemes, input edges at 3:1, choices expose
+  their state (`aria-pressed`), the page has a `<main>` landmark, the chip × no longer fades out, and long
+  widget names truncate instead of clipping on a phone.
+
 ## 0.2.1 — 2026-09-23
 
 A sweep of every widget option against real sessions, and fixes for everything that didn't work.

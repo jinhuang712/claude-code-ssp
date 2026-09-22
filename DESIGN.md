@@ -96,12 +96,20 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
 
 ## Web UI (`web/`, React + Tailwind + zustand + xterm.js + dnd-kit)
 
+* **Look**: Claude Code's own design language, defined as tokens at the top of `web/src/index.css` — warm
+  ivory/slate neutrals, one fixed clay accent (`--clay`, not the edited theme's colour, so focus rings and the
+  primary button keep their contrast), serif titles over a sans body, mono for everything that mirrors the
+  terminal, and the ✻ mark. Every text token is checked for WCAG AA on every surface; icons are inline SVGs
+  (`components/Icon.tsx`). The page reads Presets → Layout → Style, then Advanced/Diagnostics.
+
 * **Preview** = `POST /api/render { config, sample, columns }` → the **same** render engine; output painted by xterm.js
-  on a dark or light terminal ground with a matching ANSI palette. WYSIWYG by construction.
+  on a dark or light terminal ground with a matching ANSI palette, under a quiet mock of Claude Code's prompt
+  (context only — the statusline sits below the prompt). WYSIWYG by construction.
 * **Probes**: every option value, boolean outcome and picker entry is rendered against the current sample —
   coalesced into one `POST /api/render/batch` per tick (`web/src/probe.ts`) and drawn in colour (`Ansi.tsx`).
 * **Try-on**: hovering/focusing a preset, theme, bar style or separator previews it without saving. The preview's
-  height is sticky during try-ons (a shrinking preview moved the hovered chip away and looped).
+  height is sticky during try-ons (a shrinking preview moved the hovered chip away and looped), and the
+  "Previewing: …" label lives inside the prompt row for the same reason.
 * **Samples**: bundled fixtures (fresh session, post-compact null usage, 1M context, no rate_limits, worktree, vim mode,
   Bedrock). `basic` and `post-compact` point at bundled sample transcripts whose timestamps are seconds relative to
   now; `src/core/fixtures.ts` writes a real copy with ISO times, so agents, todos, tools, MCP, output speed and
