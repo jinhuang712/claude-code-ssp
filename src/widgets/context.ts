@@ -32,7 +32,7 @@ export const contextBar = defineWidget<{ label: string | null; showBar: boolean;
       label: { ...labelSchema, default: "Context" },
       showTokens: { type: "boolean", default: false, title: "Show used/total tokens (400k/1M)" },
       showBar: { type: "boolean", default: true, title: "Show bar" },
-      width: { type: "integer", default: 10, minimum: 3, maximum: 40, title: "Bar width" },
+      width: { type: "integer", default: 10, minimum: 3, maximum: 40, title: "Bar width", "x-requires": { showBar: true } },
       value: { type: "string", enum: ["percent", "remaining"], default: "percent", title: "Percentage shows" },
       ...thresholdSchema(70, 85),
       autoCompactWindow: { type: ["integer", "null"], default: null, title: "Autocompact window (tokens)", description: "Compute % against this window instead of the full model window, to match /context." },

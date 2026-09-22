@@ -13,9 +13,9 @@ export const tokensSession = defineWidget<{ label: string | null; breakdown: boo
     properties: {
       label: { ...labelSchema, default: "Tokens" },
       breakdown: { type: "boolean", default: true, title: "Show in/out/cache breakdown" },
-      style: { type: "string", enum: ["words", "arrows"], default: "words", title: "Breakdown style", description: "words: in/out/cache · arrows: ↓ ↑ + cache glyph" },
-      cacheGlyph: { type: "string", enum: ["↻", "↺", "⇄", "≈", "~"], default: "↻", title: "Cache glyph (arrows style)" },
-      parens: { type: "boolean", default: true, title: "Wrap breakdown in ( )" },
+      style: { type: "string", enum: ["words", "arrows"], default: "words", title: "Breakdown style", description: "words: in/out/cache · arrows: ↓ ↑ + cache glyph", "x-requires": { breakdown: true } },
+      cacheGlyph: { type: "string", enum: ["↻", "↺", "⇄", "≈", "~"], default: "↻", title: "Cache glyph (arrows style)", "x-requires": { breakdown: true, style: "arrows" } },
+      parens: { type: "boolean", default: true, title: "Wrap breakdown in ( )", "x-requires": { breakdown: true } },
     },
   },
   defaults: { label: "Tokens", breakdown: true, style: "words", cacheGlyph: "↻", parens: true },

@@ -155,6 +155,12 @@ export interface JsonSchema {
   minimum?: number;
   maximum?: number;
   required?: string[];
+  /**
+   * Option dependency: this option only affects the output while every listed sibling option has
+   * the given value (e.g. cacheGlyph needs `{ style: "arrows" }`). The panel dims the option and
+   * says what it needs; the option sweep test only exercises it with the requirement met.
+   */
+  "x-requires"?: Record<string, unknown>;
   [k: string]: unknown;
 }
 
