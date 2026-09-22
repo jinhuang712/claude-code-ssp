@@ -1,5 +1,5 @@
 import { defineWidget } from "../core/types.js";
-import { formatModelName, getModelName, getProviderLabel, type ModelFormatMode } from "../data/stdin.js";
+import { formatModelName, getModelName, getProviderLabel, stripContextSuffix, type ModelFormatMode } from "../data/stdin.js";
 import { stdin } from "./_shared.js";
 
 type EffortStyle = "symbol-word" | "word" | "symbol";
@@ -52,7 +52,10 @@ export const modelBadge = defineWidget<{
     const s = stdin(ctx);
     let name = formatModelName(getModelName(s), o.format);
     if (!name) return null;
-    if (o.showWindow) {
+    // Claude Code's own display name may already carry the window ("Opus 5.5 (1M context)"); the
+    // "full" format keeps that suffix, so appending "(1M)" again would print it twice.
+    const alreadyShowsWindow = stripContextSuffix(name) !== name;
+    if (o.showWindow && !alreadyShowsWindow) {
       const w = windowLabel(s.context_window?.context_window_size);
       if (w) name = `${name} (${w})`;
     }
