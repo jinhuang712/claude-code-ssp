@@ -338,21 +338,29 @@ export default function App() {
     );
   }
 
+  // The masthead spans the window (its bottom rule reaches both edges) while its content, the page
+  // and the footer share one centred column (.wrap).
   return (
-    <div className="page">
+    <>
       <div className="masthead" ref={mast}>
-        <Header />
-        <Preview />
+        <div className="wrap">
+          <Header />
+          <Preview />
+        </div>
       </div>
-      <Welcome />
-      <Presets />
-      <Layout />
-      <Themes />
-      <BarGlyphs />
-      <Separators />
-      <Advanced />
-      <Diagnostics />
-      <Footer />
+      <main className="wrap page">
+        <Welcome />
+        <Presets />
+        <Layout />
+        <Themes />
+        <BarGlyphs />
+        <Separators />
+        <Advanced />
+        <Diagnostics />
+      </main>
+      <div className="wrap">
+        <Footer />
+      </div>
       <Picker />
       <Options />
       {toast && (
@@ -360,6 +368,6 @@ export default function App() {
           {toast}
         </div>
       )}
-    </div>
+    </>
   );
 }

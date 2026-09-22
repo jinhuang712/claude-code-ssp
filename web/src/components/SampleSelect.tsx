@@ -37,7 +37,7 @@ export function SampleSelect() {
   };
 
   return (
-    <select className="field sample-select !py-0.5" value={sampleId ?? ""} onChange={(e) => void setSample(e.target.value || null)} title={t.preview.sample} aria-label={t.preview.sample}>
+    <select className="field field-sm sample-select" value={sampleId ?? ""} onChange={(e) => void setSample(e.target.value || null)} title={t.preview.sample} aria-label={t.preview.sample}>
       {samples.length === 0 && <option value="">{t.preview.noSamples}</option>}
       {[...byProject.entries()].map(([project, list]) => (
         <optgroup key={project} label={project}>

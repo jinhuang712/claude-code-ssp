@@ -44,6 +44,10 @@ export const zh: Messages = {
   preview: {
     title: "预览",
     renderTime: "渲染耗时",
+    dataLabel: "数据",
+    widthLabel: "宽度",
+    terminalLabel: "终端",
+    promptHint: "试试「解释一下这个状态栏」",
     filled: (n) => `${n} 项还没有真实数据，先用示例值占位`,
     hidden: (n) => `${n} 项没有数据也没有示例，不显示`,
     emptyLines: (n) => `${n} 行因此为空`,

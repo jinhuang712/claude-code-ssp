@@ -1,6 +1,7 @@
 import { useT, type Messages } from "../i18n";
 import { isDirty, useStore } from "../store";
 import { describeStatusLine } from "../statusline";
+import { Icon } from "./Icon";
 
 /**
  * Asked before this configurator replaces another tool's statusLine. Nothing is overwritten until
@@ -64,7 +65,7 @@ function ScopeSelect() {
   return (
     <label className="scope">
       <span>{t.header.scope}</span>
-      <select className="field !w-auto !py-0.5" value={scope} onChange={(e) => setScope(e.target.value as "user" | "project")} title={scope === "project" ? (project?.path ?? "") : undefined}>
+      <select className="field field-sm !w-auto" value={scope} onChange={(e) => setScope(e.target.value as "user" | "project")} title={scope === "project" ? (project?.path ?? "") : undefined}>
         <option value="user">{t.header.scopeUser}</option>
         <option value="project">{t.header.scopeProject(projectName)}</option>
       </select>
@@ -80,7 +81,11 @@ export function Header() {
     <>
     <header className="topbar">
       <div className="topbar-id">
-        <h1>{t.header.title}</h1>
+        {/* ✻ is Claude Code's own mark (its welcome box and spinner); decorative, the h1 names the page. */}
+        <span className="brand-mark" aria-hidden="true">
+          ✻
+        </span>
+        <h1 className="serif">{t.header.title}</h1>
         {s.sandbox && (
           <span className="tag tag-warn" title={t.header.sandboxTitle}>
             {t.header.sandbox}
@@ -98,11 +103,13 @@ export function Header() {
       </div>
       <div className="topbar-actions">
         <ScopeSelect />
-        <button className="btn" disabled={s.past.length === 0} onClick={() => s.undo()} title={s.past.length ? t.header.undoTitle(s.past.length) : t.header.nothingToUndo}>
+        <button className="btn btn-ghost" disabled={s.past.length === 0} onClick={() => s.undo()} title={s.past.length ? t.header.undoTitle(s.past.length) : t.header.nothingToUndo}>
+          <Icon name="undo" />
           {t.header.undo}
-          {s.past.length > 1 ? ` ${s.past.length}` : ""}
+          {s.past.length > 1 && <span className="count">{s.past.length}</span>}
         </button>
-        <button className="btn" onClick={() => void s.resetCounters()} title={t.header.resetCountersTitle}>
+        <button className="btn btn-ghost" onClick={() => void s.resetCounters()} title={t.header.resetCountersTitle}>
+          <Icon name="reset" />
           {t.header.resetCounters}
         </button>
         <button className={s.installed === true ? "btn" : "btn btn-primary"} onClick={() => void s.install()} title={s.installed === true ? t.header.reapplyTitle : t.header.applyTitle}>

@@ -49,6 +49,12 @@ export const en = {
   preview: {
     title: "Preview",
     renderTime: "Render time",
+    /** Short visible labels for the toolbar; each control's longer aria-label contains the word. */
+    dataLabel: "Data",
+    widthLabel: "Width",
+    terminalLabel: "Terminal",
+    /** Placeholder in the mock Claude Code prompt drawn above the statusline. */
+    promptHint: 'Try "explain this statusline"',
     filled: (n: number) => (n === 1 ? "1 item has no real data yet — showing a sample value" : `${n} items have no real data yet — showing sample values`),
     hidden: (n: number) => (n === 1 ? "1 item has no data or sample and is hidden" : `${n} items have no data or sample and are hidden`),
     emptyLines: (n: number) => (n === 1 ? "1 line is empty as a result" : `${n} lines are empty as a result`),

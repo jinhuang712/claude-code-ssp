@@ -140,21 +140,27 @@ button:disabled {
   font-family: var(--font-serif);
 }
 
-/* ---- page frame ---- */
-.page {
+/* ---- page frame: one centred column shared by the masthead, the page and the footer ---- */
+.wrap {
   margin: 0 auto;
-  max-width: 1040px;
-  padding: 0 28px 120px;
+  max-width: 1080px;
+  padding: 0 32px;
+}
+.page {
+  padding-bottom: var(--sp-7);
 }
 
+/* Header + preview stay pinned while the page scrolls, so every edit is seen as it is made. */
 .masthead {
   position: sticky;
   top: 0;
   z-index: 10;
-  margin: 0 -28px;
-  padding: 14px 28px 16px;
+  padding: 14px 0 16px;
   background: var(--bg);
   border-bottom: 1px solid var(--line);
+}
+.icon {
+  flex: none;
 }
 
 /*
@@ -167,34 +173,60 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 10px 16px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 .topbar-id {
   display: flex;
-  align-items: baseline;
-  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
   min-width: 0;
   flex: 1 1 320px;
 }
+.brand-mark {
+  color: var(--clay);
+  font-size: 22px;
+  line-height: 1;
+  /* The glyph sits high in most fonts; nudge it onto the title's x-height. */
+  transform: translateY(1px);
+}
 .topbar h1 {
-  margin: 0;
-  font-size: var(--fs-lg);
-  font-weight: 600;
+  margin: 0 0 0 -4px;
+  font-size: var(--fs-xl);
+  font-weight: 500;
   letter-spacing: -0.01em;
   white-space: nowrap;
 }
 .topbar-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
 }
+/* The undo depth, as a small counter inside the button. */
+.count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--panel-2);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: 18px;
+  color: var(--fg-2);
+}
+/* Save state as a pill: a coloured dot + one short sentence. */
 .status {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   min-width: 0;
-  font-size: var(--fs-sm);
-  color: var(--muted);
+  max-width: 100%;
+  padding: 3px 10px 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  font-size: var(--fs-xs);
+  color: var(--fg-2);
 }
 .status-text {
   overflow: hidden;
@@ -433,30 +465,86 @@ input[type="checkbox"] {
   position: relative;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-2);
-  background: var(--bg-deep);
+  background: var(--panel);
   overflow: hidden;
+  box-shadow: 0 1px 2px var(--shadow);
 }
 .term-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 12px;
-  padding: 6px 10px 6px 14px;
+  gap: 6px 16px;
+  padding: 7px 12px 7px 16px;
   border-bottom: 1px solid var(--line);
   background: var(--panel);
   font-size: var(--fs-xs);
   color: var(--muted);
 }
-.term-bar .title {
-  color: var(--fg-2);
+.term-title {
+  font-size: var(--fs-sm);
   font-weight: 600;
+  color: var(--fg);
 }
 .term-bar .meta {
   font-variant-numeric: tabular-nums;
 }
+/* One labelled toolbar control: a muted word, then the select. */
+.tb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.tb-label {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.tb-grow {
+  flex: 0 1 380px;
+}
 .term {
-  padding: 10px 14px 12px;
+  padding: 10px 16px 14px;
   background: var(--term-dark);
+}
+/*
+  The mock Claude Code prompt above the statusline: '>' and a dim placeholder between two rules,
+  in the terminal's own colours. Exactly one line tall, always.
+*/
+.term-prompt {
+  --tp-line: rgba(232, 230, 220, 0.18);
+  --tp-dim: #8f8d85;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  margin-bottom: 8px;
+  padding: 0 2px;
+  border-top: 1px solid var(--tp-line);
+  border-bottom: 1px solid var(--tp-line);
+  font-size: 13px;
+  color: #e8e6dc;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.term[data-scheme="light"] .term-prompt {
+  --tp-line: rgba(31, 30, 29, 0.16);
+  --tp-dim: #75736c;
+  color: #1f1e1d;
+}
+.term-ph {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--tp-dim);
+}
+/* "Previewing: … — click to apply", on the same line so hovering never changes the height. */
+.term-tryon {
+  flex: none;
+  margin-left: auto;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--clay);
 }
 /* Matches TERM_THEMES in theme.ts: the padding around the canvas must be the terminal's ground too. */
 .term[data-scheme="light"] {
@@ -465,23 +553,17 @@ input[type="checkbox"] {
 .term[data-fixed="true"] {
   overflow-x: auto;
 }
-.cols {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-/* Controls wrap as one group under the title; the session picker is the only part allowed to shrink. */
+/* Controls wrap as one group after the title; the data picker is the only part allowed to shrink. */
 .term-controls {
   display: flex;
   flex: 1 1 auto;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
-  gap: 6px 8px;
+  gap: 6px 16px;
   min-width: 0;
 }
 .sample-select {
-  flex: 0 1 380px;
+  flex: 1 1 auto;
   width: auto;
   min-width: 0;
   max-width: 100%;
@@ -489,8 +571,8 @@ input[type="checkbox"] {
 }
 .term-note {
   margin: 0;
-  padding: 5px 14px;
-  border-bottom: 1px solid var(--line);
+  padding: 6px 16px;
+  border-top: 1px solid var(--line);
   background: var(--panel);
   font-size: var(--fs-xs);
   color: var(--muted);
@@ -1061,19 +1143,6 @@ input[type="checkbox"] {
   min-width: 0;
   overflow: hidden;
 }
-/* "Previewing: …" while a choice is hovered. Absolutely positioned so it can never change the
-   masthead's height (which is what made hover previews loop). */
-.tryon-badge {
-  position: absolute;
-  right: 10px;
-  bottom: 8px;
-  z-index: 1;
-  box-shadow: 0 2px 8px var(--shadow);
-}
-.tag-accent {
-  background: color-mix(in srgb, var(--clay) 20%, var(--panel));
-  color: var(--fg);
-}
 /* Separator chips: the separator itself stands out between two neutral words. */
 .sep-sample {
   white-space: pre;
@@ -1209,12 +1278,11 @@ input[type="checkbox"] {
 }
 
 @media (max-width: 720px) {
-  .page {
-    padding: 0 16px 80px;
+  .wrap {
+    padding: 0 16px;
   }
   .masthead {
-    margin: 0 -16px;
-    padding: 12px 16px;
+    padding: 12px 0;
   }
   .linerow-body {
     flex-direction: column;
