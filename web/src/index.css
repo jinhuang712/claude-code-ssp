@@ -769,10 +769,16 @@ input[type="checkbox"] {
 /* ---- disclosure ---- */
 .disclosure {
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  text-align: left;
   font-size: var(--fs-sm);
   color: var(--fg-2);
+}
+/* On a phone the hint drops under the title instead of squeezing it into a column. */
+.disclosure > .hint {
+  flex: 1 1 220px;
 }
 .disclosure:hover {
   color: var(--fg);
