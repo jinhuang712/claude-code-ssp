@@ -168,7 +168,7 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
       const live = listLiveSamples()[0];
       return json({
         layers: eff.layers.map((l) => ({ name: l.name, path: l.path, exists: l.exists, error: l.error ?? null })),
-        plugins: { dirs: plugins.dirs, loaded: plugins.loaded, errors: plugins.errors },
+        plugins: { dirs: plugins.dirs, loaded: plugins.loaded, errors: plugins.errors, skipped: plugins.skipped },
         settings: { path: settingsPath(), statusLine, error: settingsError },
         lastPayload: live ? { id: live.id, capturedAt: live.capturedAt, payload: live.payload } : null,
       });

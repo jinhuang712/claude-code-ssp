@@ -50,7 +50,7 @@ export const DEFAULT_CONFIG: FooterConfig = {
   columnsOffset: 4,
   lines: DEFAULT_LINES,
   git: { enabled: true, cacheMs: 2000 },
-  plugins: { dirs: [] },
+  plugins: { dirs: [], trustedProjects: [] },
   captureSamples: true,
 };
 
@@ -114,9 +114,17 @@ export function normalizeConfig(input: Partial<FooterConfig>): FooterConfig {
     columnsOffset: Number.isFinite(merged.columnsOffset) ? Math.max(0, Math.floor(Number(merged.columnsOffset))) : DEFAULT_CONFIG.columnsOffset,
     lines: lines.map(cleanLine),
     git: { enabled: merged.git?.enabled !== false, cacheMs: Number.isFinite(merged.git?.cacheMs) ? Number(merged.git.cacheMs) : 2000 },
-    plugins: { dirs: Array.isArray(merged.plugins?.dirs) ? merged.plugins.dirs.filter((d) => typeof d === "string") : [] },
+    plugins: {
+      dirs: Array.isArray(merged.plugins?.dirs) ? merged.plugins.dirs.filter((d) => typeof d === "string") : [],
+      trustedProjects: Array.isArray(merged.plugins?.trustedProjects) ? merged.plugins.trustedProjects.filter((d) => typeof d === "string" && d !== "") : [],
+    },
     captureSamples: merged.captureSamples !== false,
   };
+}
+
+function withoutPlugins(value: Partial<FooterConfig>): Partial<FooterConfig> {
+  const { plugins: _ignored, ...rest } = value;
+  return rest;
 }
 
 export function loadEffectiveConfig(cwd: string | undefined, env: NodeJS.ProcessEnv = process.env): EffectiveConfig {
@@ -126,7 +134,14 @@ export function loadEffectiveConfig(cwd: string | undefined, env: NodeJS.Process
     readLayer("project", cwd ? projectConfigPath(cwd) : null),
   ];
   let acc: Partial<FooterConfig> = {};
-  for (const layer of layers) if (layer.value) acc = mergeConfig(acc, layer.value);
+  for (const layer of layers) {
+    if (!layer.value) continue;
+    // A project file travels with the repo, so whoever wrote the repo wrote it. `plugins` decides which
+    // code the statusline executes; letting a cloned repo set it (or trust itself) would turn "open this
+    // project in Claude Code" into "run this project's code". The layer is still shown as-is in the UI.
+    const value = layer.name === "project" ? withoutPlugins(layer.value) : layer.value;
+    acc = mergeConfig(acc, value);
+  }
   return { config: normalizeConfig(acc), layers };
 }
 

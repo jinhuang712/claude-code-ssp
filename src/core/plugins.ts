@@ -1,8 +1,15 @@
 /**
  * User widget plugins: any *.js / *.mjs / *.ts file in the plugin dirs whose default export is a
  * widget definition (or an array of them). Load failures are collected, never thrown.
+ *
+ * Trust model: a plugin is code that runs on every statusline tick. The user's own widgets dir and
+ * the dirs listed in the *user* config always load. A project's `.claude/claude-code-ssp/widgets/`
+ * loads only when the project is listed in `plugins.trustedProjects` — otherwise cloning a repo and
+ * opening it in Claude Code would execute whatever that repo ships. (Project config files can't set
+ * `plugins` at all; loadEffectiveConfig drops it.)
  */
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import { userConfigDir } from "./config.js";
@@ -13,13 +20,51 @@ export interface PluginLoadReport {
   dirs: string[];
   loaded: Array<{ file: string; ids: string[] }>;
   errors: Array<{ file: string; message: string }>;
+  /** Plugin dirs that exist but were deliberately not loaded, with a human-readable reason. */
+  skipped: Array<{ dir: string; reason: string }>;
 }
 
-export function pluginDirs(config: FooterConfig, cwd?: string): string[] {
+/** Where a project keeps its own widgets. */
+export function projectWidgetsDir(cwd: string): string {
+  return path.join(cwd, ".claude", "claude-code-ssp", "widgets");
+}
+
+function canonical(p: string): string {
+  const expanded = p.replace(/^~(?=$|[\\/])/, os.homedir());
+  try {
+    return fs.realpathSync(expanded);
+  } catch {
+    return path.resolve(expanded);
+  }
+}
+
+/** Is `cwd` one of the trusted project dirs, or inside one? Symlinks are resolved on both sides. */
+export function isTrustedProject(cwd: string, trusted: readonly string[]): boolean {
+  const dir = canonical(cwd);
+  return trusted.some((t) => {
+    const root = canonical(t);
+    return dir === root || dir.startsWith(root.endsWith(path.sep) ? root : root + path.sep);
+  });
+}
+
+/** Resolve which plugin dirs load for this cwd, and which existing ones were held back. */
+export function resolvePluginDirs(config: FooterConfig, cwd?: string): { dirs: string[]; skipped: PluginLoadReport["skipped"] } {
   const dirs = [path.join(userConfigDir(), "widgets")];
-  if (cwd) dirs.push(path.join(cwd, ".claude", "claude-code-ssp", "widgets"));
-  for (const d of config.plugins.dirs) dirs.push(path.resolve(d));
-  return [...new Set(dirs)];
+  const skipped: PluginLoadReport["skipped"] = [];
+  if (cwd) {
+    const projectDir = projectWidgetsDir(cwd);
+    if (isTrustedProject(cwd, config.plugins.trustedProjects ?? [])) dirs.push(projectDir);
+    else if (fs.existsSync(projectDir)) {
+      skipped.push({ dir: projectDir, reason: `project not trusted — add ${cwd} to plugins.trustedProjects in your user config to load its widgets` });
+    }
+  }
+  for (const d of config.plugins.dirs) dirs.push(canonical(d));
+  return { dirs: [...new Set(dirs)], skipped };
+}
+
+/** The dirs that will actually be scanned (kept for callers that only need the list). */
+export function pluginDirs(config: FooterConfig, cwd?: string): string[] {
+  return resolvePluginDirs(config, cwd).dirs;
 }
 
 function isDef(v: unknown): v is WidgetDefinition {
@@ -27,7 +72,8 @@ function isDef(v: unknown): v is WidgetDefinition {
 }
 
 export async function loadPlugins(config: FooterConfig, cwd?: string): Promise<PluginLoadReport> {
-  const report: PluginLoadReport = { dirs: pluginDirs(config, cwd), loaded: [], errors: [] };
+  const { dirs, skipped } = resolvePluginDirs(config, cwd);
+  const report: PluginLoadReport = { dirs, loaded: [], errors: [], skipped };
   for (const dir of report.dirs) {
     let files: string[];
     try {

@@ -20,6 +20,7 @@ export async function doctor(): Promise<void> {
   for (const d of plugins.dirs) console.log(`- dir: ${d}`);
   for (const p of plugins.loaded) console.log(`- loaded ${p.file}: ${p.ids.join(", ")}`);
   for (const e of plugins.errors) console.log(`- ERROR ${e.file}: ${e.message}`);
+  for (const s of plugins.skipped) console.log(`- skipped ${s.dir}: ${s.reason}`);
   console.log(`\n## Widgets (${listWidgets().length})`);
   console.log(listWidgets().map((w) => `${w.id}${w.source === "plugin" ? " (plugin)" : ""}`).join(", "));
   console.log(`\n## settings.json`);
