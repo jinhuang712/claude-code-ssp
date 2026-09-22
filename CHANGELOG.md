@@ -2,6 +2,26 @@
 
 Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace installs update when it changes.
 
+## 0.2.1 — 2026-09-23
+
+A sweep of every widget option against real sessions, and fixes for everything that didn't work.
+
+- **Output speed (tok/s) works.** It never showed: the claude-hud tracker it relied on needs renders while a
+  response streams, which Claude Code doesn't do. It now measures the latest response from the transcript
+  (end to end, replies under 200 tokens skipped).
+- Labels never run into their value (`Compacted 2`, not `Compacted2`); `custom.env` gets a *Show NAME=* toggle
+  and says when no variable is set.
+- MCP count includes servers from enabled and claude.ai-synced plugins.
+- Cost and the provider label agree on Bedrock/Vertex (env switch or model id).
+- Agent models read `opus 5.5` instead of `claude-opus-5-5[1m]`.
+- `git.repo` falls back to `origin` in `.git/config` when Claude Code doesn't send the repo.
+- Options that only act with another option on are dimmed with a reason in the panel.
+- Built-in samples include a sample transcript (agents, todos, tools, MCP, speed preview) and a Bedrock session;
+  live samples are no longer padded with made-up values.
+- Input without a `session_id` is no longer saved as an "unknown" session.
+- A helper exported from a widget module can no longer crash the statusline at startup.
+- New `tests/option-sweep.test.ts` keeps every option working.
+
 ## 0.2.0 — 2026-09-23
 
 ### Safer by default
