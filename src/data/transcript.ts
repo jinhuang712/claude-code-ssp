@@ -90,6 +90,9 @@ interface ContentBlock {
 interface TranscriptFileState {
   mtimeMs: number;
   size: number;
+  /** claude-code-ssp: file identity, so an incremental parse never resumes into a different file. */
+  dev?: number;
+  ino?: number;
 }
 
 interface SerializedToolEntry extends Omit<ToolEntry, 'startTime' | 'endTime'> {
@@ -123,14 +126,100 @@ interface SerializedTranscriptData {
   lastAssistantModel?: string;
 }
 
+/**
+ * claude-code-ssp: the parser's full working state at a line boundary.
+ *
+ * A live session appends to its transcript on every message, so the mtime+size cache above missed
+ * on every render and the whole file was re-read: ~75 ms at 18 MB, ~235 ms at 110 MB — far over the
+ * statusline budget. With this snapshot the next parse seeks to `offset` and only reads what was
+ * appended. Maps are stored as entry lists (insertion order matters: the newest tools/agents win).
+ * Everything the loop can grow is capped when saved (see RESUME_*_MAX) to keep the cache small.
+ */
+interface SerializedResumeState {
+  /** Byte offset just past the last newline-terminated line that was consumed. */
+  offset: number;
+  dev: number;
+  ino: number;
+  tools: SerializedToolEntry[];
+  agents: SerializedAgentEntry[];
+  skills: string[];
+  mcpServers: string[];
+  mcpErrors: string[];
+  todos: TodoItem[];
+  taskIdToIndex: Array<[string, number]>;
+  queueCompletions: Array<[string, string]>;
+  customTitle?: string;
+  advisorModel?: string;
+  ultracodeActive?: boolean;
+  lastCompactBoundaryAt?: string;
+  lastCompactPostTokens?: number;
+  compactionCount: number;
+  sessionTokens: SessionTokenUsage;
+  usageByMessageId: Array<[string, SessionTokenUsage]>;
+  lastUsageKey?: string;
+  prevMainChainAt?: string;
+  promptCacheAnchorAt?: string;
+  promptCacheTtlSeconds?: number;
+  promptCacheRequestId?: string;
+  promptCacheRequestAnchorAt?: string;
+  promptCachePendingRequestAt?: string;
+  sessionStart?: string;
+  lastAssistantResponseAt?: string;
+  lastAssistantModel?: string;
+}
+
+/** claude-code-ssp: SerializedResumeState with Dates, Maps and Sets restored, ready to seed the parse loop. */
+interface ResumeState {
+  offset: number;
+  toolMap: Map<string, ToolEntry>;
+  agentMap: Map<string, AgentEntry>;
+  skillSet: Set<string>;
+  mcpServerSet: Set<string>;
+  mcpErrorSet: Set<string>;
+  latestTodos: TodoItem[];
+  taskIdToIndex: Map<string, number>;
+  queueCompletionMap: Map<string, Date>;
+  customTitle?: string;
+  latestAdvisorModel?: string;
+  latestUltracodeActive?: boolean;
+  lastCompactBoundaryAt?: Date;
+  lastCompactPostTokens?: number;
+  compactionCount: number;
+  sessionTokens: SessionTokenUsage;
+  usageByMessageId: Map<string, SessionTokenUsage>;
+  lastUsageKey?: string;
+  prevMainChainAt?: Date;
+  promptCacheAnchorAt?: Date;
+  promptCacheTtlSeconds?: number;
+  promptCacheRequestId?: string;
+  promptCacheRequestAnchorAt?: Date;
+  promptCachePendingRequestAt?: Date;
+  sessionStart?: Date;
+  lastAssistantResponseAt?: Date;
+  lastAssistantModel?: string;
+}
+
 interface TranscriptCacheFile {
   version?: number;
   transcriptPath: string;
   transcriptState: TranscriptFileState;
   data: SerializedTranscriptData;
+  /** claude-code-ssp: absent when the parse could not end on a clean line boundary. */
+  resume?: SerializedResumeState;
 }
 
-const TRANSCRIPT_CACHE_VERSION = 18;
+// claude-code-ssp: 19 adds `resume` (incremental parsing); older caches are simply re-parsed once.
+const TRANSCRIPT_CACHE_VERSION = 19;
+/*
+  claude-code-ssp: caps for what the resume snapshot keeps. Only the newest 20 tools and 10 agents
+  are ever shown, so older entries only matter if a late tool_result refers to them — which would
+  update an entry that is no longer displayed anyway. Message-id dedup only has to bridge the few
+  duplicate records Claude Code writes next to each other, not the whole session.
+*/
+const RESUME_TOOLS_MAX = 200;
+const RESUME_AGENTS_MAX = 100;
+const RESUME_USAGE_IDS_MAX = 512;
+const RESUME_QUEUE_COMPLETIONS_MAX = 500;
 const MCP_TOOL_NAME_PATTERN = /^mcp__(.+?)__(.+)$/;
 const ACTIVITY_NAME_MAX_LEN = 64;
 const MESSAGE_ID_MAX_LEN = 128;
@@ -349,6 +438,8 @@ function readTranscriptFileState(transcriptPath: string): TranscriptFileState | 
     return {
       mtimeMs: stat.mtimeMs,
       size: stat.size,
+      dev: stat.dev,
+      ino: stat.ino,
     };
   } catch (err) {
     debug('Failed to stat transcript file %s:', transcriptPath, err instanceof Error ? err.message : err);
@@ -428,7 +519,14 @@ function deserializeTranscriptData(data: SerializedTranscriptData): TranscriptDa
   };
 }
 
-function readTranscriptCache(transcriptPath: string, state: TranscriptFileState): TranscriptData | null {
+/**
+ * claude-code-ssp: read the cache file once and answer both questions from it — "is the transcript
+ * unchanged?" (return the cached data) and "was it only appended to?" (return the resume state).
+ */
+function readTranscriptCache(
+  transcriptPath: string,
+  state: TranscriptFileState,
+): { data: TranscriptData | null; resume: ResumeState | null } {
   try {
     const cachePath = getTranscriptCachePath(transcriptPath, os.homedir());
     const raw = fs.readFileSync(cachePath, 'utf8');
@@ -438,20 +536,167 @@ function readTranscriptCache(transcriptPath: string, state: TranscriptFileState)
       || !parsed.data
       || !parsed.transcriptPath
       || parsed.transcriptPath !== path.resolve(transcriptPath)
-      || parsed.transcriptState?.mtimeMs !== state.mtimeMs
-      || parsed.transcriptState?.size !== state.size
     ) {
-      return null;
+      return { data: null, resume: null };
+    }
+    if (parsed.transcriptState?.mtimeMs === state.mtimeMs && parsed.transcriptState?.size === state.size) {
+      return { data: deserializeTranscriptData(parsed.data), resume: null };
     }
 
-    return deserializeTranscriptData(parsed.data);
+    return { data: null, resume: resumableState(transcriptPath, state, parsed.resume) };
   } catch (err) {
     debug('Failed to read transcript cache:', err instanceof Error ? err.message : err);
+    return { data: null, resume: null };
+  }
+}
+
+/**
+ * claude-code-ssp: accept a saved resume point only if the file is provably the same file with bytes
+ * appended: same device+inode, not shorter than the offset, and the byte before the offset is still
+ * the newline that ended the last consumed line. Anything else (rotation, rewrite, truncation, a
+ * corrupt snapshot) returns null and the caller does a full parse.
+ */
+function resumableState(
+  transcriptPath: string,
+  state: TranscriptFileState,
+  saved: SerializedResumeState | undefined,
+): ResumeState | null {
+  if (!saved || typeof saved.offset !== 'number' || saved.offset < 0) return null;
+  if (saved.dev !== state.dev || saved.ino !== state.ino || state.size < saved.offset) return null;
+  if (saved.offset > 0 && readByteAt(transcriptPath, saved.offset - 1) !== 0x0a) return null;
+  try {
+    return deserializeResumeState(saved);
+  } catch (err) {
+    debug('Ignoring unreadable resume state:', err instanceof Error ? err.message : err);
     return null;
   }
 }
 
-function writeTranscriptCache(transcriptPath: string, state: TranscriptFileState, data: TranscriptData): void {
+/** claude-code-ssp: one byte of a file, or null when it cannot be read. */
+function readByteAt(file: string, position: number): number | null {
+  let fd: number | undefined;
+  try {
+    fd = fs.openSync(file, 'r');
+    const buf = Buffer.alloc(1);
+    return fs.readSync(fd, buf, 0, 1, position) === 1 ? buf[0]! : null;
+  } catch {
+    return null;
+  } finally {
+    if (fd !== undefined) fs.closeSync(fd);
+  }
+}
+
+const isoOrUndefined = (d: Date | undefined): string | undefined => (d && !Number.isNaN(d.getTime()) ? d.toISOString() : undefined);
+const dateOrUndefined = (s: string | undefined): Date | undefined => (typeof s === 'string' ? new Date(s) : undefined);
+const lastEntries = <K, V>(m: Map<K, V>, max: number): Array<[K, V]> => Array.from(m.entries()).slice(-max);
+
+function serializeTool(tool: ToolEntry): SerializedToolEntry {
+  return { ...tool, startTime: tool.startTime.toISOString(), endTime: tool.endTime?.toISOString() };
+}
+
+function serializeAgent(agent: AgentEntry): SerializedAgentEntry {
+  return { ...agent, startTime: agent.startTime.toISOString(), endTime: agent.endTime?.toISOString() };
+}
+
+function deserializeResumeState(s: SerializedResumeState): ResumeState {
+  // Structural checks only: the snapshot is our own 0600 file, but a torn write must not crash rendering.
+  const lists = [s.tools, s.agents, s.skills, s.mcpServers, s.mcpErrors, s.todos, s.taskIdToIndex, s.queueCompletions, s.usageByMessageId];
+  if (!lists.every(Array.isArray) || typeof s.sessionTokens !== 'object' || s.sessionTokens === null) {
+    throw new Error('malformed resume state');
+  }
+  return {
+    offset: s.offset,
+    toolMap: new Map(s.tools.map((t) => [t.id, { ...t, startTime: new Date(t.startTime), endTime: dateOrUndefined(t.endTime) }])),
+    agentMap: new Map(s.agents.map((a) => [a.id, { ...a, startTime: new Date(a.startTime), endTime: dateOrUndefined(a.endTime) }])),
+    skillSet: new Set(s.skills),
+    mcpServerSet: new Set(s.mcpServers),
+    mcpErrorSet: new Set(s.mcpErrors),
+    latestTodos: s.todos.map((todo) => ({ ...todo })),
+    taskIdToIndex: new Map(s.taskIdToIndex),
+    queueCompletionMap: new Map(s.queueCompletions.map(([id, at]) => [id, new Date(at)])),
+    customTitle: s.customTitle,
+    latestAdvisorModel: s.advisorModel,
+    latestUltracodeActive: s.ultracodeActive,
+    lastCompactBoundaryAt: dateOrUndefined(s.lastCompactBoundaryAt),
+    lastCompactPostTokens: s.lastCompactPostTokens,
+    compactionCount: typeof s.compactionCount === 'number' ? s.compactionCount : 0,
+    sessionTokens: { ...s.sessionTokens },
+    usageByMessageId: new Map(s.usageByMessageId),
+    lastUsageKey: s.lastUsageKey,
+    prevMainChainAt: dateOrUndefined(s.prevMainChainAt),
+    promptCacheAnchorAt: dateOrUndefined(s.promptCacheAnchorAt),
+    promptCacheTtlSeconds: s.promptCacheTtlSeconds,
+    promptCacheRequestId: s.promptCacheRequestId,
+    promptCacheRequestAnchorAt: dateOrUndefined(s.promptCacheRequestAnchorAt),
+    promptCachePendingRequestAt: dateOrUndefined(s.promptCachePendingRequestAt),
+    sessionStart: dateOrUndefined(s.sessionStart),
+    lastAssistantResponseAt: dateOrUndefined(s.lastAssistantResponseAt),
+    lastAssistantModel: s.lastAssistantModel,
+  };
+}
+
+function serializeResumeState(r: ResumeState, state: TranscriptFileState): SerializedResumeState | undefined {
+  if (state.dev === undefined || state.ino === undefined) return undefined;
+  return {
+    offset: r.offset,
+    dev: state.dev,
+    ino: state.ino,
+    tools: Array.from(r.toolMap.values()).slice(-RESUME_TOOLS_MAX).map(serializeTool),
+    agents: Array.from(r.agentMap.values()).slice(-RESUME_AGENTS_MAX).map(serializeAgent),
+    skills: [...r.skillSet],
+    mcpServers: [...r.mcpServerSet],
+    mcpErrors: [...r.mcpErrorSet],
+    todos: r.latestTodos.map((todo) => ({ ...todo })),
+    taskIdToIndex: [...r.taskIdToIndex.entries()],
+    queueCompletions: lastEntries(r.queueCompletionMap, RESUME_QUEUE_COMPLETIONS_MAX).map(([id, at]) => [id, at.toISOString()]),
+    customTitle: r.customTitle,
+    advisorModel: r.latestAdvisorModel,
+    ultracodeActive: r.latestUltracodeActive,
+    lastCompactBoundaryAt: isoOrUndefined(r.lastCompactBoundaryAt),
+    lastCompactPostTokens: r.lastCompactPostTokens,
+    compactionCount: r.compactionCount,
+    sessionTokens: { ...r.sessionTokens },
+    usageByMessageId: lastEntries(r.usageByMessageId, RESUME_USAGE_IDS_MAX),
+    lastUsageKey: r.lastUsageKey,
+    prevMainChainAt: isoOrUndefined(r.prevMainChainAt),
+    promptCacheAnchorAt: isoOrUndefined(r.promptCacheAnchorAt),
+    promptCacheTtlSeconds: r.promptCacheTtlSeconds,
+    promptCacheRequestId: r.promptCacheRequestId,
+    promptCacheRequestAnchorAt: isoOrUndefined(r.promptCacheRequestAnchorAt),
+    promptCachePendingRequestAt: isoOrUndefined(r.promptCachePendingRequestAt),
+    sessionStart: isoOrUndefined(r.sessionStart),
+    lastAssistantResponseAt: isoOrUndefined(r.lastAssistantResponseAt),
+    lastAssistantModel: r.lastAssistantModel,
+  };
+}
+
+/**
+ * claude-code-ssp: yield only newline-terminated lines. While Claude Code is writing, the final line
+ * can be half a JSON record; consuming it would lose that record (it fails to parse now, and the
+ * resume offset would then point into its middle). Instead its byte length goes to `onTail` so the
+ * offset stops before it and the next parse reads the finished line.
+ */
+async function* completeLines(
+  lines: AsyncIterable<string> | Iterable<string>,
+  lastLineTerminated: boolean,
+  onTail: (bytes: number) => void,
+): AsyncGenerator<string> {
+  let pending: string | undefined;
+  for await (const line of lines) {
+    if (pending !== undefined) yield pending;
+    pending = line;
+  }
+  if (pending === undefined) return;
+  if (lastLineTerminated) yield pending;
+  else onTail(Buffer.byteLength(pending));
+}
+
+function writeTranscriptCache(
+  transcriptPath: string,
+  state: TranscriptFileState,
+  data: TranscriptData,
+  resume?: SerializedResumeState,
+): void {
   try {
     const cachePath = getTranscriptCachePath(transcriptPath, os.homedir());
     const cacheDir = path.dirname(cachePath);
@@ -466,6 +711,7 @@ function writeTranscriptCache(transcriptPath: string, state: TranscriptFileState
       transcriptPath: path.resolve(transcriptPath),
       transcriptState: state,
       data: serializeTranscriptData(data),
+      resume,
     };
     fs.writeFileSync(cachePath, JSON.stringify(payload), { encoding: 'utf8', mode: 0o600 });
     try {
@@ -502,54 +748,72 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
     return result;
   }
 
-  const cached = readTranscriptCache(canonicalTranscriptPath, transcriptState);
+  const { data: cached, resume } = readTranscriptCache(canonicalTranscriptPath, transcriptState);
   if (cached) {
     return cached;
   }
 
-  const toolMap = new Map<string, ToolEntry>();
-  const skillSet = new Set<string>();
-  const mcpServerSet = new Set<string>();
-  const mcpErrorSet = new Set<string>();
-  const agentMap = new Map<string, AgentEntry>();
-  let latestTodos: TodoItem[] = [];
-  const taskIdToIndex = new Map<string, number>();
-  const queueCompletionMap = new Map<string, Date>();
-  let customTitle: string | undefined;
-  let latestAdvisorModel: string | undefined;
-  let latestUltracodeActive: boolean | undefined;
-  let lastCompactBoundaryAt: Date | undefined;
-  let lastCompactPostTokens: number | undefined;
-  let compactionCount = 0;
-  const sessionTokens: SessionTokenUsage = {
+  // claude-code-ssp: every piece of parser state below starts from the resume snapshot when the file
+  // was only appended to (see SerializedResumeState), and from empty otherwise — so the loop body is
+  // unchanged and an incremental parse ends in exactly the state a full parse would.
+  const r = resume;
+  const toolMap = r?.toolMap ?? new Map<string, ToolEntry>();
+  const skillSet = r?.skillSet ?? new Set<string>();
+  const mcpServerSet = r?.mcpServerSet ?? new Set<string>();
+  const mcpErrorSet = r?.mcpErrorSet ?? new Set<string>();
+  const agentMap = r?.agentMap ?? new Map<string, AgentEntry>();
+  let latestTodos: TodoItem[] = r?.latestTodos ?? [];
+  const taskIdToIndex = r?.taskIdToIndex ?? new Map<string, number>();
+  const queueCompletionMap = r?.queueCompletionMap ?? new Map<string, Date>();
+  let customTitle: string | undefined = r?.customTitle;
+  let latestAdvisorModel: string | undefined = r?.latestAdvisorModel;
+  let latestUltracodeActive: boolean | undefined = r?.latestUltracodeActive;
+  let lastCompactBoundaryAt: Date | undefined = r?.lastCompactBoundaryAt;
+  let lastCompactPostTokens: number | undefined = r?.lastCompactPostTokens;
+  let compactionCount = r?.compactionCount ?? 0;
+  const sessionTokens: SessionTokenUsage = r?.sessionTokens ?? {
     inputTokens: 0,
     outputTokens: 0,
     cacheCreationTokens: 0,
     cacheReadTokens: 0,
     apiCalls: 0,
   };
-  const usageByMessageId = new Map<string, SessionTokenUsage>();
-  let lastUsageKey: string | undefined;
+  const usageByMessageId = r?.usageByMessageId ?? new Map<string, SessionTokenUsage>();
+  let lastUsageKey: string | undefined = r?.lastUsageKey;
   // Prompt-cache clock state. `prevMainChainAt` trails the main conversation so
   // a response can be anchored to the record it answers; the request fields hold
   // the anchor for the request currently being read.
-  let prevMainChainAt: Date | undefined;
-  let promptCacheAnchorAt: Date | undefined;
-  let promptCacheTtlSeconds: number | undefined;
-  let promptCacheRequestId: string | undefined;
-  let promptCacheRequestAnchorAt: Date | undefined;
-  let promptCachePendingRequestAt: Date | undefined;
+  let prevMainChainAt: Date | undefined = r?.prevMainChainAt;
+  let promptCacheAnchorAt: Date | undefined = r?.promptCacheAnchorAt;
+  let promptCacheTtlSeconds: number | undefined = r?.promptCacheTtlSeconds;
+  let promptCacheRequestId: string | undefined = r?.promptCacheRequestId;
+  let promptCacheRequestAnchorAt: Date | undefined = r?.promptCacheRequestAnchorAt;
+  let promptCachePendingRequestAt: Date | undefined = r?.promptCachePendingRequestAt;
+  // processEntry writes these straight onto `result`; carry them across a resume too.
+  result.sessionStart = r?.sessionStart;
+  result.lastAssistantResponseAt = r?.lastAssistantResponseAt;
+  result.lastAssistantModel = r?.lastAssistantModel;
 
   let parsedCleanly = false;
+  // claude-code-ssp: read [startOffset, size) of the stat snapshot only. Bytes appended while we read
+  // belong to the next parse; stopping at `size` keeps the saved offset consistent with the state.
+  const startOffset = r?.offset ?? 0;
+  let unterminatedTailBytes = 0;
 
   try {
-    const fileStream = createReadStreamImpl(canonicalTranscriptPath);
-    const rl = readline.createInterface({
-      input: fileStream,
-      crlfDelay: Infinity,
-    });
+    const hasNewBytes = transcriptState.size > startOffset;
+    const fileStream = hasNewBytes
+      ? createReadStreamImpl(canonicalTranscriptPath, { start: startOffset, end: transcriptState.size - 1 })
+      : null;
+    const rl = fileStream
+      ? readline.createInterface({
+        input: fileStream,
+        crlfDelay: Infinity,
+      })
+      : [];
+    const lastLineTerminated = !hasNewBytes || readByteAt(canonicalTranscriptPath, transcriptState.size - 1) === 0x0a;
 
-    for await (const line of rl) {
+    for await (const line of completeLines(rl, lastLineTerminated, (bytes) => { unterminatedTailBytes = bytes; })) {
       if (!line.trim()) {
         lastUsageKey = undefined;
         continue;
@@ -780,7 +1044,38 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
     : promptCacheAnchorAt;
   result.promptCacheTtlSeconds = promptCacheTtlSeconds;
   if (parsedCleanly) {
-    writeTranscriptCache(canonicalTranscriptPath, transcriptState, result);
+    // claude-code-ssp: snapshot the full parser state (not the display slices above) so the next
+    // parse can resume right after the last complete line.
+    const snapshot = serializeResumeState({
+      offset: transcriptState.size - unterminatedTailBytes,
+      toolMap,
+      agentMap,
+      skillSet,
+      mcpServerSet,
+      mcpErrorSet,
+      latestTodos,
+      taskIdToIndex,
+      queueCompletionMap,
+      customTitle,
+      latestAdvisorModel,
+      latestUltracodeActive,
+      lastCompactBoundaryAt,
+      lastCompactPostTokens,
+      compactionCount,
+      sessionTokens,
+      usageByMessageId,
+      lastUsageKey,
+      prevMainChainAt,
+      promptCacheAnchorAt,
+      promptCacheTtlSeconds,
+      promptCacheRequestId,
+      promptCacheRequestAnchorAt,
+      promptCachePendingRequestAt,
+      sessionStart: result.sessionStart,
+      lastAssistantResponseAt: result.lastAssistantResponseAt,
+      lastAssistantModel: result.lastAssistantModel,
+    }, transcriptState);
+    writeTranscriptCache(canonicalTranscriptPath, transcriptState, result, snapshot);
   }
 
   return result;
