@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useT } from "../i18n";
 import { useStore } from "../store";
 import { parseAnsi } from "./Ansi";
+import { SampleSelect } from "./SampleSelect";
 import { TERM_THEMES, termScheme, useTheme, type TermBg } from "../theme";
 
 export function Preview() {
@@ -16,9 +17,6 @@ export function Preview() {
   const setColumns = useStore((s) => s.setColumns);
   const columnsMode = useStore((s) => s.columnsMode);
   const setColumnsMode = useStore((s) => s.setColumnsMode);
-  const samples = useStore((s) => s.samples);
-  const sampleId = useStore((s) => s.sampleId);
-  const setSample = useStore((s) => s.setSample);
   const lineCount = useStore((s) => s.config?.lines.length ?? 0);
   const termBg = useTheme((s) => s.termBg);
   const setTermBg = useTheme((s) => s.setTermBg);
@@ -144,14 +142,7 @@ export function Preview() {
             <option value="dark">{t.preview.termDark}</option>
             <option value="light">{t.preview.termLight}</option>
           </select>
-          <select className="field sample-select !py-0.5" value={sampleId ?? ""} onChange={(e) => setSample(e.target.value || null)} title={t.preview.sample} aria-label={t.preview.sample}>
-            {samples.length === 0 && <option value="">{t.preview.noSamples}</option>}
-            {samples.map((sm) => (
-              <option key={sm.id} value={sm.id}>
-                {sm.source === "live" ? t.preview.liveSample(sm.label) : t.preview.fixtureSample(sm.label)}
-              </option>
-            ))}
-          </select>
+          <SampleSelect />
         </div>
       </div>
       {/* The note gets its own row: squeezed into the toolbar it wrapped one word per line. */}
