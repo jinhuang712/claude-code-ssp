@@ -2,6 +2,33 @@ import { useEffect, useState } from "react";
 import { api, type DoctorReport } from "../api";
 import { useT } from "../i18n";
 import { useStore } from "../store";
+import { describeStatusLine } from "../statusline";
+
+/** The way out: put back whatever this configurator replaced (or remove it when there was nothing). */
+function Restore() {
+  const t = useT();
+  const installed = useStore((s) => s.installed);
+  const plan = useStore((s) => s.installPlan);
+  const uninstall = useStore((s) => s.uninstall);
+  if (installed !== true) return null;
+  const prev = plan?.savedPrevious ? describeStatusLine(plan.savedPrevious) : null;
+  return (
+    <div className="row row-top">
+      <span className="min-w-0">
+        {t.restore.title}
+        <span className="hint block">{prev ? t.restore.previous : t.restore.none}</span>
+        {prev && (
+          <code className="mono banner-code" title={prev.full}>
+            {prev.short}
+          </code>
+        )}
+      </span>
+      <button className="btn btn-danger" onClick={() => void uninstall()}>
+        {prev ? t.restore.restoreButton : t.restore.removeButton}
+      </button>
+    </div>
+  );
+}
 
 function Doctor() {
   const t = useT();
@@ -155,6 +182,7 @@ export function Advanced() {
               {project?.exists ? t.advanced.overwriteProject : t.advanced.saveAsProject}
             </button>
           </div>
+          <Restore />
           <Doctor />
           <details className="text-xs">
             <summary className="hint cursor-pointer">{t.advanced.configJson}</summary>

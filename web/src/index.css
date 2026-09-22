@@ -728,11 +728,39 @@ input[type="checkbox"] {
   color: var(--fg);
 }
 .enum-sample {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/*
+  A statusline sample drawn on a patch of terminal ground (Ansi.tsx). The ground follows the
+  preview's terminal background so theme colours are judged where they will actually appear.
+  Values match TERM_THEMES in theme.ts.
+*/
+.ansi {
+  --term-bg: #0b0e13;
+  --term-fg: #dfe4ec;
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 6px;
+  border-radius: var(--r-1);
+  background: var(--term-bg);
+  color: var(--term-fg);
   font-size: var(--fs-xs);
-  color: var(--fg-2);
+  line-height: 1.6;
   white-space: pre;
   overflow: hidden;
   text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.ansi[data-scheme="light"] {
+  --term-bg: #ffffff;
+  --term-fg: #1f2328;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.ansi-link {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
 }
 
 /* ---- disclosure ---- */
@@ -783,6 +811,7 @@ input[type="checkbox"] {
   right: 0;
   bottom: 0;
   width: min(520px, 100vw);
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--line-strong);
@@ -804,28 +833,31 @@ input[type="checkbox"] {
   background: var(--bg-deep);
 }
 .live-text {
-  font-size: var(--fs-sm);
-  white-space: pre;
+  min-width: 0;
   overflow-x: auto;
 }
 .row-top {
   align-items: flex-start;
 }
-.bool-sample {
-  display: block;
-  margin-top: 3px;
+/* Boolean options: the two outcomes stacked, tagged On / Off, the current one emphasised. */
+.bool {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bool-compare {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 8px;
+}
+.bool-tag {
   font-size: var(--fs-xs);
-  color: var(--fg-2);
-  white-space: pre-wrap;
-}
-.bool-sample b {
-  font-weight: 600;
   color: var(--muted);
-  margin-right: 4px;
 }
-.bool-sample b + * + b,
-.bool-sample b:nth-of-type(2) {
-  margin-left: 10px;
+.bool-tag[data-active="true"] {
+  color: var(--fg);
+  font-weight: 600;
 }
 .muted-note {
   display: flex;
@@ -933,9 +965,9 @@ input[type="checkbox"] {
   border-color: var(--accent);
 }
 .pick .sample {
-  margin-top: 3px;
-  font-size: var(--fs-xs);
-  color: var(--muted);
+  margin-top: 4px;
+  min-width: 0;
+  overflow: hidden;
 }
 .tag {
   padding: 0 6px;
@@ -959,6 +991,37 @@ input[type="checkbox"] {
   padding: 8px 16px;
   font-size: var(--fs-sm);
   box-shadow: 0 10px 30px var(--shadow);
+}
+
+/* ---- consent banner: asks before replacing another tool's statusLine ---- */
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--warn) 55%, var(--line-strong));
+  border-radius: var(--r-2);
+  background: color-mix(in srgb, var(--warn) 8%, var(--panel));
+  font-size: var(--fs-sm);
+}
+.banner p {
+  margin: 2px 0 6px;
+}
+.banner-actions {
+  display: flex;
+  gap: 8px;
+}
+.banner-code {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  color: var(--fg-2);
 }
 
 /* ---- footer: viewer preferences ---- */

@@ -1,5 +1,40 @@
 import { useT, type Messages } from "../i18n";
 import { isDirty, useStore } from "../store";
+import { describeStatusLine } from "../statusline";
+
+/**
+ * Asked before this configurator replaces another tool's statusLine. Nothing is overwritten until
+ * "Replace it" — the old entry is parked and can be restored from Advanced settings.
+ */
+function ConsentBanner() {
+  const t = useT();
+  const consent = useStore((s) => s.consent);
+  const install = useStore((s) => s.install);
+  const dismiss = useStore((s) => s.dismissConsent);
+  if (!consent) return null;
+  const cmd = describeStatusLine(consent.current);
+  return (
+    <div className="banner" role="alertdialog" aria-labelledby="consent-title" aria-describedby="consent-body">
+      <div className="min-w-0">
+        <strong id="consent-title">{t.consent.title}</strong>
+        <p id="consent-body" className="hint">
+          {t.consent.body}
+        </p>
+        <code className="mono banner-code" title={cmd.full}>
+          {cmd.short}
+        </code>
+      </div>
+      <div className="banner-actions">
+        <button className="btn btn-primary" onClick={() => void install(true)}>
+          {t.consent.replace}
+        </button>
+        <button className="btn" onClick={dismiss}>
+          {t.consent.notNow}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 type StatusState = "error" | "saving" | "dirty" | "defaults" | "live" | "unapplied" | "saved";
 
@@ -23,6 +58,7 @@ export function Header() {
   const s = useStore();
   const { state, text } = statusOf(s, t);
   return (
+    <>
     <header className="topbar">
       <div className="topbar-id">
         <h1>{t.header.title}</h1>
@@ -49,5 +85,7 @@ export function Header() {
         </button>
       </div>
     </header>
+    <ConsentBanner />
+    </>
   );
 }

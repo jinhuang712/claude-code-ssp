@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { tr, widgetName } from "./i18n";
-import { api, type ConfigLayer, type FooterConfig, type LineConfig, type RenderResult, type SampleMeta, type ThemeDef, type WidgetInstance, type WidgetManifest, type Zone } from "./api";
+import { api, NeedsConfirm, type ConfigLayer, type InstallPlan, type FooterConfig, type LineConfig, type RenderResult, type SampleMeta, type ThemeDef, type WidgetInstance, type WidgetManifest, type Zone } from "./api";
 
 export interface Selection {
   line: number;
@@ -54,6 +54,14 @@ interface State {
   /** Last save failure, shown in the header until a save succeeds (a toast alone is too easy to miss). */
   saveError: string | null;
   installed: boolean | null;
+  /** What settings.json holds now and what install would write; refreshed after every install/uninstall. */
+  installPlan: InstallPlan | null;
+  /**
+   * Set when applying would replace another tool's statusLine (claude-hud, a custom script…). The
+   * header asks before anything is overwritten; "Not now" stops asking for this page view.
+   */
+  consent: { current: unknown } | null;
+  consentDismissed: boolean;
   advanced: boolean;
   /** Undo stack of pre-edit snapshots (cap 30); typing bursts coalesce into one step. */
   past: FooterConfig[];
@@ -82,8 +90,12 @@ interface State {
   moveLine(i: number, dir: -1 | 1): void;
   updateAt(sel: Selection, mutate: (w: WidgetInstance) => void): void;
   applyPreset(id: PresetId): void;
-  saveNow(scope?: "user" | "project"): Promise<void>;
-  install(): Promise<void>;
+  saveNow(scope?: "user" | "project", opts?: { autoApply?: boolean }): Promise<void>;
+  /** Apply to Claude Code; `confirmReplace` is the user's explicit yes to replacing another statusLine. */
+  install(confirmReplace?: boolean): Promise<void>;
+  /** Stop using this statusline: restores the one it replaced, or removes ours. */
+  uninstall(): Promise<void>;
+  dismissConsent(): void;
   resetCounters(): Promise<void>;
   refreshPreview(): Promise<void>;
   setAdvanced(v: boolean): void;
@@ -122,6 +134,9 @@ export const useStore = create<State>((set, get) => ({
   saving: false,
   saveError: null,
   installed: null,
+  installPlan: null,
+  consent: null,
+  consentDismissed: false,
   advanced: localStorage.getItem("ssp.advanced") === "1",
   past: [],
   showCenter: localStorage.getItem("ssp.center") === "1",
@@ -133,7 +148,6 @@ export const useStore = create<State>((set, get) => ({
       const [eff, widgets, themes, samples, plan] = await Promise.all([api.config(), api.widgets(), api.themes(), api.samples(), api.installPlan().catch(() => null)]);
       const live = samples.find((s) => s.source === "live");
       const sampleId = live?.id ?? samples[0]?.id ?? null;
-      const prevCmd = (plan?.previous as { command?: string } | undefined)?.command ?? "";
       set({
         config: eff.config,
         saved: structuredClone(eff.config),
@@ -142,7 +156,8 @@ export const useStore = create<State>((set, get) => ({
         themes,
         samples,
         sampleId,
-        installed: plan ? prevCmd.includes("claude-code-ssp") : null,
+        installed: plan ? plan.currentIsOurs : null,
+        installPlan: plan,
         loading: false,
       });
       void get().refreshPreview();
@@ -277,7 +292,7 @@ export const useStore = create<State>((set, get) => ({
     set({ selection: null, toast: tr().toast.presetApplied });
   },
 
-  async saveNow(scope = "user") {
+  async saveNow(scope = "user", opts = {}) {
     const c = get().config!;
     const snapshot = JSON.stringify(c);
     set({ saving: true });
@@ -293,14 +308,22 @@ export const useStore = create<State>((set, get) => ({
         set({ toast: tr().toast.savedProject });
       }
       // `render` re-reads the config file on every tick, but Claude Code only runs it when
-      // settings.json points at us — so the first successful save auto-applies (idempotent,
-      // no backup spam). After that the button is just a repair entry.
-      if (get().installed !== true) {
-        try {
-          await api.install();
-          set({ installed: true });
-        } catch {
-          /* keep manual button as fallback; next save retries */
+      // settings.json points at us — so the first successful save auto-applies, *unless* that
+      // would replace someone else's statusLine: then the header asks first (see `consent`).
+      if (opts.autoApply !== false && get().installed !== true) {
+        const plan = get().installPlan;
+        const foreign = plan !== null && plan.current !== null && plan.current !== undefined && !plan.currentIsOurs;
+        if (foreign) {
+          if (!get().consentDismissed) set({ consent: { current: plan.current } });
+        } else {
+          try {
+            await api.install(false);
+            set({ installed: true, installPlan: await api.installPlan().catch(() => plan) });
+          } catch (err) {
+            // The server is the final judge: it may see a foreign statusLine the stale plan missed.
+            if (err instanceof NeedsConfirm && !get().consentDismissed) set({ consent: { current: err.current } });
+            /* other failures: the manual button stays as a fallback and the next save retries */
+          }
         }
       }
     } catch (err) {
@@ -309,18 +332,32 @@ export const useStore = create<State>((set, get) => ({
     }
   },
 
-  async install() {
+  async install(confirmReplace = false) {
     try {
-      await get().saveNow();
-      const r = await api.install();
-      set({ installed: true, toast: tr().toast.installed(r.settingsFile) });
+      await get().saveNow("user", { autoApply: false });
+      const r = await api.install(confirmReplace);
+      set({ installed: true, consent: null, installPlan: await api.installPlan().catch(() => get().installPlan), toast: tr().toast.installed(r.settingsFile) });
     } catch (err) {
-      set({ toast: tr().toast.installFailed(err instanceof Error ? err.message : String(err)) });
+      if (err instanceof NeedsConfirm) set({ consent: { current: err.current }, consentDismissed: false });
+      else set({ toast: tr().toast.installFailed(err instanceof Error ? err.message : String(err)) });
     }
   },
 
+  async uninstall() {
+    try {
+      const r = await api.uninstall();
+      set({ installed: false, installPlan: await api.installPlan().catch(() => null), toast: r.restored ? tr().toast.restored : tr().toast.uninstalled });
+    } catch (err) {
+      set({ toast: tr().toast.uninstallFailed(err instanceof Error ? err.message : String(err)) });
+    }
+  },
+
+  dismissConsent: () => set({ consent: null, consentDismissed: true }),
+
   async resetCounters() {
-    const live = get().samples.find((x) => x.source === "live");
+    // Reset the session being previewed when it is a live one; otherwise the most recent live one.
+    const { samples, sampleId } = get();
+    const live = samples.find((x) => x.id === sampleId && x.source === "live") ?? samples.find((x) => x.source === "live");
     try {
       const r = await api.reset(live?.id);
       set({ toast: tr().toast.reset(r.sessionId.slice(0, 8)) });

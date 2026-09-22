@@ -123,6 +123,8 @@ export const zh: Messages = {
     search: "搜索名称或说明",
     target: (line, zone) => `加到第 ${line} 行${zone}`,
     plugin: "插件",
+    inUse: "已添加",
+    close: "关闭",
     noMatch: "没有匹配的项目。换个词试试，或清空搜索。",
   },
 
@@ -139,6 +141,9 @@ export const zh: Messages = {
     hide: "隐藏",
     on: "开",
     off: "关",
+    noDifference: "当前数据下看不出区别",
+    position: "位置",
+    lineN: (n) => `第 ${n} 行`,
     color: "颜色",
     colors: { "": "默认", fg: "正文", muted: "弱化", accent: "强调", ok: "绿", warn: "黄", crit: "红" },
     custom: "自定义",
@@ -179,6 +184,21 @@ export const zh: Messages = {
     notCaptured: "还没有捕获到（需要开启「把真实 stdin 快照存下来」）",
   },
 
+  consent: {
+    title: "Claude Code 已经在用别的状态栏",
+    body: "应用后会替换它。原来的会保留下来，随时可以在「高级设置」里换回去。",
+    replace: "替换",
+    notNow: "先不",
+  },
+
+  restore: {
+    title: "不再使用这个状态栏",
+    previous: "换回之前被替换的状态栏：",
+    none: "从 settings.json 移除（之前没有状态栏）。",
+    restoreButton: "换回原来的",
+    removeButton: "移除",
+  },
+
   footer: {
     appearance: "外观",
     system: "跟随系统",
@@ -198,6 +218,9 @@ export const zh: Messages = {
     reset: (id) => `已重置会话 ${id}… 的费用 / Tokens / API 次数 / 改动行数，状态栏下次刷新起从 0 累计`,
     resetFailed: (e) => `重置失败：${e}`,
     previewFailed: (e) => `预览失败：${e}`,
+    restored: "已换回你原来的状态栏，新开一个 Claude Code 会话即可看到。",
+    uninstalled: "已从 settings.json 移除，Claude Code 会恢复默认状态栏。",
+    uninstallFailed: (e) => `恢复失败：${e}`,
   },
 
   widgets: {

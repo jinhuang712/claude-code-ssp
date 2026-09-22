@@ -128,6 +128,8 @@ export const en = {
     search: "Search by name or description",
     target: (line: number, zone: string) => `Adding to line ${line}, ${zone.toLowerCase()}`,
     plugin: "plugin",
+    inUse: "in use",
+    close: "Close",
     noMatch: "Nothing matches. Try another word or clear the search.",
   },
 
@@ -144,6 +146,9 @@ export const en = {
     hide: "Hide",
     on: "On",
     off: "Off",
+    noDifference: "No visible difference with the current data",
+    position: "Position",
+    lineN: (n: number) => `Line ${n}`,
     color: "Color",
     colors: { "": "Default", fg: "Text", muted: "Muted", accent: "Accent", ok: "Green", warn: "Yellow", crit: "Red" } as Record<string, string>,
     custom: "Custom",
@@ -184,6 +189,21 @@ export const en = {
     notCaptured: "Nothing captured yet — turn on “Save real stdin snapshots”.",
   },
 
+  consent: {
+    title: "Claude Code already has a statusline",
+    body: "Applying this one replaces it. The current one is kept and can be put back from Advanced settings.",
+    replace: "Replace it",
+    notNow: "Not now",
+  },
+
+  restore: {
+    title: "Stop using this statusline",
+    previous: "Puts back the statusline it replaced:",
+    none: "Removes it from settings.json (there was no statusline before).",
+    restoreButton: "Restore previous",
+    removeButton: "Remove",
+  },
+
   footer: {
     appearance: "Appearance",
     system: "System",
@@ -203,6 +223,9 @@ export const en = {
     reset: (id: string) => `Counters reset for session ${id}… — cost, tokens, API calls and lines changed restart from 0 on the next refresh`,
     resetFailed: (e: string) => `Couldn't reset: ${e}`,
     previewFailed: (e: string) => `Preview failed: ${e}`,
+    restored: "Your previous statusline is back. Open a new Claude Code session to see it.",
+    uninstalled: "Removed from settings.json. Claude Code shows its default statusline again.",
+    uninstallFailed: (e: string) => `Couldn't restore: ${e}`,
   },
 
   widgets: {
