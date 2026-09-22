@@ -52,6 +52,10 @@ export const en = {
     noSamples: "No data available",
     liveSample: (label: string) => `My session · ${label}`,
     fixtureSample: (label: string) => `Sample · ${label}`,
+    terminal: "Terminal background — pick the one your terminal uses, so colors are judged fairly",
+    termAuto: "Match panel",
+    termDark: "Dark terminal",
+    termLight: "Light terminal",
   },
 
   presets: {
@@ -168,6 +172,14 @@ export const en = {
     statusLine: (path: string) => `statusLine in settings.json (${path})`,
     lastStdin: (time: string) => (time ? `Last stdin from Claude Code (${time})` : "Last stdin from Claude Code"),
     notCaptured: "Nothing captured yet — turn on “Save real stdin snapshots”.",
+  },
+
+  footer: {
+    appearance: "Appearance",
+    system: "System",
+    light: "Light",
+    dark: "Dark",
+    source: "Source",
   },
 
   toast: {

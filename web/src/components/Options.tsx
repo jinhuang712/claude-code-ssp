@@ -306,7 +306,7 @@ export function Options() {
             {s.advanced && (
               <details className="text-xs">
                 <summary className="hint cursor-pointer">JSON</summary>
-                <pre className="mono mt-1 max-h-40 overflow-auto p-2 text-[11px]" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
+                <pre className="mono mt-1 max-h-40 overflow-auto p-2 text-xs" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
                   {JSON.stringify(w, null, 2)}
                 </pre>
               </details>

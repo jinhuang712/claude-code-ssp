@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Advanced } from "./components/Advanced";
+import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { Layout } from "./components/Layout";
 import { Options } from "./components/Options";
@@ -8,6 +9,7 @@ import { Preview } from "./components/Preview";
 import { uiColor } from "./colors";
 import { HTML_LANG, useLang, useT, type Messages } from "./i18n";
 import { PRESETS, useStore, type PresetId } from "./store";
+import { useTheme } from "./theme";
 
 function Presets() {
   const t = useT();
@@ -134,15 +136,26 @@ function BarGlyphs() {
   );
 }
 
-/* The panel borrows its accent from the statusline theme being edited. */
+/*
+  The panel borrows its accent from the statusline theme being edited. It is written as the *raw*
+  terminal colour; index.css derives --accent from it (darkened in light mode for contrast).
+*/
 function useThemeAccent() {
   const themes = useStore((s) => s.themes);
   const theme = useStore((s) => s.config?.theme);
   useEffect(() => {
     const tokens = typeof theme === "string" ? themes.find((th) => th.name === theme)?.tokens : theme?.tokens;
     const accent = uiColor(tokens?.accent, "#4cc9e0");
-    document.documentElement.style.setProperty("--accent", accent);
+    document.documentElement.style.setProperty("--accent-raw", accent);
   }, [themes, theme]);
+}
+
+/* Mirror the resolved panel scheme to <html data-theme>; index.html sets the first value pre-paint. */
+function useSchemeAttr() {
+  const scheme = useTheme((s) => s.scheme);
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", scheme);
+  }, [scheme]);
 }
 
 /* Keep <html lang> in step with the UI language: screen readers and CJK font fallback both read it. */
@@ -170,6 +183,7 @@ export default function App() {
   const { loading, error, config, init, toast, notify } = useStore();
   const mast = useRef<HTMLDivElement>(null);
   useThemeAccent();
+  useSchemeAttr();
   useHtmlLang();
   useMastheadHeight(mast);
 
@@ -227,6 +241,7 @@ export default function App() {
       <Themes />
       <BarGlyphs />
       <Advanced />
+      <Footer />
       <Picker />
       <Options />
       {toast && <div className="toast">{toast}</div>}

@@ -53,13 +53,13 @@ function Doctor() {
       </div>
       <details className="text-xs">
         <summary className="hint cursor-pointer">{t.doctor.statusLine(r.settings.path)}</summary>
-        <pre className="mono mt-1 max-h-40 overflow-auto p-2 text-[11px]" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
+        <pre className="mono mt-1 max-h-40 overflow-auto p-2 text-xs" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
           {r.settings.error ?? JSON.stringify(r.settings.statusLine, null, 2)}
         </pre>
       </details>
       <details className="text-xs">
         <summary className="hint cursor-pointer">{t.doctor.lastStdin(r.lastPayload?.capturedAt ? new Date(r.lastPayload.capturedAt).toLocaleTimeString() : "")}</summary>
-        <pre className="mono mt-1 max-h-72 overflow-auto p-2 text-[11px]" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
+        <pre className="mono mt-1 max-h-72 overflow-auto p-2 text-xs" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
           {r.lastPayload ? JSON.stringify(r.lastPayload.payload, null, 2) : t.doctor.notCaptured}
         </pre>
       </details>
@@ -158,7 +158,7 @@ export function Advanced() {
           <Doctor />
           <details className="text-xs">
             <summary className="hint cursor-pointer">{t.advanced.configJson}</summary>
-            <pre className="mono mt-1 max-h-64 overflow-auto p-2 text-[11px]" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
+            <pre className="mono mt-1 max-h-64 overflow-auto p-2 text-xs" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
               {JSON.stringify(c, null, 2)}
             </pre>
           </details>

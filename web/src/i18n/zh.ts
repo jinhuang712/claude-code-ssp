@@ -47,6 +47,10 @@ export const zh: Messages = {
     noSamples: "没有可用数据",
     liveSample: (label) => `我的会话 · ${label}`,
     fixtureSample: (label) => `示例 · ${label}`,
+    terminal: "终端背景：选你终端实际用的那种，颜色才看得准",
+    termAuto: "跟随面板",
+    termDark: "深色终端",
+    termLight: "浅色终端",
   },
 
   presets: {
@@ -163,6 +167,14 @@ export const zh: Messages = {
     statusLine: (path) => `settings.json 里的 statusLine（${path}）`,
     lastStdin: (time) => (time ? `Claude Code 最近一次发来的 stdin（${time}）` : "Claude Code 最近一次发来的 stdin"),
     notCaptured: "还没有捕获到（需要开启「把真实 stdin 快照存下来」）",
+  },
+
+  footer: {
+    appearance: "外观",
+    system: "跟随系统",
+    light: "浅色",
+    dark: "深色",
+    source: "源码",
   },
 
   toast: {
