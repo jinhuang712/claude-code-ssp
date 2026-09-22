@@ -58,6 +58,30 @@ export async function getGitStatus(cwd?: string): Promise<GitStatus | null> {
   let runner: GitCommandRunner | undefined;
   try {
     runner = createGitRunner(cwd);
+    const git = runner;
+    /*
+      claude-code-ssp: none of these commands needs another one's output, so where the runner allows
+      it they are all started at once — five sequential ~10 ms git spawns (much more on a big or
+      network repo) were the largest part of a cache-miss render. `diff --numstat` is started
+      speculatively even before we know the tree is dirty: on a clean tree it is cheap and its output
+      is simply ignored. Each call still gets its own timeout and failure handling as before.
+    */
+    const statusCmd = () => git.run(['-c', 'core.quotePath=false', '--no-optional-locks', 'status', '--porcelain'], 1000);
+    const numstatCmd = () => git.run(['-c', 'core.quotePath=false', '--no-optional-locks', 'diff', '--numstat', 'HEAD'], 2000);
+    const revListCmd = () => git.run(['rev-list', '--left-right', '--count', '@{upstream}...HEAD'], 1000);
+    const remoteCmd = () => git.run(['remote', 'get-url', 'origin'], 1000);
+    // Settle every promise so one failing command never leaves another rejection unhandled.
+    const settle = <T>(p: Promise<T>) => p.then((value) => ({ ok: true as const, value }), (error: unknown) => ({ ok: false as const, error }));
+    let pending: {
+      status: ReturnType<typeof settle<{ stdout: string }>>;
+      numstat: ReturnType<typeof settle<{ stdout: string }>> | null;
+      revList: ReturnType<typeof settle<{ stdout: string }>>;
+      remote: ReturnType<typeof settle<{ stdout: string }>>;
+    } | null = null;
+    if (git.concurrent) {
+      pending = { status: settle(statusCmd()), numstat: settle(numstatCmd()), revList: settle(revListCmd()), remote: settle(remoteCmd()) };
+    }
+
     // Get branch name
     const branch = await resolveGitRef(runner);
     if (!branch) return null;
@@ -66,34 +90,31 @@ export async function getGitStatus(cwd?: string): Promise<GitStatus | null> {
     let isDirty = false;
     let fileStats: FileStats | undefined;
     let lineDiff: LineDiff | undefined;
-    try {
-      const { stdout: statusOut } = await runner.run(
-        ['-c', 'core.quotePath=false', '--no-optional-locks', 'status', '--porcelain'],
-        1000,
-      );
-      const trimmed = statusOut.trim();
+    const statusResult = await (pending?.status ?? settle(statusCmd()));
+    if (statusResult.ok) {
+      const trimmed = statusResult.value.stdout.trim();
       isDirty = trimmed.length > 0;
       if (isDirty) {
         fileStats = parseFileStats(trimmed);
       }
-    } catch (err) {
+    } else {
+      const err = statusResult.error;
       debug('Failed to get git status:', err instanceof Error ? err.message : err);
     }
 
     // Get per-file and total line diffs
     if (isDirty) {
-      try {
-        const { stdout: numstatOut } = await runner.run(
-          ['-c', 'core.quotePath=false', '--no-optional-locks', 'diff', '--numstat', 'HEAD'],
-          2000,
-        );
+      const numstatResult = await (pending?.numstat ?? settle(numstatCmd()));
+      if (numstatResult.ok) {
+        const numstatOut = numstatResult.value.stdout;
         const trackedPaths = new Set(fileStats?.trackedFiles.map((file) => file.fullPath) ?? []);
         const { totalDiff, perFileDiff } = parseNumstat(numstatOut, trackedPaths);
         lineDiff = totalDiff;
         if (fileStats) {
           applyLineDiffsToFiles(fileStats.trackedFiles, perFileDiff);
         }
-      } catch (err) {
+      } else {
+        const err = numstatResult.error;
         debug('Failed to get line diff:', err instanceof Error ? err.message : err);
       }
     }
@@ -101,28 +122,24 @@ export async function getGitStatus(cwd?: string): Promise<GitStatus | null> {
     // Get ahead/behind counts
     let ahead = 0;
     let behind = 0;
-    try {
-      const { stdout: revOut } = await runner.run(
-        ['rev-list', '--left-right', '--count', '@{upstream}...HEAD'],
-        1000,
-      );
-      const parts = revOut.trim().split(/\s+/);
+    const revListResult = await (pending?.revList ?? settle(revListCmd()));
+    if (revListResult.ok) {
+      const parts = revListResult.value.stdout.trim().split(/\s+/);
       if (parts.length === 2) {
         behind = parseInt(parts[0], 10) || 0;
         ahead = parseInt(parts[1], 10) || 0;
       }
-    } catch (err) {
+    } else {
+      const err = revListResult.error;
       debug('Failed to get ahead/behind (no upstream?):', err instanceof Error ? err.message : err);
     }
 
     // Build GitHub branch URL from remote
     let branchUrl: string | undefined;
+    const remoteResult = await (pending?.remote ?? settle(remoteCmd()));
     try {
-      const { stdout: remoteOut } = await runner.run(
-        ['remote', 'get-url', 'origin'],
-        1000,
-      );
-      const remote = remoteOut.trim();
+      if (!remoteResult.ok) throw remoteResult.error;
+      const remote = remoteResult.value.stdout.trim();
       const httpsBase = remote
         .replace(/^git@github\.com:/, 'https://github.com/')
         .replace(/^ssh:\/\/git@github\.com\//, 'https://github.com/')

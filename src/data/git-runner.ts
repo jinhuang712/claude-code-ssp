@@ -14,6 +14,11 @@ const TREE_KILL_TIMEOUT_MS = 1000;
 export interface GitCommandRunner {
   run(args: readonly string[], timeout: number): Promise<{ stdout: string }>;
   close(): Promise<void>;
+  /**
+   * claude-code-ssp: whether `run` may be called again before the previous call settles. Direct
+   * runners spawn one git per call and can overlap; the Windows worker handles one command at a time.
+   */
+  readonly concurrent?: boolean;
 }
 
 interface WorkerRequest {
@@ -59,6 +64,7 @@ export function createGitEnvironment(base: NodeJS.ProcessEnv = process.env): Nod
 }
 
 class DirectGitRunner implements GitCommandRunner {
+  readonly concurrent = true;
   constructor(private readonly cwd: string) {}
 
   async run(args: readonly string[], timeout: number): Promise<{ stdout: string }> {
