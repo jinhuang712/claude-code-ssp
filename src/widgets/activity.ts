@@ -1,6 +1,6 @@
 import { defineWidget } from "../core/types.js";
 import { sanitizeDisplayText } from "../data/utils/sanitize.js";
-import { labelSchema, withLabel } from "./_shared.js";
+import { labelSchema, shortModelName, withLabel } from "./_shared.js";
 
 export const activityAgents = defineWidget<{ label: string | null; max: number; showModel: boolean; showDescription: boolean }>({
   id: "activity.agents",
@@ -28,7 +28,7 @@ export const activityAgents = defineWidget<{ label: string | null; max: number; 
       if (i > 0) segs.push(api.seg(" "));
       segs.push(api.seg("● ", { fg: "ok" }));
       let text = sanitizeDisplayText(a.type);
-      if (o.showModel && a.model) text += ` (${sanitizeDisplayText(a.model)})`;
+      if (o.showModel && a.model) text += ` (${sanitizeDisplayText(shortModelName(a.model))})`;
       if (o.showDescription && a.description) text += `: ${sanitizeDisplayText(a.description).slice(0, 40)}`;
       segs.push(api.seg(text));
     });

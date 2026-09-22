@@ -76,3 +76,25 @@ export function thresholdSchema(warn: number, crit: number): Record<string, Json
     critAt: { type: "integer", title: "Critical at %", minimum: 0, maximum: 100, default: crit },
   };
 }
+
+/**
+ * Short model name for an agent: the Agent tool's `model` is either an alias ("opus") or, for
+ * forks and inherited models, a full id like "claude-opus-5-5[1m]" — too long and noisy for a
+ * statusline. Full ids become "opus 5.5"; anything unrecognised is shown as given, minus the
+ * "claude-" prefix and a "[1m]"-style suffix.
+ */
+export function shortModelName(model: string): string {
+  const m = model
+    .trim()
+    .toLowerCase()
+    .replace(/^claude-/, "")
+    .replace(/\[[^\]]*\]$/, "")
+    .replace(/-\d{8}$/, ""); // date-stamped ids (…-20250514)
+  let x = /^([a-z]+)-(\d+)-(\d+)$/.exec(m); // opus-5-5
+  if (x) return `${x[1]} ${x[2]}.${x[3]}`;
+  x = /^([a-z]+)-(\d+)$/.exec(m); // opus-5
+  if (x) return `${x[1]} ${x[2]}`;
+  x = /^(\d+)-(\d+)-([a-z]+)$/.exec(m); // 3-5-sonnet (older ids)
+  if (x) return `${x[3]} ${x[1]}.${x[2]}`;
+  return m || model;
+}
