@@ -3,6 +3,7 @@
  * claude-code-ssp CLI. The `render` path must stay lean: no server or UI imports here.
  */
 import { captureSample } from "../core/capture.js";
+import { prepareFixture } from "../core/fixtures.js";
 import { loadEffectiveConfig } from "../core/config.js";
 import { buildContext } from "../core/context.js";
 import { render } from "../core/layout.js";
@@ -21,7 +22,8 @@ async function cmdRender(argv: string[]): Promise<void> {
   const started = performance.now();
   registerBuiltinWidgets();
   const fixture = arg("fixture", argv);
-  let stdin = fixture ? (JSON.parse(await Bun.file(fixture).text()) as Awaited<ReturnType<typeof readStdin>>) : await readStdin();
+  // A fixture gets live-looking times and its bundled sample transcript (src/core/fixtures.ts).
+  let stdin = fixture ? prepareFixture(JSON.parse(await Bun.file(fixture).text()) as Awaited<ReturnType<typeof readStdin>>, fixture) : await readStdin();
   if (!stdin) {
     console.log("claude-code-ssp: waiting for Claude Code statusline JSON on stdin (or pass --fixture <file>)");
     return;

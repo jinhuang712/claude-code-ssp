@@ -7,6 +7,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { listLiveSamples, samplesDir, type Sample } from "../core/capture.js";
+import { prepareFixture } from "../core/fixtures.js";
 import { loadEffectiveConfig, normalizeConfig, projectConfigPath, userConfigPath, writeProjectConfig, writeUserConfig } from "../core/config.js";
 import { buildContext } from "../core/context.js";
 import { render } from "../core/layout.js";
@@ -52,16 +53,6 @@ function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json" } });
 }
 
-/** Fixtures store 0 for time fields; hydrate them relative to now so previews look alive. */
-function hydrate(payload: unknown, now: number): unknown {
-  const p = structuredClone(payload) as Record<string, any>;
-  const sec = Math.floor(now / 1000);
-  if (p.rate_limits?.five_hour && !p.rate_limits.five_hour.resets_at) p.rate_limits.five_hour.resets_at = sec + 3 * 3600 + 41 * 60;
-  if (p.rate_limits?.seven_day && !p.rate_limits.seven_day.resets_at) p.rate_limits.seven_day.resets_at = sec + 5 * 86400 + 2 * 3600;
-  if (p.prompt_cache && !p.prompt_cache.expires_at) p.prompt_cache.expires_at = sec + 42 * 60;
-  return p;
-}
-
 function fixtureSamples(): Sample[] {
   try {
     return fs
@@ -73,6 +64,7 @@ function fixtureSamples(): Sample[] {
         capturedAt: null,
         payload: JSON.parse(fs.readFileSync(path.join(FIXTURES_DIR, f), "utf8")),
         source: "fixture" as const,
+        file: path.join(FIXTURES_DIR, f),
       }));
   } catch {
     return [];
@@ -142,8 +134,11 @@ const MAX_BATCH = 100;
  */
 async function renderPreviews(configs: Array<Partial<FooterConfig>>, sampleId: string | null, columns: number, fillEmpty: boolean): Promise<RenderResult[]> {
   const now = Date.now();
-  const sample = allSamples().find((x) => x.id === sampleId)?.payload ?? fixtureSamples()[0]?.payload ?? {};
-  const stdin = hydrate(sample, now) as StdinData;
+  const picked = allSamples().find((x) => x.id === sampleId) ?? fixtureSamples()[0];
+  // Built-in samples get live-looking times and their bundled transcript (src/core/fixtures.ts).
+  // Live samples are shown exactly as Claude Code sent them: filling their gaps with made-up
+  // values would e.g. show a cold prompt cache as warm.
+  const stdin = (picked?.source === "fixture" && picked.file ? prepareFixture(picked.payload, picked.file, now) : (picked?.payload ?? {})) as StdinData;
   const contexts = new Map<string, ReturnType<typeof buildContext>>();
   return Promise.all(
     configs.map(async (raw) => {

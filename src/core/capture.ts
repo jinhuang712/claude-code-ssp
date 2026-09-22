@@ -57,6 +57,8 @@ export interface Sample {
   capturedAt: number | null;
   payload: unknown;
   source: "live" | "fixture";
+  /** Fixtures only: the file the payload came from (relative transcript paths resolve against it). */
+  file?: string;
 }
 
 export function listLiveSamples(): Sample[] {

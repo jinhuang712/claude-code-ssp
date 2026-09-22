@@ -1,0 +1,4 @@
+{"type": "user", "timestamp": -3600, "sessionId": "fixture-basic", "message": {"role": "user", "content": "Refactor the billing module"}}
+{"type": "system", "subtype": "compact_boundary", "timestamp": -2400, "sessionId": "fixture-post-compact", "content": "Conversation compacted", "compactMetadata": {"trigger": "auto", "preTokens": 172000}}
+{"type": "system", "subtype": "compact_boundary", "timestamp": -600, "sessionId": "fixture-post-compact", "content": "Conversation compacted", "compactMetadata": {"trigger": "manual", "preTokens": 150000}}
+{"type": "user", "timestamp": -60, "sessionId": "fixture-basic", "message": {"role": "user", "content": "Continue where we left off"}}
