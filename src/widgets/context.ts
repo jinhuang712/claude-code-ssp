@@ -1,7 +1,7 @@
 import { defineWidget } from "../core/types.js";
 import { getContextPercent, getTotalTokens } from "../data/stdin.js";
 import { formatTokens } from "../core/api.js";
-import { labelSchema, pctColor, stdin, thresholdSchema, withLabel, type ColorMode } from "./_shared.js";
+import { labelPrefix, labelSchema, pctColor, stdin, thresholdSchema, withLabel, type ColorMode } from "./_shared.js";
 
 type ValueMode = "percent" | "tokens" | "remaining" | "both";
 
@@ -97,7 +97,7 @@ export const contextCompactions = defineWidget<{ label: string | null }>({
   render(ctx, o, api) {
     const n = ctx.transcript.compactionCount ?? 0;
     if (n <= 0) return null;
-    return [api.seg(`${withLabel(o.label, "⟳") ?? ""}${n}`, { fg: "muted" })];
+    return [api.seg(`${labelPrefix(withLabel(o.label, "⟳"))}${n}`, { fg: "muted" })];
   },
 });
 

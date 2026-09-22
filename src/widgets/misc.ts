@@ -1,5 +1,6 @@
 import { defineWidget } from "../core/types.js";
 import { sanitizeDisplayText } from "../data/utils/sanitize.js";
+import { labelPrefix } from "./_shared.js";
 
 export const customText = defineWidget<{ text: string; color: string }>({
   id: "custom.text",
@@ -21,7 +22,7 @@ export const customText = defineWidget<{ text: string; color: string }>({
   },
 });
 
-export const customEnv = defineWidget<{ name: string; label: string | null; color: string }>({
+export const customEnv = defineWidget<{ name: string; showName: boolean; color: string }>({
   id: "custom.env",
   name: "Environment variable",
   description: "Value of an environment variable visible to the statusline process.",
@@ -30,18 +31,25 @@ export const customEnv = defineWidget<{ name: string; label: string | null; colo
   schema: {
     type: "object",
     properties: {
-      name: { type: "string", default: "", title: "Variable name" },
-      label: { type: ["string", "null"], default: null, title: "Label (defaults to NAME=)" },
+      name: { type: "string", default: "", title: "Variable name", description: "Required, e.g. AWS_PROFILE. Nothing shows until it is set." },
+      showName: { type: "boolean", default: true, title: "Show NAME= before the value" },
       color: { type: "string", default: "fg" },
     },
   },
-  defaults: { name: "", label: null, color: "fg" },
+  /*
+    No own `label` option: the automatic NAME= prefix used to double as the label, so the panel's
+    Label row said "hidden" while NAME= showed, and a custom label hugged the value ("H/Users/me").
+    Custom labels now go through the engine's generic label (muted, followed by a space).
+  */
+  defaults: { name: "", showName: true, color: "fg" },
   render(_ctx, o, api) {
     if (!o.name) return null;
     const v = process.env[o.name];
     if (!v) return null;
-    const label = o.label === null ? `${o.name}=` : o.label;
-    return [...(label ? [api.seg(label, { fg: "muted" })] : []), api.seg(sanitizeDisplayText(v).slice(0, 60), { fg: o.color })];
+    // Configs from before showName kept a custom label in options.label; honour it.
+    const legacy = (o as { label?: unknown }).label;
+    const prefix = typeof legacy === "string" ? labelPrefix(legacy) : o.showName ? `${o.name}=` : "";
+    return [...(prefix ? [api.seg(prefix, { fg: "muted" })] : []), api.seg(sanitizeDisplayText(v).slice(0, 60), { fg: o.color })];
   },
 });
 

@@ -310,6 +310,7 @@ export const en = {
     } as Record<string, string>,
     /** Short legends shown next to an option's title. */
     fieldHints: {
+      name: "Required, e.g. AWS_PROFILE — nothing shows until it is set",
       effortStyle: "Symbols: ○ low · ◔ medium · ◑ high · ◕ xhigh · ● max",
       colorMode: "Gradient ignores the thresholds — check the preview above",
     } as Record<string, string>,

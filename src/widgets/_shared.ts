@@ -49,6 +49,18 @@ export function withLabel(label: string | null | undefined, fallback: string): s
   return label;
 }
 
+/**
+ * The text to put in front of a value for `label`. Symbol labels hug the value ("⟳2") and so do
+ * assignment-style ones ("AWS_PROFILE=prod"); word labels get a space ("Compacted 2"). Without
+ * this, a custom text label ran straight into the number ("Compacted2").
+ */
+export function labelPrefix(label: string | null): string {
+  if (!label) return "";
+  // ≤ 2 UTF-16 units covers a BMP symbol (⟳) or one astral emoji; letters/digits make it a word.
+  const glyph = label.length <= 2 && !/[\p{L}\p{N}]/u.test(label);
+  return glyph || label.endsWith("=") ? label : `${label} `;
+}
+
 export type ColorMode = "thresholds" | "gradient";
 
 /** Resolve the colour for a percentage: theme token below the thresholds, or a computed gradient hex. */

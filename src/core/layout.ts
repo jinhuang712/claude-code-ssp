@@ -42,7 +42,10 @@ function renderInstance(
   }
   try {
     const opts = { ...def.defaults, ...(inst.options ?? {}) };
-    if (inst.label !== undefined) (opts as Record<string, unknown>).label = inst.label;
+    // The instance label is either the widget's own `label` option or, for widgets without one, a
+    // generic muted prefix added below — never both (that printed "Env Env prod").
+    const ownsLabel = Boolean(def.schema.properties && "label" in def.schema.properties);
+    if (ownsLabel && inst.label !== undefined) (opts as Record<string, unknown>).label = inst.label;
     const out = def.render(ctx, opts, api);
     let segs: Segment[] = out === null || out === undefined ? [] : typeof out === "string" ? [{ text: out }] : out;
     let filled = false;
@@ -52,7 +55,6 @@ function renderInstance(
       filled = true;
     }
     // Widgets that do not know about labels still get one: a muted prefix set from the instance.
-    const ownsLabel = Boolean(def.schema.properties && "label" in def.schema.properties);
     if (!ownsLabel && typeof inst.label === "string" && inst.label !== "") segs = [{ text: `${inst.label} `, style: { fg: "muted" } }, ...segs];
     const text = renderSegments(applyOverride(segs, inst.style), ctx.theme, level);
     const rendered = { text, width: visualWidth(text) };

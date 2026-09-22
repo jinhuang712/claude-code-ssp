@@ -405,7 +405,8 @@ export const zh: Messages = {
       text: "文本",
       color: "颜色",
       url: "链接地址",
-      name: "名称",
+      name: "变量名",
+      showName: "值前面显示 NAME=",
       autoCompactWindow: "自动压缩窗口（tokens）",
       window: "窗口",
       effortStyle: "思考强度写法",
@@ -425,6 +426,7 @@ export const zh: Messages = {
       showRules: "统计规则",
     },
     fieldHints: {
+      name: "必填，比如 AWS_PROFILE；不填就不显示",
       effortStyle: "符号对应：○ low · ◔ medium · ◑ high · ◕ xhigh · ● max",
       colorMode: "选渐变后阈值不再起作用；效果看上方预览",
     },
