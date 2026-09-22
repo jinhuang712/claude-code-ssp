@@ -1,9 +1,11 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { useEffect, useRef } from "react";
+import { useT } from "../i18n";
 import { useStore } from "../store";
 
 export function Preview() {
+  const t = useT();
   const host = useRef<HTMLDivElement>(null);
   const term = useRef<Terminal | null>(null);
   const preview = useStore((s) => s.preview);
@@ -19,7 +21,7 @@ export function Preview() {
 
   useEffect(() => {
     if (!host.current) return;
-    const t = new Terminal({
+    const xt = new Terminal({
       rows: 3,
       disableStdin: true,
       cursorBlink: false,
@@ -30,9 +32,9 @@ export function Preview() {
       theme: { background: "#0b0e13", foreground: "#dfe4ec", cursor: "#0b0e13" },
     });
     const f = new FitAddon();
-    t.loadAddon(f);
-    t.open(host.current);
-    term.current = t;
+    xt.loadAddon(f);
+    xt.open(host.current);
+    term.current = xt;
     const refit = () => {
       if (useStore.getState().columnsMode !== "auto") return;
       const dims = f.proposeDimensions();
@@ -43,7 +45,7 @@ export function Preview() {
     ro.observe(host.current);
     return () => {
       ro.disconnect();
-      t.dispose();
+      xt.dispose();
       term.current = null;
     };
   }, [setColumns]);
@@ -59,39 +61,42 @@ export function Preview() {
 
   // Redraw only from a preview rendered for the current width; a stale one would wrap.
   useEffect(() => {
-    const t = term.current;
-    if (!t || !preview || previewColumns !== columns) return;
+    const xt = term.current;
+    if (!xt || !preview || previewColumns !== columns) return;
     const lines = preview.lines;
     const rows = Math.max(1, lines.length);
-    if (t.cols !== columns || t.rows !== rows) t.resize(columns, rows);
-    t.reset();
-    t.write(lines.join("\r\n"));
+    if (xt.cols !== columns || xt.rows !== rows) xt.resize(columns, rows);
+    xt.reset();
+    xt.write(lines.join("\r\n"));
   }, [preview, previewColumns, columns]);
 
   const shown = preview?.lines.length ?? 0;
   const hidden = Math.max(0, lineCount - shown);
   const filledCount = preview?.empty?.filter((e) => e.filled).length ?? 0;
   const hiddenCount = (preview?.empty?.length ?? 0) - filledCount;
-  const note = [filledCount ? `${filledCount} 项还没有真实数据，先用示例值占位` : "", hiddenCount ? `${hiddenCount} 项没有数据也没有示例，不显示` : "", hidden ? `${hidden} 行因此为空` : ""].filter(Boolean).join("；");
+  const note = [filledCount ? t.preview.filled(filledCount) : "", hiddenCount ? t.preview.hidden(hiddenCount) : "", hidden ? t.preview.emptyLines(hidden) : ""].filter(Boolean).join(t.preview.noteJoin);
 
   return (
     <div className="term-frame">
       <div className="term-bar">
-        <span className="title">预览</span>
-        <span className="meta mono">{preview ? `${preview.ms.toFixed(1)} ms` : ""}</span>
+        <span className="title">{t.preview.title}</span>
+        <span className="meta mono" title={t.preview.renderTime}>
+          {preview ? `${preview.ms.toFixed(1)} ms` : ""}
+        </span>
         {note && <span>{note}</span>}
         <div className="cols ml-auto">
           <select
             className="field !w-auto !py-0.5"
             value={columnsMode === "auto" ? "auto" : "fixed"}
             onChange={(e) => setColumnsMode(e.target.value === "auto" ? "auto" : columns)}
-            title="预览宽度"
+            title={t.preview.width}
+            aria-label={t.preview.width}
           >
-            <option value="auto">宽度跟随窗口</option>
-            <option value="fixed">按终端列数</option>
+            <option value="auto">{t.preview.fitWindow}</option>
+            <option value="fixed">{t.preview.fixedColumns}</option>
           </select>
           {columnsMode === "auto" ? (
-            <span className="mono meta">{columns} 列</span>
+            <span className="mono meta">{t.preview.columns(columns)}</span>
           ) : (
             <input
               className="field mono !w-16 !py-0.5"
@@ -99,6 +104,7 @@ export function Preview() {
               min={40}
               max={400}
               value={columns}
+              aria-label={t.preview.fixedColumns}
               onChange={(e) => {
                 const n = Number(e.target.value);
                 if (n >= 40) setColumnsMode(n);
@@ -106,16 +112,11 @@ export function Preview() {
             />
           )}
         </div>
-        <select
-          className="field !w-auto !py-0.5"
-          value={sampleId ?? ""}
-          onChange={(e) => setSample(e.target.value || null)}
-          title="预览用哪份数据：你的真实会话快照，或内置示例"
-        >
-          {samples.length === 0 && <option value="">没有可用数据</option>}
+        <select className="field !w-auto !py-0.5" value={sampleId ?? ""} onChange={(e) => setSample(e.target.value || null)} title={t.preview.sample} aria-label={t.preview.sample}>
+          {samples.length === 0 && <option value="">{t.preview.noSamples}</option>}
           {samples.map((sm) => (
             <option key={sm.id} value={sm.id}>
-              {sm.source === "live" ? `我的会话 · ${sm.label}` : `示例 · ${sm.label}`}
+              {sm.source === "live" ? t.preview.liveSample(sm.label) : t.preview.fixtureSample(sm.label)}
             </option>
           ))}
         </select>

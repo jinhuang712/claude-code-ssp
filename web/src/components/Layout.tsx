@@ -16,7 +16,8 @@ import { useMemo, useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import type { LineConfig, WidgetInstance, Zone } from "../api";
 import { CAT_COLOR } from "../colors";
-import { effectiveLabel, emptyStateAt, nameOf, useStore } from "../store";
+import { useT, widgetName } from "../i18n";
+import { effectiveLabel, emptyStateAt, useStore } from "../store";
 
 /*
   Drag ids must survive a reorder. Positions do not, so a chip is identified by its widget id plus
@@ -62,17 +63,19 @@ const collision: CollisionDetection = (args) => {
 };
 
 function ChipFace({ widget, ghost }: { widget: string; ghost?: boolean }) {
+  const t = useT();
   const manifest = useStore((s) => s.widgets.find((w) => w.id === widget));
   const cat = CAT_COLOR[manifest?.category ?? "misc"];
   return (
     <span className="chip mono" data-ghost={ghost} style={{ ["--cat" as string]: cat }}>
-      <span className="chip-name">{nameOf(manifest, widget)}</span>
+      <span className="chip-name">{widgetName(t, manifest, widget)}</span>
     </span>
   );
 }
 
 function Chip({ id, line, zone, index, item }: { id: string; line: number; zone: Zone; index: number; item: WidgetInstance }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const t = useT();
   const s = useStore();
   const manifest = s.widgets.find((w) => w.id === item.widget);
   const selected = s.selection?.line === line && s.selection.zone === zone && s.selection.index === index;
@@ -86,14 +89,14 @@ function Chip({ id, line, zone, index, item }: { id: string; line: number; zone:
       className="chip mono"
       data-selected={selected}
       data-empty={empty ?? undefined}
-      title={empty === "filled" ? "当前数据里还没有这一项，预览里先用示例值占位" : empty === "hidden" ? "当前数据里没有这一项，也没有示例值，预览不显示" : undefined}
+      title={empty === "filled" ? t.layout.filledTitle : empty === "hidden" ? t.layout.hiddenTitle : undefined}
       {...attributes}
       {...listeners}
     >
-      <button className="chip-name" onClick={() => s.select({ line, zone, index })} title="修改选项">
+      <button className="chip-name" onClick={() => s.select({ line, zone, index })} title={t.layout.editOptions}>
         {label && <span className="chip-label">{label}</span>}
-        {nameOf(manifest, item.widget)}
-        {empty && <span className="chip-empty">{empty === "filled" ? "示例值" : "无数据"}</span>}
+        {widgetName(t, manifest, item.widget)}
+        {empty && <span className="chip-empty">{empty === "filled" ? t.layout.sampleTag : t.layout.noDataTag}</span>}
       </button>
       <button
         className="chip-x"
@@ -101,8 +104,8 @@ function Chip({ id, line, zone, index, item }: { id: string; line: number; zone:
           e.stopPropagation();
           s.removeAt({ line, zone, index });
         }}
-        aria-label="移除"
-        title="移除"
+        aria-label={t.layout.remove}
+        title={t.layout.remove}
       >
         ×
       </button>
@@ -110,9 +113,8 @@ function Chip({ id, line, zone, index, item }: { id: string; line: number; zone:
   );
 }
 
-const EMPTY_LABEL: Record<Zone, string> = { left: "左边放什么", center: "中间放什么", right: "右边放什么" };
-
 function ZoneBox({ line, zone, items, at }: { line: number; zone: Zone; items: WidgetInstance[]; at: Map<string, string> }) {
+  const t = useT();
   const openPicker = useStore((s) => s.openPicker);
   const ids = items.map((_, i) => at.get(`${line}:${zone}:${i}`)!);
   const empty = items.length === 0;
@@ -123,8 +125,8 @@ function ZoneBox({ line, zone, items, at }: { line: number; zone: Zone; items: W
         {items.map((it, i) => (
           <Chip key={ids[i]} id={ids[i]!} line={line} zone={zone} index={i} item={it} />
         ))}
-        <button className="addchip" onClick={() => openPicker(line, zone)} aria-label={`在第 ${line + 1} 行${EMPTY_LABEL[zone].slice(0, 2)}添加`}>
-          ＋{empty && zone !== "center" && <span>{EMPTY_LABEL[zone]}</span>}
+        <button className="addchip" onClick={() => openPicker(line, zone)} aria-label={t.layout.addTo(line + 1, t.layout.zones[zone])}>
+          ＋{empty && zone !== "center" && <span>{t.layout.emptyZone[zone]}</span>}
         </button>
       </div>
     </SortableContext>
@@ -132,19 +134,20 @@ function ZoneBox({ line, zone, items, at }: { line: number; zone: Zone; items: W
 }
 
 function Row({ line, index, total, withCenter, at }: { line: LineConfig; index: number; total: number; withCenter: boolean; at: Map<string, string> }) {
+  const t = useT();
   const s = useStore();
   return (
     <div className="linerow">
       <div className="linerow-gutter">
         <span className="linerow-num mono">{index + 1}</span>
         <div className="linerow-tools">
-          <button disabled={index === 0} onClick={() => s.moveLine(index, -1)} title="上移">
+          <button disabled={index === 0} onClick={() => s.moveLine(index, -1)} title={t.layout.moveUp} aria-label={t.layout.moveUp}>
             ↑
           </button>
-          <button disabled={index === total - 1} onClick={() => s.moveLine(index, 1)} title="下移">
+          <button disabled={index === total - 1} onClick={() => s.moveLine(index, 1)} title={t.layout.moveDown} aria-label={t.layout.moveDown}>
             ↓
           </button>
-          <button onClick={() => s.removeLine(index)} title="删除这一行">
+          <button onClick={() => s.removeLine(index)} title={t.layout.deleteLine} aria-label={t.layout.deleteLine}>
             ×
           </button>
         </div>
@@ -157,7 +160,7 @@ function Row({ line, index, total, withCenter, at }: { line: LineConfig; index: 
       {s.advanced && (
         <div className="linerow-adv">
           <label>
-            放不下时
+            {t.layout.overflow}
             <select
               className="field !w-auto !py-0.5"
               value={line.overflow ?? "wrap"}
@@ -167,13 +170,13 @@ function Row({ line, index, total, withCenter, at }: { line: LineConfig; index: 
                 })
               }
             >
-              <option value="wrap">右侧另起一行</option>
-              <option value="truncate">截断</option>
-              <option value="drop-right">隐藏右侧</option>
+              <option value="wrap">{t.layout.overflowWrap}</option>
+              <option value="truncate">{t.layout.overflowTruncate}</option>
+              <option value="drop-right">{t.layout.overflowDropRight}</option>
             </select>
           </label>
           <label>
-            窄于
+            {t.layout.hideBelow}
             <input
               className="field !w-16 !py-0.5"
               type="number"
@@ -187,7 +190,7 @@ function Row({ line, index, total, withCenter, at }: { line: LineConfig; index: 
                 })
               }
             />
-            列时隐藏整行
+            {t.layout.columnsUnit}
           </label>
         </div>
       )}
@@ -196,6 +199,7 @@ function Row({ line, index, total, withCenter, at }: { line: LineConfig; index: 
 }
 
 export function Layout() {
+  const t = useT();
   const config = useStore((s) => s.config)!;
   const advanced = useStore((s) => s.advanced);
   const reorder = useStore((s) => s.reorder);
@@ -233,15 +237,15 @@ export function Layout() {
   return (
     <section className="section">
       <div className="section-head">
-        <h2 className="h2">布局</h2>
-        <span className="hint">每一行对应状态栏的一行。点名字改选项，拖动排序，也可以拖到别的行。</span>
+        <h2 className="h2">{t.layout.title}</h2>
+        <span className="hint">{t.layout.hint}</span>
       </div>
       <div className="linehead">
         <span />
         <div className={`linehead-zones ${withCenter ? "with-center" : ""}`}>
-          <span>靠左</span>
-          {withCenter && <span>居中</span>}
-          <span>靠右</span>
+          <span>{t.layout.zones.left}</span>
+          {withCenter && <span>{t.layout.zones.center}</span>}
+          <span>{t.layout.zones.right}</span>
         </div>
       </div>
       <DndContext sensors={sensors} collisionDetection={collision} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
@@ -253,7 +257,7 @@ export function Layout() {
         <DragOverlay dropAnimation={null}>{dragging ? <ChipFace widget={dragging.split("#")[0]!} ghost /> : null}</DragOverlay>
       </DndContext>
       <button className="btn mt-3" onClick={addLine}>
-        ＋ 加一行
+        ＋ {t.layout.addLine}
       </button>
     </section>
   );

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { tr } from "./i18n";
 import { api, type ConfigLayer, type FooterConfig, type LineConfig, type RenderResult, type SampleMeta, type ThemeDef, type WidgetInstance, type WidgetManifest, type Zone } from "./api";
 
 export interface Selection {
@@ -9,23 +10,18 @@ export interface Selection {
 
 export type PresetId = "minimal" | "standard" | "full";
 
-export const PRESETS: Record<PresetId, { name: string; blurb: string; lines: LineConfig[] }> = {
+/** Preset layouts. Names and blurbs are UI copy and live in the locale files (`presets.<id>`). */
+export const PRESETS: Record<PresetId, { lines: LineConfig[] }> = {
   minimal: {
-    name: "极简",
-    blurb: "一行：项目 · 模型 · 上下文",
     lines: [{ left: [{ widget: "project.path" }, { widget: "git.branch" }], right: [{ widget: "model.badge" }, { widget: "context.value" }] }],
   },
   standard: {
-    name: "标准",
-    blurb: "两行：加上用量与费用",
     lines: [
       { left: [{ widget: "project.path" }, { widget: "git.branch" }], right: [{ widget: "model.badge" }, { widget: "cost.session" }] },
       { left: [{ widget: "usage.windows" }], right: [{ widget: "context.bar" }] },
     ],
   },
   full: {
-    name: "完整",
-    blurb: "四行：tokens、会话时间、agents、todos",
     lines: [
       { left: [{ widget: "project.path" }, { widget: "git.branch" }], right: [{ widget: "model.badge" }, { widget: "session.duration" }, { widget: "cost.session" }] },
       { left: [{ widget: "usage.windows" }], right: [{ widget: "context.bar" }] },
@@ -206,7 +202,7 @@ export const useStore = create<State>((set, get) => ({
     get().setConfig((c) => {
       zoneOf(c.lines[sel.line]!, sel.zone).splice(sel.index, 1);
     });
-    set({ selection: null, toast: "已移除，可按 Ctrl/⌘+Z 撤销" });
+    set({ selection: null, toast: tr().toast.removed });
   },
 
   moveWidget(from, toLine, toZone, toIndex) {
@@ -238,7 +234,7 @@ export const useStore = create<State>((set, get) => ({
     get().setConfig((c) => {
       c.lines.splice(i, 1);
     });
-    set({ selection: null, toast: "已删除整行，可按 Ctrl/⌘+Z 撤销" });
+    set({ selection: null, toast: tr().toast.lineRemoved });
   },
 
   moveLine(i, dir) {
@@ -262,7 +258,7 @@ export const useStore = create<State>((set, get) => ({
     get().setConfig((c) => {
       c.lines = structuredClone(PRESETS[id].lines);
     });
-    set({ selection: null, toast: "已整体替换布局，可按 Ctrl/⌘+Z 撤销" });
+    set({ selection: null, toast: tr().toast.presetApplied });
   },
 
   async saveNow(scope = "user") {
@@ -278,7 +274,7 @@ export const useStore = create<State>((set, get) => ({
       if (scope === "project") {
         // Project `lines` replaces the user layer wholesale: later panel edits keep
         // going to the user file and will NOT show in the row layout. Say so once.
-        set({ toast: "已存为项目配置：它的行布局会整体覆盖用户级，之后面板里的改动只影响非行布局部分" });
+        set({ toast: tr().toast.savedProject });
       }
       // `render` re-reads the config file on every tick, but Claude Code only runs it when
       // settings.json points at us — so the first successful save auto-applies (idempotent,
@@ -292,7 +288,7 @@ export const useStore = create<State>((set, get) => ({
         }
       }
     } catch (err) {
-      set({ saving: false, toast: `保存失败：${err instanceof Error ? err.message : String(err)}` });
+      set({ saving: false, toast: tr().toast.saveFailed(err instanceof Error ? err.message : String(err)) });
     }
   },
 
@@ -300,9 +296,9 @@ export const useStore = create<State>((set, get) => ({
     try {
       await get().saveNow();
       const r = await api.install();
-      set({ installed: true, toast: `已写入 ${r.settingsFile}。新开一个 Claude Code 会话即可看到。` });
+      set({ installed: true, toast: tr().toast.installed(r.settingsFile) });
     } catch (err) {
-      set({ toast: `安装失败：${err instanceof Error ? err.message : String(err)}` });
+      set({ toast: tr().toast.installFailed(err instanceof Error ? err.message : String(err)) });
     }
   },
 
@@ -310,10 +306,10 @@ export const useStore = create<State>((set, get) => ({
     const live = get().samples.find((x) => x.source === "live");
     try {
       const r = await api.reset(live?.id);
-      set({ toast: `已重置会话 ${r.sessionId.slice(0, 8)}… 的费用 / Tokens / API 次数 / 改动行数，状态栏下次刷新起从 0 累计` });
+      set({ toast: tr().toast.reset(r.sessionId.slice(0, 8)) });
       void get().refreshPreview();
     } catch (err) {
-      set({ toast: `重置失败：${err instanceof Error ? err.message : String(err)}` });
+      set({ toast: tr().toast.resetFailed(err instanceof Error ? err.message : String(err)) });
     }
   },
 
@@ -325,7 +321,7 @@ export const useStore = create<State>((set, get) => ({
       if (get().columns !== columns) return; // a newer request is on its way
       set({ preview, previewColumns: columns });
     } catch (err) {
-      set({ toast: `预览失败：${err instanceof Error ? err.message : String(err)}` });
+      set({ toast: tr().toast.previewFailed(err instanceof Error ? err.message : String(err)) });
     }
   },
 
@@ -344,66 +340,6 @@ export function widgetAt(state: State, sel: Selection | null): WidgetInstance | 
 
 export function isDirty(state: State): boolean {
   return JSON.stringify(state.config) !== JSON.stringify(state.saved);
-}
-
-/** Chinese display names for the built-in widgets; falls back to the manifest name. */
-export const ZH: Record<string, string> = {
-  "model.badge": "模型",
-  "model.effort": "思考强度",
-  "model.claudeVersion": "Claude Code 版本",
-  "project.path": "项目路径",
-  "project.addedDirs": "附加目录",
-  "project.worktree": "Worktree",
-  "project.sessionName": "会话名",
-  "git.branch": "Git 分支",
-  "git.repo": "仓库",
-  "git.pr": "Pull Request",
-  "git.linesChanged": "改动行数",
-  "context.bar": "上下文进度条",
-  "context.value": "上下文数值",
-  "context.compactions": "压缩次数",
-  "context.promptCache": "Prompt 缓存",
-  "usage.windows": "用量（5h / 7d）",
-  "usage.single": "用量（单窗口）",
-  "tokens.session": "会话 Tokens",
-  "tokens.current": "当前上下文 Tokens",
-  "tokens.outputSpeed": "输出速度",
-  "session.duration": "会话时长",
-  "session.started": "开始时间",
-  "session.lastReply": "上次回复",
-  "session.clock": "时钟",
-  "session.apiCalls": "API 调用次数",
-  "session.vimMode": "Vim 模式",
-  "session.agent": "Agent 名",
-  "cost.session": "费用",
-  "cost.apiTime": "API 耗时",
-  "activity.agents": "运行中的 Agents",
-  "activity.todos": "Todo 进度",
-  "activity.tools": "工具活动",
-  "activity.mcp": "MCP 服务",
-  "environment.counts": "配置计数",
-  "environment.outputStyle": "输出风格",
-  "environment.thinking": "思考开关",
-  "custom.text": "固定文本",
-  "custom.env": "环境变量",
-  "custom.link": "链接",
-};
-
-export const ZH_CATEGORY: Record<string, string> = {
-  model: "模型",
-  project: "项目",
-  git: "Git",
-  context: "上下文",
-  usage: "用量",
-  cost: "费用",
-  session: "会话",
-  activity: "活动",
-  environment: "环境",
-  misc: "其他",
-};
-
-export function nameOf(w: WidgetManifest | undefined, id: string): string {
-  return ZH[id] ?? w?.name ?? id;
 }
 
 /** Does this widget's own schema know about a label (so it has a built-in default)? */
@@ -429,51 +365,4 @@ export function effectiveLabel(inst: WidgetInstance, w: WidgetManifest | undefin
 export function emptyStateAt(preview: RenderResult | null, sel: Selection): null | "filled" | "hidden" {
   const e = preview?.empty?.find((x) => x.line === sel.line && x.zone === sel.zone && x.index === sel.index);
   return e ? (e.filled ? "filled" : "hidden") : null;
-}
-
-/** Chinese one-liners for the built-in widgets (manifest descriptions are English). */
-export const ZH_DESC: Record<string, string> = {
-  "model.badge": "当前模型，可附带思考强度、供应商和快速模式标记。",
-  "model.effort": "思考强度，用符号和/或文字表示。",
-  "model.claudeVersion": "Claude Code 的版本号。",
-  "project.path": "工作目录：只显示末级、末 N 级、~ 相对或完整路径。",
-  "project.addedDirs": "用 /add-dir 加入的目录。",
-  "project.worktree": "当前 git worktree 的名字。",
-  "project.sessionName": "会话标题。Claude Code 会把最近一条提问当标题发过来，/rename 设过的优先。",
-  "git.branch": "分支名，可附带改动标记、领先/落后数和文件统计。",
-  "git.repo": "从 origin 解析出的 owner/name。",
-  "git.pr": "当前分支对应的 PR / MR 及评审状态。",
-  "git.linesChanged": "增删行数：本会话改过的（Claude Code 统计，提交后不清零）或工作区未提交的（git diff HEAD）。",
-  "context.bar": "上下文占用进度条，按阈值变色。",
-  "context.value": "上下文占用，只显示数字。",
-  "context.compactions": "本次会话压缩过几次，压缩前不显示。",
-  "context.promptCache": "Prompt 缓存是否还热、多久过期。",
-  "usage.windows": "5 小时 / 7 天 / 花费上限用量（Pro / Max 账号）。",
-  "usage.single": "只显示一个用量窗口，适合放窄的位置。",
-  "tokens.session": "本次会话累计 tokens，可展开 in / out / cache 明细。",
-  "tokens.current": "当前上下文窗口里的 tokens 数。",
-  "tokens.outputSpeed": "输出速度 tok/s，流式输出时才有值。",
-  "session.duration": "会话已进行的时长。",
-  "session.started": "会话开始的时间。",
-  "session.lastReply": "距上一次回复过了多久。",
-  "session.clock": "本机当前时间。",
-  "session.apiCalls": "本次会话调了多少次模型 API，一轮回复算一次，流式分片不重复计。",
-  "session.vimMode": "当前 vim 模式。",
-  "session.agent": "用 --agent 启动时的 agent 名。",
-  "cost.session": "本次会话费用，Claude Code 自己的统计，缺失时按价目表估算。",
-  "cost.apiTime": "本次会话等待 API 的总时长。",
-  "activity.agents": "正在运行的子 agent。",
-  "activity.todos": "Todo 完成数 / 总数和进行中的那一项。",
-  "activity.tools": "最近的工具调用和状态。",
-  "activity.mcp": "本次会话调用过的 MCP 服务，出错的会标出来。",
-  "environment.counts": "当前目录生效的 CLAUDE.md / 规则 / MCP / hooks 数量。",
-  "environment.outputStyle": "当前输出风格，默认风格时不显示。",
-  "environment.thinking": "开启扩展思考时显示 💭。",
-  "custom.text": "固定文本或符号，比如分隔符、你的名字。",
-  "custom.env": "某个环境变量的值。",
-  "custom.link": "可点击的文字链接。",
-};
-
-export function descOf(w: WidgetManifest | undefined, id: string): string {
-  return ZH_DESC[id] ?? w?.description ?? "";
 }

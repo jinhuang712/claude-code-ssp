@@ -1,0 +1,267 @@
+/**
+ * English UI copy — the source of truth for the message shape.
+ *
+ * Every other locale is typed as `Messages`, so a missing or misspelled key is a compile error
+ * rather than a blank label at runtime. Strings that need values are small functions instead of
+ * `{placeholder}` templates: TypeScript then checks the arguments too.
+ *
+ * Widget names/descriptions and option titles are deliberately *not* duplicated here: English
+ * falls back to what each widget declares in its own manifest (src/widgets), so plugin authors
+ * only ever write English once. The `widgets` tables below only fill gaps and friendlier wording.
+ */
+export const en = {
+  langName: "English",
+
+  app: {
+    loading: "Loading…",
+    unreachable: (err: string) => `Can't reach the local server: ${err}`,
+    unreachableHint: ["In Claude Code, type ", " — or run ", " in a terminal."] as readonly [string, string, string],
+  },
+
+  header: {
+    title: "Claude Code statusline",
+    saving: "Saving…",
+    dirty: "Unsaved changes — saving…",
+    saved: "Saved · Claude Code picks it up on its next refresh",
+    applied: "Applied · edits go live automatically",
+    notApplied: "Your first edit applies it to Claude Code",
+    undo: "Undo",
+    undoTitle: (n: number) => `Undo the last change (${n} available) — Ctrl/⌘+Z`,
+    nothingToUndo: "Nothing to undo",
+    resetCounters: "Reset counters",
+    resetCountersTitle: "Restart cost, tokens, API calls and lines changed from zero. Only affects the current session.",
+    apply: "Apply to Claude Code",
+    applyTitle: "Point Claude Code's statusline at this configurator (once — later edits apply automatically)",
+    reapply: "Re-apply",
+    reapplyTitle: "Rarely needed: every save applies automatically. Use this to repair settings.json if something else changed it.",
+    language: "Language",
+  },
+
+  preview: {
+    title: "Preview",
+    renderTime: "Render time",
+    filled: (n: number) => (n === 1 ? "1 item has no real data yet — showing a sample value" : `${n} items have no real data yet — showing sample values`),
+    hidden: (n: number) => (n === 1 ? "1 item has no data or sample and is hidden" : `${n} items have no data or sample and are hidden`),
+    emptyLines: (n: number) => (n === 1 ? "1 line is empty as a result" : `${n} lines are empty as a result`),
+    noteJoin: "; ",
+    width: "Preview width",
+    fitWindow: "Fit to window",
+    fixedColumns: "Fixed columns",
+    columns: (n: number) => `${n} cols`,
+    sample: "Data for the preview: a snapshot of your real session, or a built-in sample",
+    noSamples: "No data available",
+    liveSample: (label: string) => `My session · ${label}`,
+    fixtureSample: (label: string) => `Sample · ${label}`,
+  },
+
+  presets: {
+    title: "Presets",
+    matches: "Your layout matches this preset",
+    customised: "Your layout is customised — picking a preset replaces it (Ctrl/⌘+Z undoes)",
+    lines: (n: number) => (n === 1 ? "1 line" : `${n} lines`),
+    minimal: { name: "Minimal", blurb: "One line: project, branch, model, context" },
+    standard: { name: "Standard", blurb: "Two lines: adds usage limits and cost" },
+    full: { name: "Full", blurb: "Four lines: adds tokens, session times, agents and todos" },
+  },
+
+  layout: {
+    title: "Layout",
+    hint: "Each row is one line of the statusline. Click a widget to edit it; drag it to reorder or move it to another line.",
+    zones: { left: "Left", center: "Center", right: "Right" },
+    emptyZone: { left: "What goes on the left?", center: "What goes in the center?", right: "What goes on the right?" },
+    addTo: (line: number, zone: string) => `Add to line ${line}, ${zone.toLowerCase()}`,
+    editOptions: "Edit options",
+    remove: "Remove",
+    sampleTag: "sample",
+    noDataTag: "no data",
+    filledTitle: "No data for this in the current session — the preview shows a sample value",
+    hiddenTitle: "No data and no sample — hidden in the preview",
+    moveUp: "Move line up",
+    moveDown: "Move line down",
+    deleteLine: "Delete line",
+    overflow: "When it doesn't fit",
+    overflowWrap: "Wrap the right side onto its own line",
+    overflowTruncate: "Truncate",
+    overflowDropRight: "Hide the right side",
+    hideBelow: "Hide the line below",
+    columnsUnit: "columns",
+    addLine: "Add line",
+  },
+
+  themes: {
+    title: "Color theme",
+    hint: "Changes the terminal colors; this panel's accent color follows along",
+  },
+
+  bars: {
+    title: "Progress bar style",
+    hint: "Shared by every bar (context, usage, …)",
+    names: {
+      theme: "Theme default",
+      block: "Full block",
+      rect: "Tall",
+      low: "Low",
+      half: "Half",
+      slant: "Slanted",
+      square: "Squares",
+      line: "Line",
+      dot: "Dots",
+    },
+  },
+
+  picker: {
+    dialog: "Add to the statusline",
+    search: "Search by name or description",
+    target: (line: number, zone: string) => `Adding to line ${line}, ${zone.toLowerCase()}`,
+    plugin: "plugin",
+    noMatch: "Nothing matches. Try another word or clear the search.",
+  },
+
+  options: {
+    dialog: "Widget options",
+    where: (line: number, zone: string) => `Line ${line} · ${zone}`,
+    done: "Done",
+    now: "Right now",
+    nothingNow: "(nothing to show with the current data)",
+    label: "Label",
+    labelHint: "Text in front of the value",
+    hidden: "Hidden",
+    show: "Show",
+    hide: "Hide",
+    on: "On",
+    off: "Off",
+    color: "Color",
+    colors: { "": "Default", fg: "Text", muted: "Muted", accent: "Accent", ok: "Green", warn: "Yellow", crit: "Red" } as Record<string, string>,
+    custom: "Custom",
+    pickColor: "Pick a color",
+    bold: "Bold",
+    removeWidget: "Remove from statusline",
+  },
+
+  advanced: {
+    title: "Advanced settings",
+    hint: "Separator, color mode, center zone, project config",
+    separator: "Separator between widgets",
+    rightMargin: "Right margin (columns)",
+    rightMarginHint: "Claude Code's own padding — raise it if the right edge wraps",
+    colorMode: "Color mode",
+    colorLevels: { auto: "Auto", truecolor: "Truecolor", "256": "256 colors", "16": "16 colors", none: "No color" } as Record<string, string>,
+    capture: "Save real stdin snapshots for the preview",
+    captureHint: (dir: string) => `Stored locally in ${dir}`,
+    saveProject: "Save to this project",
+    overwriteProject: "Overwrite project config",
+    saveAsProject: "Save as project config",
+    configJson: "Config JSON",
+    pluginsHint: ["Custom widgets: drop a .ts / .js file into ", ", restart the server, and it shows up in the “+” list. See examples/widgets/hello.ts."] as readonly [string, string],
+  },
+
+  doctor: {
+    title: "Diagnostics",
+    refresh: "Refresh",
+    loading: "Loading diagnostics…",
+    failed: (err: string) => `Couldn't load diagnostics: ${err}`,
+    layers: "Config sources (later ones win)",
+    layerNames: { defaults: "Defaults", user: "User", project: "Project" } as Record<string, string>,
+    builtIn: "(built in)",
+    pluginDirs: "Custom widget folders",
+    noPlugins: "No custom widgets loaded",
+    statusLine: (path: string) => `statusLine in settings.json (${path})`,
+    lastStdin: (time: string) => (time ? `Last stdin from Claude Code (${time})` : "Last stdin from Claude Code"),
+    notCaptured: "Nothing captured yet — turn on “Save real stdin snapshots”.",
+  },
+
+  toast: {
+    removed: "Removed — Ctrl/⌘+Z to undo",
+    lineRemoved: "Line deleted — Ctrl/⌘+Z to undo",
+    presetApplied: "Layout replaced — Ctrl/⌘+Z to undo",
+    savedProject: "Saved as project config. Its lines replace your user layout entirely, so later edits here only change the other settings.",
+    saveFailed: (e: string) => `Couldn't save: ${e}`,
+    installed: (file: string) => `Written to ${file}. Open a new Claude Code session to see it.`,
+    installFailed: (e: string) => `Couldn't apply: ${e}`,
+    reset: (id: string) => `Counters reset for session ${id}… — cost, tokens, API calls and lines changed restart from 0 on the next refresh`,
+    resetFailed: (e: string) => `Couldn't reset: ${e}`,
+    previewFailed: (e: string) => `Preview failed: ${e}`,
+  },
+
+  widgets: {
+    /** Overrides for manifest names; English uses the manifest as-is. */
+    names: {} as Record<string, string>,
+    /** Overrides for manifest descriptions. */
+    descs: {} as Record<string, string>,
+    categories: {
+      model: "Model",
+      project: "Project",
+      git: "Git",
+      context: "Context",
+      usage: "Usage",
+      tokens: "Tokens",
+      cost: "Cost",
+      session: "Session",
+      activity: "Activity",
+      environment: "Environment",
+      misc: "Other",
+    } as Record<string, string>,
+    /** Titles for options whose schema has none (the schema title wins when present). */
+    fields: {
+      label: "Label",
+      color: "Color",
+      format: "Format",
+      max: "Show at most",
+      showClaudeMd: "Count CLAUDE.md files",
+      showDescription: "Show description",
+      showHooks: "Count hooks",
+      showMcp: "Count MCP servers",
+      showModel: "Show model",
+      showRules: "Count rules",
+      text: "Text",
+      url: "Link address",
+      value: "Value",
+      window: "Window",
+    } as Record<string, string>,
+    /** Short legends shown next to an option's title. */
+    fieldHints: {
+      effortStyle: "Symbols: ○ low · ◔ medium · ◑ high · ◕ xhigh · ● max",
+      colorMode: "Gradient ignores the thresholds — check the preview above",
+    } as Record<string, string>,
+    /** Friendly names for enum values, shared by every widget. */
+    enums: {
+      full: "Full",
+      compact: "Compact",
+      short: "Shortest",
+      tilde: "~ relative",
+      percent: "Percent",
+      tokens: "Tokens",
+      remaining: "Remaining",
+      both: "Both",
+      used: "Used",
+      words: "Words",
+      arrows: "Arrows",
+      relative: "Countdown",
+      absolute: "Clock time",
+      transcript: "Transcript",
+      stdin: "Reported by Claude Code",
+      datetime: "Date + time",
+      time: "Time only",
+      name: "Name",
+      "owner/name": "owner/name",
+      "5h": "5 hours",
+      "7d": "7 days",
+      "1": "1 level",
+      "2": "2 levels",
+      "3": "3 levels",
+      thresholds: "Thresholds: green → yellow → red",
+      gradient: "Gradient: 0% white → 10% blue → 30% green → 50% yellow → 70% orange → 90% red → 100% deep red",
+    } as Record<string, string>,
+    /** Per-widget wording where the shared words would hide what an option really does. */
+    enumsByField: {
+      "model.badge.format": { full: "As reported", compact: "Drop “(1M context)”", short: "Also drop “Claude”" },
+      "model.badge.effortStyle": { "symbol-word": "Symbol + word", word: "Word only", symbol: "Symbol only" },
+      "model.effort.effortStyle": { "symbol-word": "Symbol + word", word: "Word only", symbol: "Symbol only" },
+      "model.badge.joiner": { space: "Space", dot: "Dot ·" },
+      "context.bar.value": { percent: "Used %", remaining: "Remaining %" },
+      "git.linesChanged.source": { session: "Edited this session", worktree: "Uncommitted in the worktree" },
+    } as Record<string, Record<string, string>>,
+  },
+};
+
+export type Messages = typeof en;

@@ -6,9 +6,11 @@ import { Options } from "./components/Options";
 import { Picker } from "./components/Picker";
 import { Preview } from "./components/Preview";
 import { uiColor } from "./colors";
+import { HTML_LANG, useLang, useT, type Messages } from "./i18n";
 import { PRESETS, useStore, type PresetId } from "./store";
 
 function Presets() {
+  const t = useT();
   const config = useStore((s) => s.config)!;
   const applyPreset = useStore((s) => s.applyPreset);
   const ids = Object.keys(PRESETS) as PresetId[];
@@ -18,17 +20,17 @@ function Presets() {
   return (
     <section className="section">
       <div className="section-head">
-        <h2 className="h2">预设</h2>
-        <span className="hint">{current ? "当前布局就是这个预设" : "当前布局已在预设基础上改动，点一个预设会整体替换"}</span>
+        <h2 className="h2">{t.presets.title}</h2>
+        <span className="hint">{current ? t.presets.matches : t.presets.customised}</span>
       </div>
       <div className="choices">
         {ids.map((id) => (
           <button key={id} className="choice choice-tall" data-active={current === id} onClick={() => applyPreset(id)}>
             <span>
-              {PRESETS[id].name}
-              <small className="ml-2">{PRESETS[id].lines.length} 行</small>
+              {t.presets[id].name}
+              <small className="ml-2">{t.presets.lines(PRESETS[id].lines.length)}</small>
             </span>
-            <small>{PRESETS[id].blurb}</small>
+            <small>{t.presets[id].blurb}</small>
           </button>
         ))}
       </div>
@@ -47,6 +49,7 @@ const STRIP: Array<[string, number]> = [
 ];
 
 function Themes() {
+  const t = useT();
   const themes = useStore((s) => s.themes);
   const config = useStore((s) => s.config)!;
   const setConfig = useStore((s) => s.setConfig);
@@ -54,27 +57,27 @@ function Themes() {
   return (
     <section className="section">
       <div className="section-head">
-        <h2 className="h2">配色</h2>
-        <span className="hint">只影响终端里的颜色，面板的强调色会跟着换</span>
+        <h2 className="h2">{t.themes.title}</h2>
+        <span className="hint">{t.themes.hint}</span>
       </div>
       <div className="choices">
-        {themes.map((t) => (
+        {themes.map((th) => (
           <button
-            key={t.name}
+            key={th.name}
             className="choice"
-            data-active={current === t.name}
+            data-active={current === th.name}
             onClick={() =>
               setConfig((c) => {
-                c.theme = t.name;
+                c.theme = th.name;
               })
             }
           >
             <span className="strip" aria-hidden="true">
               {STRIP.map(([k, w]) => (
-                <i key={k} style={{ width: w, background: uiColor(t.tokens[k]) }} />
+                <i key={k} style={{ width: w, background: uiColor(th.tokens[k]) }} />
               ))}
             </span>
-            {t.name}
+            {th.name}
           </button>
         ))}
       </div>
@@ -82,31 +85,32 @@ function Themes() {
   );
 }
 
-/* Bar glyph pairs; each one is shown exactly as the statusline will draw it. */
-const BAR_SETS: Array<{ id: string; filled: string; empty: string; name: string }> = [
-  { id: "theme", filled: "", empty: "", name: "跟随配色" },
-  { id: "block", filled: "█", empty: "░", name: "整格" },
-  { id: "rect", filled: "▮", empty: "▯", name: "矮一档" },
-  { id: "low", filled: "▆", empty: "▁", name: "贴底" },
-  { id: "half", filled: "▄", empty: "▁", name: "半格" },
-  { id: "slant", filled: "▰", empty: "▱", name: "斜块" },
-  { id: "square", filled: "■", empty: "□", name: "方块" },
-  { id: "line", filled: "━", empty: "╌", name: "细线" },
-  { id: "dot", filled: "●", empty: "○", name: "圆点" },
+/* Bar glyph pairs; each one is shown exactly as the statusline will draw it. Names live in `bars.names`. */
+const BAR_SETS: Array<{ id: keyof Messages["bars"]["names"]; filled: string; empty: string }> = [
+  { id: "theme", filled: "", empty: "" },
+  { id: "block", filled: "█", empty: "░" },
+  { id: "rect", filled: "▮", empty: "▯" },
+  { id: "low", filled: "▆", empty: "▁" },
+  { id: "half", filled: "▄", empty: "▁" },
+  { id: "slant", filled: "▰", empty: "▱" },
+  { id: "square", filled: "■", empty: "□" },
+  { id: "line", filled: "━", empty: "╌" },
+  { id: "dot", filled: "●", empty: "○" },
 ];
 
 function BarGlyphs() {
+  const t = useT();
   const config = useStore((s) => s.config)!;
   const themes = useStore((s) => s.themes);
   const setConfig = useStore((s) => s.setConfig);
-  const themeBar = (typeof config.theme === "string" ? themes.find((t) => t.name === config.theme)?.bar : config.theme.bar) ?? { filled: "█", empty: "░" };
+  const themeBar = (typeof config.theme === "string" ? themes.find((th) => th.name === config.theme)?.bar : config.theme.bar) ?? { filled: "█", empty: "░" };
   const current = BAR_SETS.find((b) => b.id !== "theme" && config.bar?.filled === b.filled && config.bar?.empty === b.empty)?.id ?? (config.bar ? "custom" : "theme");
   const draw = (f: string, e: string) => f.repeat(4) + e.repeat(6);
   return (
     <section className="section">
       <div className="section-head">
-        <h2 className="h2">进度条字符</h2>
-        <span className="hint">上下文、用量等所有进度条共用</span>
+        <h2 className="h2">{t.bars.title}</h2>
+        <span className="hint">{t.bars.hint}</span>
       </div>
       <div className="choices">
         {BAR_SETS.map((b) => (
@@ -122,7 +126,7 @@ function BarGlyphs() {
             }
           >
             <span className="mono">{b.id === "theme" ? draw(themeBar.filled, themeBar.empty) : draw(b.filled, b.empty)}</span>
-            <small>{b.name}</small>
+            <small>{t.bars.names[b.id]}</small>
           </button>
         ))}
       </div>
@@ -135,10 +139,18 @@ function useThemeAccent() {
   const themes = useStore((s) => s.themes);
   const theme = useStore((s) => s.config?.theme);
   useEffect(() => {
-    const tokens = typeof theme === "string" ? themes.find((t) => t.name === theme)?.tokens : theme?.tokens;
+    const tokens = typeof theme === "string" ? themes.find((th) => th.name === theme)?.tokens : theme?.tokens;
     const accent = uiColor(tokens?.accent, "#4cc9e0");
     document.documentElement.style.setProperty("--accent", accent);
   }, [themes, theme]);
+}
+
+/* Keep <html lang> in step with the UI language: screen readers and CJK font fallback both read it. */
+function useHtmlLang() {
+  const lang = useLang((s) => s.lang);
+  useEffect(() => {
+    document.documentElement.lang = HTML_LANG[lang];
+  }, [lang]);
 }
 
 function useMastheadHeight(ref: React.RefObject<HTMLDivElement | null>) {
@@ -154,9 +166,11 @@ function useMastheadHeight(ref: React.RefObject<HTMLDivElement | null>) {
 }
 
 export default function App() {
+  const t = useT();
   const { loading, error, config, init, toast, notify } = useStore();
   const mast = useRef<HTMLDivElement>(null);
   useThemeAccent();
+  useHtmlLang();
   useMastheadHeight(mast);
 
   useEffect(() => {
@@ -165,8 +179,8 @@ export default function App() {
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => notify(null), 5000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => notify(null), 5000);
+    return () => clearTimeout(timer);
   }, [toast, notify]);
 
   // Global undo: Ctrl/⌘+Z restores the last pre-edit snapshot. Skipped while typing
@@ -174,8 +188,8 @@ export default function App() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
-        const t = e.target as HTMLElement | null;
-        if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+        const el = e.target as HTMLElement | null;
+        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
         if (e.isComposing) return;
         e.preventDefault();
         useStore.getState().undo();
@@ -185,16 +199,22 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  if (loading) return <div className="p-10 text-sm opacity-60">加载中…</div>;
-  if (error || !config)
+  if (loading) return <div className="p-10 text-sm opacity-60">{t.app.loading}</div>;
+  if (error || !config) {
+    const [a, b, c] = t.app.unreachableHint;
     return (
       <div className="mx-auto max-w-xl p-10 text-sm">
-        <p style={{ color: "var(--danger)" }}>连不上本地服务：{error}</p>
+        <p style={{ color: "var(--danger)" }}>{t.app.unreachable(error ?? "")}</p>
         <p className="mt-2 opacity-70">
-          在 Claude Code 里输入 <code className="mono">/ssp:config</code>，或在终端运行 <code className="mono">bun run serve</code>。
+          {a}
+          <code className="mono">/ssp:config</code>
+          {b}
+          <code className="mono">bun run serve</code>
+          {c}
         </p>
       </div>
     );
+  }
 
   return (
     <div className="page">
