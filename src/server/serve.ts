@@ -12,7 +12,7 @@ import { render } from "../core/layout.js";
 import { loadPlugins } from "../core/plugins.js";
 import { widgetManifest } from "../core/registry.js";
 import { listThemes } from "../core/theme.js";
-import type { FooterConfig } from "../core/types.js";
+import type { FooterConfig, RenderResult } from "../core/types.js";
 import type { StdinData } from "../data/types.js";
 import { registerBuiltinWidgets } from "../widgets/index.js";
 import { guardRequest, HttpError, MAX_BODY_BYTES, readJson } from "./guard.js";
@@ -128,6 +128,36 @@ export function parseColumns(value: unknown): number {
   return Math.min(500, Math.max(20, Math.floor(n)));
 }
 
+/** Most configs one /api/render/batch call may carry; the biggest options drawer needs ~40. */
+const MAX_BATCH = 100;
+
+/**
+ * Render preview(s) of `configs` against one sample, in order. The data context (transcript, git,
+ * usage…) only depends on `config.git` — the width is always given explicitly here — so configs that
+ * differ in widgets, options or styling share one context: a 40-probe batch costs one transcript read
+ * and one git call instead of forty.
+ */
+async function renderPreviews(configs: Array<Partial<FooterConfig>>, sampleId: string | null, columns: number, fillEmpty: boolean): Promise<RenderResult[]> {
+  const now = Date.now();
+  const sample = allSamples().find((x) => x.id === sampleId)?.payload ?? fixtureSamples()[0]?.payload ?? {};
+  const stdin = hydrate(sample, now) as StdinData;
+  const contexts = new Map<string, ReturnType<typeof buildContext>>();
+  return Promise.all(
+    configs.map(async (raw) => {
+      const config = normalizeConfig(raw ?? {});
+      // The preview is painted by xterm.js, which speaks truecolor; "auto" would otherwise follow this server's env.
+      if (config.colorLevel === "auto") config.colorLevel = "truecolor";
+      const key = JSON.stringify(config.git);
+      let ctx = contexts.get(key);
+      if (!ctx) {
+        ctx = buildContext(stdin, config, { columns, now, deadlineMs: 800 });
+        contexts.set(key, ctx);
+      }
+      return render(config, await ctx, { fillEmpty });
+    }),
+  );
+}
+
 async function handleApi(req: Request, url: URL): Promise<Response> {
   const cwd = resolveCwd(url);
   switch (`${req.method} ${url.pathname}`) {
@@ -186,15 +216,17 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
       // No client-supplied stdin payload: it could name any transcript_path / cwd on disk and turn the
       // preview into a file and git-status oracle. Previews render captured samples or fixtures only.
       const body = await readJson<{ config?: Partial<FooterConfig>; sampleId?: string; columns?: number; fillEmpty?: boolean }>(req);
-      const config = normalizeConfig(body.config ?? loadEffectiveConfig(cwd).config);
-      // The preview is painted by xterm.js, which speaks truecolor; "auto" would otherwise follow this server's env.
-      if (config.colorLevel === "auto") config.colorLevel = "truecolor";
-      const now = Date.now();
-      const sample = allSamples().find((x) => x.id === body.sampleId)?.payload ?? fixtureSamples()[0]?.payload ?? {};
-      const stdin = hydrate(sample, now) as StdinData;
-      const ctx = await buildContext(stdin, config, { columns: parseColumns(body.columns), now, deadlineMs: 800 });
-      const out = render(config, ctx, { fillEmpty: body.fillEmpty === true });
+      const [out] = await renderPreviews([body.config ?? loadEffectiveConfig(cwd).config], body.sampleId ?? null, parseColumns(body.columns), body.fillEmpty === true);
       return json(out);
+    }
+    case "POST /api/render/batch": {
+      // The options drawer previews every value of every option; one request instead of dozens.
+      const body = await readJson<{ sampleId?: string | null; columns?: number; fillEmpty?: boolean; configs?: unknown }>(req);
+      if (!Array.isArray(body.configs) || body.configs.length < 1 || body.configs.length > MAX_BATCH) {
+        throw new HttpError(400, `configs must be an array of 1..${MAX_BATCH} configs`);
+      }
+      const results = await renderPreviews(body.configs as Partial<FooterConfig>[], body.sampleId ?? null, parseColumns(body.columns), body.fillEmpty === true);
+      return json({ results });
     }
     case "POST /api/reset": {
       const { resetLatestSession, undoReset } = await import("./reset.js");
@@ -252,6 +284,8 @@ function serveStatic(pathname: string): Response {
 export async function handleRequest(req: Request, port: number): Promise<Response> {
   const denied = guardRequest(req, port);
   if (denied) return denied;
+  // Idempotent; lets handleRequest work on its own (tests) and not only after serve() ran.
+  registerBuiltinWidgets();
   const url = new URL(req.url);
   if (url.pathname.startsWith("/api/")) {
     try {

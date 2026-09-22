@@ -24,6 +24,25 @@ beforeAll(() => {
 afterEach(() => fs.rmSync(path.dirname(settingsPath()), { recursive: true, force: true }));
 afterAll(() => sb.restore());
 
+describe("render batch", () => {
+  const probe = (text: string) => ({ colorLevel: "none", lines: [{ left: [{ widget: "custom.text", options: { text } }] }] });
+
+  test("returns one result per config, in order, matching single renders", async () => {
+    const res = await call("/api/render/batch", "POST", { sampleId: null, columns: 0, configs: [probe("alpha"), probe("beta"), probe("gamma")] });
+    expect(res.status).toBe(200);
+    const { results } = (await res.json()) as { results: Array<{ lines: string[] }> };
+    expect(results.map((r) => r.lines[0])).toEqual(["alpha", "beta", "gamma"]);
+    const single = (await (await call("/api/render", "POST", { sampleId: null, columns: 0, config: probe("beta") })).json()) as { lines: string[] };
+    expect(single.lines).toEqual(results[1]!.lines);
+  });
+
+  test("rejects an empty or oversized batch", async () => {
+    expect((await call("/api/render/batch", "POST", { configs: [] })).status).toBe(400);
+    expect((await call("/api/render/batch", "POST", { configs: Array.from({ length: 101 }, () => probe("x")) })).status).toBe(400);
+    expect((await call("/api/render/batch", "POST", { configs: "nope" })).status).toBe(400);
+  });
+});
+
 describe("install API", () => {
   test("GET /api/install describes current, planned and saved-previous", async () => {
     fs.mkdirSync(path.dirname(settingsPath()), { recursive: true });
