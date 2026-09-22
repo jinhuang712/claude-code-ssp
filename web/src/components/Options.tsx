@@ -6,6 +6,7 @@ import { useProbe } from "../probe";
 import { effectiveLabel, hasCenter, ownsLabel, useStore, widgetAt } from "../store";
 import { Ansi } from "./Ansi";
 import { Drawer } from "./Drawer";
+import { Icon } from "./Icon";
 import { TextField } from "./TextField";
 
 function typeOf(schema: JsonSchema) {
@@ -31,6 +32,10 @@ function EnumField({ title, values, current, inst, name, onChange }: { title: st
           const active = String(current ?? "") === k;
           return (
             <button key={k} type="button" role="radio" aria-checked={active} className="enum-opt" data-active={active} onClick={() => onChange(v)}>
+              {/* ❯ marks the current value, as in Claude Code's own menus; aria-checked says it to AT. */}
+              <span className="enum-ptr" aria-hidden="true">
+                ❯
+              </span>
               <span className="enum-name">{enumLabel(t, inst.widget, name, k)}</span>
               <span className="enum-sample">{samples[i] === undefined ? "…" : <Ansi text={samples[i]!} fallback="—" />}</span>
             </button>
@@ -256,7 +261,7 @@ function OptionsBody() {
     <>
       <div className="sheet-head">
         <div className="min-w-0">
-          <h3 className="text-base font-semibold">{widgetName(t, manifest, w.widget)}</h3>
+          <h3 className="sheet-title">{widgetName(t, manifest, w.widget)}</h3>
           <div className="hint">
             {t.options.where(sel.line + 1, t.layout.zones[sel.zone])} · <span className="mono">{w.widget}</span>
           </div>
@@ -312,8 +317,9 @@ function OptionsBody() {
         ))}
         <ColorField style={style} setStyle={setStyle} />
         <BoldField bold={!!style.bold} onChange={(b) => setStyle({ bold: b })} />
-        <div className="mt-2 flex justify-between pt-3" style={{ borderTop: "1px solid var(--line)" }}>
+        <div className="sheet-foot">
           <button className="btn btn-danger" onClick={() => s.removeAt(sel)}>
+            <Icon name="x" size={14} />
             {t.options.removeWidget}
           </button>
           <details className="text-xs">

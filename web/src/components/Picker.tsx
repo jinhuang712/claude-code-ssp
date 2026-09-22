@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import type { WidgetManifest } from "../api";
+import { CAT_COLOR } from "../colors";
 import { categoryName, useT, widgetDesc, widgetName } from "../i18n";
 import { useProbe } from "../probe";
 import { useStore } from "../store";
 import { Ansi } from "./Ansi";
 import { Drawer } from "./Drawer";
+import { Icon } from "./Icon";
 
 /** Reading order for categories: what a statusline is *about* first, bookkeeping last. */
 const CATEGORY_ORDER = ["model", "project", "git", "context", "usage", "tokens", "cost", "session", "activity", "environment", "misc"];
@@ -40,22 +42,31 @@ function PickerBody({ picker }: { picker: { line: number; zone: "left" | "center
 
   return (
     <>
-      <div className="sheet-head">
-        <input autoFocus className="field" placeholder={t.picker.search} aria-label={t.picker.search} value={q} onChange={(e) => setQ(e.target.value)} />
-        <span className="hint whitespace-nowrap">{t.picker.target(picker.line + 1, t.layout.zones[picker.zone])}</span>
-        <button className="btn" onClick={closePicker} aria-label={t.picker.close}>
-          ×
-        </button>
+      <div className="sheet-head sheet-head-stack">
+        <div className="flex items-center gap-2">
+          <h3 className="sheet-title">{t.picker.dialog}</h3>
+          <span className="hint ml-auto whitespace-nowrap">{t.picker.target(picker.line + 1, t.layout.zones[picker.zone])}</span>
+          <button className="btn btn-ghost btn-icon" onClick={closePicker} aria-label={t.picker.close} title={t.picker.close}>
+            <Icon name="x" />
+          </button>
+        </div>
+        <label className="search">
+          <Icon name="search" />
+          <input autoFocus type="search" className="field" placeholder={t.picker.search} aria-label={t.picker.search} value={q} onChange={(e) => setQ(e.target.value)} />
+        </label>
       </div>
       <div className="drawer-scroll p-4">
         {groups.map(([cat, list]) => (
           <div key={cat} className="mb-4">
-            <div className="cat-head">{categoryName(t, cat)}</div>
+            <div className="cat-head">
+              {categoryName(t, cat)}
+              <span className="cat-count">{list.length}</span>
+            </div>
             <div className="grid grid-cols-1 gap-1.5">
               {list.map((w) => (
-                <button key={w.id} className="pick" onClick={() => addWidget(picker.line, picker.zone, w.id)}>
+                <button key={w.id} className="pick" style={{ ["--cat" as string]: CAT_COLOR[w.category] ?? CAT_COLOR.misc }} onClick={() => addWidget(picker.line, picker.zone, w.id)}>
                   <div className="flex items-baseline gap-2">
-                    <span className="font-medium">{widgetName(t, w, w.id)}</span>
+                    <span className="pick-name">{widgetName(t, w, w.id)}</span>
                     {w.source === "plugin" && <span className="tag">{t.picker.plugin}</span>}
                     {inUse.has(w.id) && <span className="tag">{t.picker.inUse}</span>}
                   </div>

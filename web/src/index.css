@@ -948,37 +948,51 @@ input[type="checkbox"] {
   font-size: var(--fs-sm);
 }
 .enum-title {
-  color: var(--fg-2);
+  color: var(--fg);
+  font-weight: 500;
 }
+/*
+  A value list in the style of Claude Code's own menus: the current row carries a clay ❯ and a
+  faint wash; the others keep the pointer's space so names stay aligned.
+*/
 .enum-options {
   display: flex;
   flex-direction: column;
+  padding: 3px;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-1);
-  overflow: hidden;
+  background: var(--sunken);
 }
 .enum-opt {
   display: grid;
-  grid-template-columns: minmax(72px, auto) 1fr;
+  grid-template-columns: 12px minmax(72px, auto) 1fr;
   align-items: center;
-  gap: 12px;
-  padding: 6px 10px;
+  gap: 10px;
+  min-height: 34px;
+  padding: 4px 8px;
+  border-radius: 4px;
   text-align: left;
-  border-top: 1px solid var(--line);
-  background: var(--bg-deep);
-}
-.enum-opt:first-child {
-  border-top: 0;
 }
 .enum-opt:hover {
   background: var(--panel-2);
 }
 .enum-opt[data-active="true"] {
-  background: var(--panel-2);
-  box-shadow: inset 3px 0 0 var(--clay);
+  background: color-mix(in srgb, var(--clay) 12%, var(--panel));
+}
+.enum-ptr {
+  visibility: hidden;
+  font-family: var(--font-mono);
+  color: var(--accent);
+}
+.enum-opt[data-active="true"] .enum-ptr {
+  visibility: visible;
 }
 .enum-name {
+  color: var(--fg-2);
+}
+.enum-opt[data-active="true"] .enum-name {
   color: var(--fg);
+  font-weight: 600;
 }
 .enum-sample {
   min-width: 0;
@@ -1077,19 +1091,60 @@ input[type="checkbox"] {
   background: var(--panel);
   box-shadow: -24px 0 60px var(--shadow);
 }
+.sheet-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--fs-xl);
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--fg);
+}
+/* The picker's head: title row, then the search field under it (beats .sheet-head's centring). */
+.sheet-head.sheet-head-stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-3);
+}
+.search {
+  position: relative;
+  display: block;
+  color: var(--muted);
+}
+.search > .icon {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.search > .field {
+  padding-left: 32px;
+  min-height: 36px;
+}
+.sheet-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--line);
+}
 .drawer .sheet-body,
 .drawer-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
 }
+/* "Right now": the widget's current output, pinned under the drawer's title. */
 .live {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 16px;
+  gap: 6px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--line);
-  background: var(--bg-deep);
+  background: var(--sunken);
 }
 .live-text {
   min-width: 0;
@@ -1157,11 +1212,11 @@ input[type="checkbox"] {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 28px;
-  padding: 0 9px 0 6px;
+  height: 32px;
+  padding: 0 10px 0 7px;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-1);
-  background: var(--bg-deep);
+  background: var(--panel);
   font-size: var(--fs-sm);
   color: var(--fg-2);
 }
@@ -1178,6 +1233,7 @@ input[type="checkbox"] {
 .swatch[data-active="true"] {
   color: var(--fg);
   border-color: var(--clay);
+  background: color-mix(in srgb, var(--clay) 9%, var(--panel));
   box-shadow: inset 0 0 0 1px var(--clay);
 }
 /* Preset cards: a sketch of the layout on top, name and what it adds underneath. */
@@ -1257,53 +1313,60 @@ input[type="checkbox"] {
   opacity: 0.9;
 }
 
-/* ---- overlays ---- */
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 8vh 24px 24px;
-  background: rgba(6, 8, 12, 0.6);
-}
-.sheet {
-  width: 100%;
-  max-width: 640px;
-  border: 1px solid var(--line-strong);
-  background: var(--panel);
-  border-radius: var(--r-2);
-  box-shadow: 0 24px 60px var(--shadow);
-}
+/* ---- drawer contents ---- */
 .sheet-head {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--line);
 }
 .sheet-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
 }
 .cat-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
   margin-bottom: 6px;
   font-size: var(--fs-xs);
-  color: var(--muted);
+  font-weight: 600;
+  color: var(--fg-2);
 }
+.cat-count {
+  font-weight: 400;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+/* A widget in the picker: category dot + name, its live output, one line of description. */
 .pick {
   text-align: left;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--r-1);
-  background: var(--bg-deep);
-  transition: border-color 0.12s;
+  background: var(--panel);
+  transition: border-color 0.12s, background 0.12s;
 }
 .pick:hover {
   border-color: var(--clay);
+  background: color-mix(in srgb, var(--clay) 5%, var(--panel));
+}
+.pick-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 500;
+  color: var(--fg);
+}
+.pick-name::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cat, var(--muted));
 }
 .pick .sample {
   margin-top: 4px;
