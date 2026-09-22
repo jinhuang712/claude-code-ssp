@@ -30,6 +30,63 @@ describe("visualWidth", () => {
   });
 });
 
+describe("truncateVisual on styled text", () => {
+  const RED = "\x1b[31m";
+  const RESET = "\x1b[0m";
+  const link = (url: string, text: string) => `\x1b]8;;${url}\x07${text}\x1b]8;;\x07`;
+
+  test("escape bytes cost no width: a red 24-char string cut to 20 keeps 19 chars + ellipsis", () => {
+    // Regression: the old cut counted `ESC[31m` as 4 visible cells and returned `hello…` (6 cells).
+    const out = truncateVisual(`${RED}${"x".repeat(24)}${RESET}`, 20);
+    expect(visualWidth(out)).toBe(20);
+    expect(stripAnsi(out)).toBe(`${"x".repeat(19)}…`);
+  });
+
+  test("a cut inside a colour closes the colour after the ellipsis", () => {
+    const out = truncateVisual(`${RED}${"x".repeat(24)}${RESET} tail`, 10);
+    expect(out.startsWith(RED)).toBe(true);
+    expect(out.endsWith(`…${RESET}`)).toBe(true);
+  });
+
+  test("a cut after the colour was reset adds no extra reset", () => {
+    const out = truncateVisual(`${RED}ab${RESET}${"y".repeat(20)}`, 8);
+    expect(out).toBe(`${RED}ab${RESET}yyyyy…`);
+  });
+
+  test("a cut inside an OSC 8 link terminates the link", () => {
+    const out = truncateVisual(`see ${link("https://example.com", "a-very-long-link-text")} after`, 12);
+    expect(visualWidth(out)).toBe(12);
+    expect(out.endsWith("…\x1b]8;;\x07")).toBe(true);
+    // Exactly one opener and one closer, so the terminal ends the hyperlink.
+    expect(out.split("\x1b]8;;").length - 1).toBe(2);
+  });
+
+  test("a finished link before the cut is left alone", () => {
+    const out = truncateVisual(`${link("https://x", "ok")} ${"z".repeat(30)}`, 10);
+    expect(out.endsWith("…")).toBe(true);
+    expect(out.split("\x1b]8;;").length - 1).toBe(2);
+  });
+
+  test("never splits a ZWJ emoji or a combining mark", () => {
+    expect(truncateVisual("ab👨‍👩‍👧cdef", 4)).toBe("ab…"); // the family (2 cells) would overflow; it is dropped whole
+    expect(truncateVisual("éééé", 3)).toBe("éé…");
+  });
+
+  test("zero budget yields an empty string", () => {
+    expect(truncateVisual("abc", 0)).toBe("");
+  });
+});
+
+describe("layoutLine truncate policy keeps styles intact", () => {
+  test("styled zones cut to the row width with the colour closed", () => {
+    const left = `\x1b[32m${"L".repeat(30)}\x1b[0m`;
+    const right = `\x1b[33m${"R".repeat(30)}\x1b[0m`;
+    const [row] = layoutLine({ left: z(left), center: z(""), right: z(right) }, 40, "truncate");
+    expect(visualWidth(row!)).toBe(40);
+    expect(row!.endsWith("…\x1b[0m")).toBe(true);
+  });
+});
+
 describe("layoutLine", () => {
   test("right zone is anchored to the last column", () => {
     const [row] = layoutLine({ left: z("L"), center: z(""), right: z("RR") }, 20);

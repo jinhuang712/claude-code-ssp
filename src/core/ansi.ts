@@ -121,17 +121,58 @@ export function visualWidth(s: string): number {
   return Bun.stringWidth(s);
 }
 
-/** Truncate a plain string to `max` cells, appending an ellipsis when cut. */
+/*
+  One token of a styled string: either an escape sequence (zero width, copied verbatim) or plain
+  text. Covers every escape the renderer emits: SGR (`ESC[…m`), any other CSI, and OSC 8
+  hyperlinks terminated by BEL or ST (`ESC\`).
+*/
+// eslint-disable-next-line no-control-regex
+const ESCAPE_TOKEN_RE = /\x1b\[[0-9;:?]*[A-Za-z]|\x1b\]8;[^;\x07\x1b]*;([^\x07\x1b]*)(?:\x07|\x1b\\)/g;
+const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+
+/**
+ * Truncate a (possibly styled) string to `max` visible cells, appending an ellipsis when cut.
+ *
+ * Escape sequences cost no width and are kept, so colours survive the cut. Text is cut on grapheme
+ * boundaries so a ZWJ emoji or a base letter plus combining mark is never split in half. When the
+ * cut lands inside a colour or a hyperlink, both are closed after the ellipsis — otherwise the
+ * colour bleeds into whatever Claude Code prints next and an unterminated OSC 8 can turn the rest
+ * of the terminal line into one giant link.
+ */
 export function truncateVisual(s: string, max: number, ellipsis = "…"): string {
   if (visualWidth(s) <= max) return s;
+  if (max <= 0) return "";
   const budget = Math.max(0, max - visualWidth(ellipsis));
   let out = "";
   let w = 0;
-  for (const ch of s) {
-    const cw = visualWidth(ch);
-    if (w + cw > budget) break;
-    out += ch;
-    w += cw;
+  let sgrOpen = false;
+  let linkOpen = false;
+  let last = 0;
+  const takeText = (text: string): boolean => {
+    for (const { segment } of graphemes.segment(text)) {
+      const cw = Bun.stringWidth(segment);
+      if (w + cw > budget) return false;
+      out += segment;
+      w += cw;
+    }
+    return true;
+  };
+  for (const m of s.matchAll(ESCAPE_TOKEN_RE)) {
+    if (!takeText(s.slice(last, m.index))) return close();
+    const esc = m[0];
+    out += esc;
+    if (esc.startsWith("\x1b]8;")) linkOpen = (m[1] ?? "") !== "";
+    else if (esc.endsWith("m")) {
+      // `ESC[m` and `ESC[0m` reset everything; any other SGR leaves some attribute switched on.
+      const params = esc.slice(2, -1);
+      sgrOpen = !(params === "" || params === "0");
+    }
+    last = m.index + esc.length;
   }
-  return out + ellipsis;
+  takeText(s.slice(last));
+  return close();
+
+  function close(): string {
+    return out + ellipsis + (linkOpen ? "\x1b]8;;\x07" : "") + (sgrOpen ? RESET : "");
+  }
 }
