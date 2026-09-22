@@ -20,7 +20,9 @@ Claude Code ≥ 2.1.251 now ships `rate_limits`, `prompt_cache`, `effort`, `cost
 |---|---|
 | `claude-code-ssp render` | stdin JSON → ANSI lines on stdout. Hot path. Imports only `core` + `widgets` + `data`. |
 | `claude-code-ssp serve [--port 4877] [--open]` | Bun.serve on 127.0.0.1 serving `web/dist` + JSON API. Lazy-imported. |
-| `claude-code-ssp install` / `uninstall` | Atomic merge into `~/.claude/settings.json` (`.bak.<ts>` backup). |
+| `claude-code-ssp serve --sandbox` | Same on `:4878` against temp copies of config, samples and statusLine (for UI work and automation). |
+| `claude-code-ssp install [--replace]` / `uninstall` | Atomic merge into `~/.claude/settings.json` (`.bak.<ts>` backup). Replacing a statusLine that isn't ours needs `--replace` (the panel asks); it is parked under `statusLine.previous.claude-code-ssp` and `uninstall` restores it. `uninstall` never touches a statusLine that isn't ours. |
+| `claude-code-ssp reset [--session ID]` | Baseline the session counters; `/ssp:reset` passes `$CLAUDE_CODE_SESSION_ID` so the right session is reset. |
 | `claude-code-ssp doctor` | Shows effective config, layer provenance, last captured payload, render timing. |
 
 ## Layout model
@@ -62,7 +64,9 @@ defineWidget({
 ```
 
 `Segment = { text, style?: { fg, bg, bold, dim, italic, underline }, link? }`. Colors are theme tokens
-(`fg muted accent ok warn crit model project git usage context`) or literals (`#rrggbb`, `208`, `red`).
+(`fg muted accent ok warn crit model project git usage context`), literals (`#rrggbb`, `208`, `red`) or `default`
+(no colour code: the terminal's own foreground). Every theme maps `fg` to `default`, so plain values stay readable on
+light terminals; only accents are coloured.
 `api.level(pct, warnAt, critAt)` returns `ok | warn | crit` so every numeric widget gets consistent thresholds.
 
 ## Plugins
@@ -71,30 +75,51 @@ defineWidget({
 imported; each module's default export is a widget definition or an array of them. A plugin that throws at load or at
 render time is replaced by a dim `⚠ <id>` segment — a broken plugin never blanks the statusline.
 
+**Trust.** Plugins are code that runs on every render, so a project's widget folder loads only when the project is
+listed in `plugins.trustedProjects` of the *user* config. `plugins.*` in a project config is ignored entirely (a repo
+you just cloned can't trust itself or point at other folders). Skipped folders are reported in `/api/doctor`.
+
 ## Config layering
 
 `defaults` → `~/.config/claude-code-ssp/config.json` (or `$CLAUDE_CODE_SSP_CONFIG`) → `<cwd>/.claude/claude-code-ssp.json`.
 Objects deep-merge; `lines` replaces wholesale. The web UI shows which layer set each value and lets you edit either.
 Config is re-read on every render (cheap: one small JSON) so saves from the web UI apply on the next tick.
 
+The panel edits the *effective* config but saves a *layer*: it replays only the paths changed since the last save onto
+the target file (`web/src/layers.ts`), so defaults are never frozen into a file and project values never leak into the
+user file. The project is the previewed session's directory (`?cwd=`, accepted only for captured sessions).
+
 ## Web UI (`web/`, React + Tailwind + zustand + xterm.js + dnd-kit)
 
-* **Preview** = `POST /api/render { config, sample, columns }` → the **same** render engine; output painted by xterm.js.
-  WYSIWYG by construction.
+* **Preview** = `POST /api/render { config, sample, columns }` → the **same** render engine; output painted by xterm.js
+  on a dark or light terminal ground with a matching ANSI palette. WYSIWYG by construction.
+* **Probes**: every option value, boolean outcome and picker entry is rendered against the current sample —
+  coalesced into one `POST /api/render/batch` per tick (`web/src/probe.ts`) and drawn in colour (`Ansi.tsx`).
+* **Try-on**: hovering/focusing a preset, theme, bar style or separator previews it without saving. The preview's
+  height is sticky during try-ons (a shrinking preview moved the hovered chip away and looped).
 * **Samples**: bundled fixtures (fresh session, post-compact null usage, 1M context, no rate_limits, worktree, vim mode)
   plus **live captures**: `render` persists the last stdin payload per `session_id` to `<data>/samples/` (throttled), so
   you preview against your real session.
-* **Widget picker** renders option forms from each widget's JSON Schema. Drag widgets between zones and lines.
-* **Theme editor** with ok/warn/crit swatches; `colorLevel` downgrade preview.
-* **Install** button performs the settings.json merge.
+* **Widget picker** renders option forms from each widget's JSON Schema. Drag widgets between zones and lines, or
+  move them with Alt+Arrow keys; drawers are focus-trapped dialogs.
+* **Install**: the first save auto-applies unless another tool's statusLine is set — then the server answers 409 and
+  the panel asks. *Advanced settings → Stop using this statusline* restores the previous one.
+* **i18n**: typed message objects (`web/src/i18n`), English and 简体中文, browser-detected with a switcher.
+* **Security**: see `src/server/guard.ts` — own Host/Origin only, no CORS, JSON-only writes, 1 MB cap.
+* **Shipping**: `web/dist` is committed (marketplace installs run it as-is), stamped with a hash of its sources;
+  `tests/web-dist.test.ts` fails when it is stale.
 
 ## Performance budget
 
 Claude Code debounces at 300 ms and kills in-flight scripts. Target **< 40 ms warm** for `render`:
 * no UI/server imports on the render path (separate entry, lazy `import()` for `serve`);
-* transcript parser reuses claude-hud's mtime/size cache; git results cached on `.git/HEAD` + `.git/index` mtime per cwd
-  with `--no-optional-locks`, `GIT_OPTIONAL_LOCKS=0`, `GIT_TERMINAL_PROMPT=0`, hard timeouts;
-* a `bun test` asserts the fixture render stays under budget.
+* the transcript is parsed **incrementally** from a saved byte offset (a full parse only when the file was truncated or
+  replaced), so a new message costs the same on a 100 MB transcript as on a small one;
+* git/jj calls run in parallel under a ~200 ms deadline. On a miss the render uses the last cached status and a
+  detached helper (`src/core/vcs-refresh.ts`, one per repo via a lock file) finishes the work for the next render.
+  The cache honours `git.cacheMs` and is invalidated by `.git/HEAD` / `.git/index` changes;
+* `render` exits as soon as stdout is flushed — nothing lingering keeps Claude Code waiting;
+* `tests/render-budget.test.ts` times the whole CLI (startup included), not just `render()`.
 
 ## Data root
 
