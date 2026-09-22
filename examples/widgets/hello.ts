@@ -10,7 +10,7 @@ export default {
   name: "Hello",
   description: "Greets you and shows how many todos are done. Demonstrates options, theme tokens and thresholds.",
   category: "misc",
-  sample: "👋 huangjin · 3/7",
+  sample: "👋 you · 3/7",
   schema: {
     type: "object",
     properties: {

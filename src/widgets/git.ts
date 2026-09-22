@@ -55,7 +55,7 @@ export const gitRepo = defineWidget<{ format: "owner/name" | "name" }>({
   name: "Repository",
   description: "owner/name parsed by Claude Code from the origin remote.",
   category: "git",
-  sample: "jinhuang712/claude-code-ssp",
+  sample: "acme/webapp",
   schema: { type: "object", properties: { format: { type: "string", enum: ["owner/name", "name"], default: "owner/name" } } },
   defaults: { format: "owner/name" },
   render(ctx, o, api) {
