@@ -83,9 +83,11 @@ async function main(): Promise<void> {
     }
     case "reset": {
       const { resetLatestSession, undoReset } = await import("../server/reset.js");
+      // `--session` comes from ssp.sh, which forwards the id of the Claude session running /ssp:reset.
+      // Without it (run by hand in a terminal) both paths fall back to the most recent session.
       if (argv.includes("--undo")) {
         const { listLiveSamples } = await import("../core/capture.js");
-        const id = listLiveSamples()[0]?.id;
+        const id = arg("session", argv) || listLiveSamples()[0]?.id;
         if (id) undoReset(id);
         console.log(id ? `counters restored for session ${id}` : "no session seen yet");
         return;

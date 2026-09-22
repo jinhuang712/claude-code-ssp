@@ -47,3 +47,28 @@ describe("live samples", () => {
     expect(fs.existsSync(samplesDir()) ? fs.readdirSync(samplesDir()) : []).toEqual([]);
   });
 });
+
+describe("ssp.sh reset", () => {
+  test("targets the Claude session that ran it (CLAUDE_CODE_SESSION_ID)", () => {
+    const r = run(["bash", "scripts/ssp.sh", "reset"], { CLAUDE_CODE_SESSION_ID: "session-a" });
+    expect(r.out).toContain("session session-a");
+    expect(baselineExists("session-a")).toBe(true);
+    expect(baselineExists("session-b")).toBe(false);
+  });
+
+  test("without a session id it falls back to the most recent real session, never a fixture", () => {
+    const r = run(["bash", "scripts/ssp.sh", "reset"], { CLAUDE_CODE_SESSION_ID: undefined });
+    expect(r.out).toContain("session session-b");
+    expect(baselineExists("session-b")).toBe(true);
+    expect(baselineExists("fixture-basic")).toBe(false);
+  });
+
+  test("--undo clears the baseline of the named session only", () => {
+    run(["bash", "scripts/ssp.sh", "reset"], { CLAUDE_CODE_SESSION_ID: "session-a" });
+    run(["bash", "scripts/ssp.sh", "reset"], { CLAUDE_CODE_SESSION_ID: "session-b" });
+    const r = run(["bash", "scripts/ssp.sh", "reset", "--undo"], { CLAUDE_CODE_SESSION_ID: "session-a" });
+    expect(r.out).toContain("session-a");
+    expect(baselineExists("session-a")).toBe(false);
+    expect(baselineExists("session-b")).toBe(true);
+  });
+});

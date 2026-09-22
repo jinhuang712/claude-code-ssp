@@ -99,7 +99,13 @@ case "${1:-config}" in
     "$BUN" "$ROOT/src/cli/main.ts" install "${@:2}"
     ;;
   reset)
-    "$BUN" "$ROOT/src/cli/main.ts" reset "${@:2}"
+    # Claude Code exports the id of the session running /ssp:reset to its Bash tool calls, so reset
+    # that exact session instead of "whichever one rendered last" (wrong with several sessions open).
+    # Run by hand without it, main.ts falls back to the most recently rendered session.
+    session_args=()
+    if [ -n "${CLAUDE_CODE_SESSION_ID:-}" ]; then session_args=(--session "$CLAUDE_CODE_SESSION_ID"); fi
+    # ${arr[@]+"${arr[@]}"}: an empty array under `set -u` is an error in macOS's bash 3.2.
+    "$BUN" "$ROOT/src/cli/main.ts" reset ${session_args[@]+"${session_args[@]}"} "${@:2}"
     ;;
   render-test)
     COLUMNS="${COLUMNS:-120}" "$BUN" "$ROOT/src/cli/main.ts" render --fixture "$ROOT/src/fixtures/basic.json"
