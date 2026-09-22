@@ -32,6 +32,18 @@ export function ensureBuiltins(): void {
   }
 }
 
+/** Run git with a fixed identity; HOME is the temp home (tests/setup.ts), so no global config applies. */
+export function runGit(cwd: string, ...args: string[]): string {
+  const r = Bun.spawnSync({
+    cmd: ["git", "-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "init.defaultBranch=main", "-c", "commit.gpgsign=false", ...args],
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  if (r.exitCode !== 0) throw new Error(`git ${args.join(" ")}: ${r.stderr.toString()}`);
+  return r.stdout.toString();
+}
+
 /** Plain-text config: no colour, no git subprocesses, single separator space. */
 export function plainConfig(lines: FooterConfig["lines"]): FooterConfig {
   return { ...DEFAULT_CONFIG, colorLevel: "none", separator: " ", git: { enabled: false, cacheMs: 0 }, lines };

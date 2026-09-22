@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, test } from "bun:test";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { getGitStatus } from "../src/data/git.ts";
+import { runGit as git } from "./helpers.ts";
 
 /*
   getGitStatus now starts its git commands concurrently. These tests pin the observable result on a
@@ -10,18 +11,6 @@ import { getGitStatus } from "../src/data/git.ts";
 const root = path.join(process.env.SSP_TEST_ROOT!, "git-status");
 const repo = path.join(root, "repo");
 const upstream = path.join(root, "upstream.git");
-
-/** Run git with a fixed identity; HOME is the temp home, so no global config applies. */
-export function git(cwd: string, ...args: string[]): string {
-  const r = Bun.spawnSync({
-    cmd: ["git", "-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "init.defaultBranch=main", "-c", "commit.gpgsign=false", ...args],
-    cwd,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  if (r.exitCode !== 0) throw new Error(`git ${args.join(" ")}: ${r.stderr.toString()}`);
-  return r.stdout.toString();
-}
 
 beforeAll(() => {
   fs.rmSync(root, { recursive: true, force: true });

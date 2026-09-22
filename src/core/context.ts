@@ -3,20 +3,18 @@
  * Collectors run concurrently and each is individually bounded so a slow git never blanks the line.
  */
 import { readBaseline } from "./reset.js";
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
 import { applyContextWindowFallback } from "../data/context-cache.js";
 import { countConfigs } from "../data/config-reader.js";
 import { resolveEffortLevel } from "../data/effort.js";
-import { getGitStatus, type GitStatus } from "../data/git.js";
-import { getJjStatus, isJjRepo } from "../data/jj.js";
 import { getUsageFromStdin } from "../data/stdin.js";
 import { parseTranscript } from "../data/transcript.js";
 import type { StdinData, TranscriptData } from "../data/types.js";
-import { getHudPluginDir } from "../data/claude-config-dir.js";
 import { formatDuration } from "./api.js";
 import type { Ctx, FooterConfig } from "./types.js";
+import { resolveVcsStatus } from "./vcs-cache.js";
+
+// Kept importable from here for existing callers; the implementation lives in vcs-cache.ts.
+export { resolveVcsStatus } from "./vcs-cache.js";
 
 export interface BuildOptions {
   columns?: number;
@@ -37,81 +35,6 @@ async function bounded<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   } finally {
     if (timer) clearTimeout(timer);
   }
-}
-
-// ---- git cache -------------------------------------------------------------
-
-interface GitCacheEntry {
-  savedAt: number;
-  headMtime: number;
-  indexMtime: number;
-  status: GitStatus | null;
-}
-
-function gitCachePath(cwd: string): string {
-  const key = Buffer.from(path.resolve(cwd)).toString("base64url").slice(0, 120);
-  return path.join(getHudPluginDir(os.homedir()), "git-cache", `${key}.json`);
-}
-
-function gitMarkers(cwd: string): { headMtime: number; indexMtime: number } | null {
-  let dir = path.resolve(cwd);
-  for (let i = 0; i < 64; i++) {
-    const dotGit = path.join(dir, ".git");
-    try {
-      const st = fs.lstatSync(dotGit);
-      let gitDir = dotGit;
-      if (st.isFile()) {
-        const m = /^gitdir:\s*(.+)$/m.exec(fs.readFileSync(dotGit, "utf8"));
-        if (!m) return null;
-        gitDir = path.resolve(dir, m[1]!.trim());
-      }
-      const head = fs.statSync(path.join(gitDir, "HEAD")).mtimeMs;
-      let index = 0;
-      try {
-        index = fs.statSync(path.join(gitDir, "index")).mtimeMs;
-      } catch {
-        /* fresh repo */
-      }
-      return { headMtime: head, indexMtime: index };
-    } catch {
-      /* keep walking */
-    }
-    const parent = path.dirname(dir);
-    if (parent === dir) return null;
-    dir = parent;
-  }
-  return null;
-}
-
-export async function resolveVcsStatus(cwd: string | undefined, config: FooterConfig, now: number): Promise<GitStatus | null> {
-  if (!cwd || !config.git.enabled) return null;
-  if (isJjRepo(cwd)) return getJjStatus(cwd);
-  const markers = gitMarkers(cwd);
-  if (!markers) return null;
-  const cachePath = gitCachePath(cwd);
-  try {
-    const cached = JSON.parse(fs.readFileSync(cachePath, "utf8")) as GitCacheEntry;
-    if (
-      cached.headMtime === markers.headMtime &&
-      cached.indexMtime === markers.indexMtime &&
-      now - cached.savedAt < Math.max(config.git.cacheMs, 30_000) // markers unchanged: trust for up to 30s
-    ) {
-      return cached.status;
-    }
-    if (now - cached.savedAt < config.git.cacheMs) return cached.status;
-  } catch {
-    /* miss */
-  }
-  const status = await getGitStatus(cwd);
-  try {
-    fs.mkdirSync(path.dirname(cachePath), { recursive: true, mode: 0o700 });
-    const tmp = `${cachePath}.${process.pid}.tmp`;
-    fs.writeFileSync(tmp, JSON.stringify({ savedAt: now, ...markers, status } satisfies GitCacheEntry), { mode: 0o600 });
-    fs.renameSync(tmp, cachePath);
-  } catch {
-    /* best effort */
-  }
-  return status;
 }
 
 // ---- context ---------------------------------------------------------------
