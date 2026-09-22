@@ -69,7 +69,7 @@ export const zh: Messages = {
 
   layout: {
     title: "布局",
-    hint: "每一行对应状态栏的一行。点名字改选项，拖动排序，也可以拖到别的行。",
+    hint: "每一行对应状态栏的一行。点名字改选项；拖动（或按 Alt+方向键）可以排序、挪到别的行。",
     zones: { left: "靠左", center: "居中", right: "靠右" },
     emptyZone: { left: "左边放什么", center: "中间放什么", right: "右边放什么" },
     addTo: (line, zone) => `在第 ${line} 行${zone}添加`,
@@ -79,6 +79,12 @@ export const zh: Messages = {
     noDataTag: "无数据",
     filledTitle: "当前数据里还没有这一项，预览里先用示例值占位",
     hiddenTitle: "当前数据里没有这一项，也没有示例值，预览不显示",
+    lineMenu: (n) => `第 ${n} 行的选项`,
+    chipHelp: "Alt+方向键移动这一项，回车打开选项。",
+    moved: (name, line, zone, pos) => `${name} 已移到第 ${line} 行${zone}第 ${pos} 位`,
+    centerZone: "居中区",
+    centerInUse: "有行正在用居中区，所以一直显示",
+    hideBelowHint: "0 表示一直显示",
     moveUp: "上移这一行",
     moveDown: "下移这一行",
     deleteLine: "删除这一行",
@@ -143,7 +149,7 @@ export const zh: Messages = {
 
   advanced: {
     title: "高级设置",
-    hint: "分隔符、颜色模式、居中区、项目级配置",
+    hint: "分隔符、颜色模式、项目级配置、诊断",
     separator: "项目之间的分隔符",
     rightMargin: "右边留白（列）",
     rightMarginHint: "Claude Code 自身边距，右侧贴边有换行时调大",

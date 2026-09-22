@@ -74,7 +74,7 @@ export const en = {
 
   layout: {
     title: "Layout",
-    hint: "Each row is one line of the statusline. Click a widget to edit it; drag it to reorder or move it to another line.",
+    hint: "Each row is one line of the statusline. Click a widget to edit it; drag it — or press Alt+Arrow keys — to reorder it or move it to another line.",
     zones: { left: "Left", center: "Center", right: "Right" },
     emptyZone: { left: "What goes on the left?", center: "What goes in the center?", right: "What goes on the right?" },
     addTo: (line: number, zone: string) => `Add to line ${line}, ${zone.toLowerCase()}`,
@@ -84,6 +84,12 @@ export const en = {
     noDataTag: "no data",
     filledTitle: "No data for this in the current session — the preview shows a sample value",
     hiddenTitle: "No data and no sample — hidden in the preview",
+    lineMenu: (n: number) => `Line ${n} options`,
+    chipHelp: "Alt+Arrow keys move this widget; Enter opens its options.",
+    moved: (name: string, line: number, zone: string, pos: number) => `${name} moved to line ${line}, ${zone.toLowerCase()}, position ${pos}`,
+    centerZone: "Center zone",
+    centerInUse: "Some lines use the center zone, so it stays visible",
+    hideBelowHint: "0 = always show",
     moveUp: "Move line up",
     moveDown: "Move line down",
     deleteLine: "Delete line",
@@ -148,7 +154,7 @@ export const en = {
 
   advanced: {
     title: "Advanced settings",
-    hint: "Separator, color mode, center zone, project config",
+    hint: "Separator, color mode, project config, diagnostics",
     separator: "Separator between widgets",
     rightMargin: "Right margin (columns)",
     rightMarginHint: "Claude Code's own padding — raise it if the right edge wraps",
