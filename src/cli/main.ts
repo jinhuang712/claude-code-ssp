@@ -28,7 +28,10 @@ async function cmdRender(argv: string[]): Promise<void> {
   }
   const cwd = stdin!.workspace?.current_dir ?? stdin!.cwd;
   const { config } = loadEffectiveConfig(cwd);
-  if (config.captureSamples) captureSample(stdin);
+  // Fixture renders (README preview, tests, `ssp.sh render-test`) are not a real session: capturing
+  // them would put a fake "live" session at the top of the list, which `/ssp:reset` and the web
+  // preview then pick as "the latest session".
+  if (config.captureSamples && !fixture) captureSample(stdin);
   await loadPlugins(config, cwd);
   const columnsArg = arg("columns", argv);
   const ctx = await buildContext(stdin!, config, { columns: columnsArg ? Number(columnsArg) : undefined });

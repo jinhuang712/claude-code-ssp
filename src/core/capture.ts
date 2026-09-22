@@ -66,6 +66,9 @@ export function listLiveSamples(): Sample[] {
   }
   const out: Sample[] = [];
   for (const f of files) {
+    // Bundled fixtures all use `fixture-*` session ids. Older versions captured fixture renders as
+    // if they were live sessions; skip those leftovers so they never masquerade as "your session".
+    if (f.startsWith("fixture-")) continue;
     try {
       const parsed = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")) as { capturedAt?: number; payload?: unknown };
       const p = parsed.payload as { workspace?: { current_dir?: string }; model?: { display_name?: string } } | undefined;
