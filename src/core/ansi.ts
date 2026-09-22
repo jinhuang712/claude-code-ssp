@@ -28,6 +28,8 @@ export function detectColorLevel(env: NodeJS.ProcessEnv = process.env): Exclude<
 export function resolveColor(value: Color | undefined, theme: ThemeDef, depth = 0): ResolvedColor | null {
   if (!value || depth > 4) return null;
   const v = value.trim();
+  // "default" = the terminal's own foreground/background: emit no colour code (SGR 39/49 behaviour).
+  if (v === "default") return null;
   if (v in theme.tokens && theme.tokens[v] !== v) return resolveColor(theme.tokens[v], theme, depth + 1);
   if (v in NAMED) return { kind: "16", index: NAMED[v]! };
   if (/^#?[0-9a-f]{6}$/i.test(v)) {
