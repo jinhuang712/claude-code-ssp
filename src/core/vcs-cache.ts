@@ -1,13 +1,23 @@
 /**
- * Git / jj status for the statusline with an on-disk cache per working directory.
+ * Git / jj status for the statusline: an on-disk cache per working directory, a short render
+ * deadline, and a detached background refresh when the deadline is missed.
  *
- * The cache is trusted only while the repo's marker files are unchanged AND it is younger than
- * `git.cacheMs` — markers alone miss unstaged edits (they don't touch HEAD or the index), and a TTL
- * alone would show a pre-commit dirty state after a commit.
+ * Why all three:
+ *  - Claude Code re-runs the statusline on every event (debounced ~300 ms) and kills a run that is
+ *    still going, so a render must finish fast and exit. Git on a large or network repo can take
+ *    far longer than that.
+ *  - The cache is trusted only while the repo's marker files are unchanged AND it is younger than
+ *    `git.cacheMs` — markers alone miss unstaged edits (they don't touch HEAD or the index), and a
+ *    TTL alone would show a pre-commit dirty state after a commit.
+ *  - When a fresh status misses the deadline the render shows the last known status instead of
+ *    nothing, and a detached helper (vcs-refresh.ts) finishes the job and writes the cache, so the
+ *    next render is correct. The render process itself never waits for it.
  */
+import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import { getHudPluginDir } from "../data/claude-config-dir.js";
 import { getGitStatus, type GitStatus } from "../data/git.js";
 import { getJjStatus, isJjRepo } from "../data/jj.js";
@@ -24,6 +34,11 @@ export interface VcsCacheEntry {
   markers: string;
   status: GitStatus | null;
 }
+
+/** Default render deadline for a fresh VCS status, in ms. Well under Claude Code's ~300 ms debounce. */
+export const VCS_DEADLINE_MS = 200;
+/** A refresh lock younger than this means a helper is already running for this directory. */
+const REFRESH_LOCK_MS = 10_000;
 
 export function vcsCachePath(cwd: string): string {
   const key = Buffer.from(path.resolve(cwd)).toString("base64url").slice(0, 120);
@@ -127,12 +142,59 @@ function computeStatus(vcs: Vcs, cwd: string): Promise<GitStatus | null> {
   return vcs === "jj" ? getJjStatus(cwd) : getGitStatus(cwd);
 }
 
-export interface ResolveVcsOptions {
-  /** Test hook. */
-  compute?: (vcs: Vcs, cwd: string) => Promise<GitStatus | null>;
+/**
+ * Compute a fresh status and cache it, with the collectors' normal per-command timeouts.
+ * Used by the detached helper; also safe to call directly.
+ */
+export async function refreshVcsCache(cwd: string): Promise<GitStatus | null> {
+  const m = vcsMarkers(cwd);
+  if (!m) return null;
+  const savedAt = Date.now();
+  const status = await computeStatus(m.vcs, cwd);
+  writeVcsCache(cwd, { savedAt, ...m, status });
+  try {
+    fs.rmSync(`${vcsCachePath(cwd)}.lock`, { force: true });
+  } catch {
+    /* a stale lock expires on its own after REFRESH_LOCK_MS */
+  }
+  return status;
 }
 
-/** Status for the render: cached when still valid, otherwise computed and cached. */
+/**
+ * Start vcs-refresh.ts detached (own process group, no stdio) so it outlives this render and is not
+ * caught by Claude Code killing the render. A lock file keeps back-to-back renders on a slow repo
+ * from each spawning another helper.
+ */
+function spawnDetachedRefresh(cwd: string): void {
+  const lock = `${vcsCachePath(cwd)}.lock`;
+  try {
+    if (Date.now() - fs.statSync(lock).mtimeMs < REFRESH_LOCK_MS) return;
+  } catch {
+    /* no lock: go ahead */
+  }
+  try {
+    fs.mkdirSync(path.dirname(lock), { recursive: true, mode: 0o700 });
+    fs.writeFileSync(lock, String(process.pid), { mode: 0o600 });
+    const script = fileURLToPath(new URL("./vcs-refresh.ts", import.meta.url));
+    const child = spawn(process.execPath, [script, cwd], { detached: true, stdio: "ignore", env: process.env, windowsHide: true });
+    child.unref();
+  } catch {
+    /* can't spawn: the next render simply tries again in-process */
+  }
+}
+
+export interface ResolveVcsOptions {
+  /** How long this render waits for a fresh status before falling back to the cached one. */
+  deadlineMs?: number;
+  /** Test hooks. */
+  compute?: (vcs: Vcs, cwd: string) => Promise<GitStatus | null>;
+  refreshInBackground?: (cwd: string) => void;
+}
+
+/**
+ * Status for the render: cached when still valid, fresh when it arrives within the deadline,
+ * otherwise the last known status (possibly slightly stale, never blank) plus a background refresh.
+ */
 export async function resolveVcsStatus(
   cwd: string | undefined,
   config: FooterConfig,
@@ -143,8 +205,24 @@ export async function resolveVcsStatus(
   const m = vcsMarkers(cwd);
   if (!m) return null;
   const cached = readVcsCache(cwd);
-  if (cached && cached.vcs === m.vcs && cached.markers === m.markers && now - cached.savedAt < config.git.cacheMs) return cached.status;
-  const status = await (opts.compute ?? computeStatus)(m.vcs, cwd);
-  writeVcsCache(cwd, { savedAt: now, ...m, status });
-  return status;
+  const sameRepo = cached !== null && cached.vcs === m.vcs;
+  if (sameRepo && cached.markers === m.markers && now - cached.savedAt < config.git.cacheMs) return cached.status;
+
+  const compute = opts.compute ?? computeStatus;
+  const fresh = compute(m.vcs, cwd).then(
+    (status) => {
+      writeVcsCache(cwd, { savedAt: now, ...m, status });
+      return { status };
+    },
+    () => ({ status: null }),
+  );
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), opts.deadlineMs ?? VCS_DEADLINE_MS);
+  });
+  const won = await Promise.race([fresh, late]);
+  clearTimeout(timer);
+  if (won) return won.status;
+  (opts.refreshInBackground ?? spawnDetachedRefresh)(cwd);
+  return sameRepo ? cached.status : null;
 }

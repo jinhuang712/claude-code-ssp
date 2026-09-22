@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { DEFAULT_CONFIG } from "../src/core/config.ts";
 import type { FooterConfig } from "../src/core/types.ts";
-import { resolveVcsStatus, vcsCachePath, vcsMarkers } from "../src/core/vcs-cache.ts";
+import { readVcsCache, refreshVcsCache, resolveVcsStatus, vcsCachePath, vcsMarkers } from "../src/core/vcs-cache.ts";
 import type { GitStatus } from "../src/data/git.ts";
 import { runGit as git } from "./helpers.ts";
 
@@ -54,6 +54,51 @@ describe("git cache honours cacheMs", () => {
     await resolveVcsStatus(repo, cfg(0), Date.now(), { compute });
     await resolveVcsStatus(repo, cfg(0), Date.now(), { compute });
     expect(calls).toBe(2);
+  });
+});
+
+describe("render deadline", () => {
+  const slow = (status: GitStatus, ms: number) => () => new Promise<GitStatus>((r) => setTimeout(() => r(status), ms));
+  const oldStatus: GitStatus = { branch: "old", isDirty: false, ahead: 0, behind: 0 };
+  const newStatus: GitStatus = { branch: "new", isDirty: true, ahead: 0, behind: 0 };
+
+  test("a late status falls back to the last known one and schedules a background refresh", async () => {
+    const repo = freshRepo("late");
+    await resolveVcsStatus(repo, cfg(0), Date.now(), { compute: async () => oldStatus });
+    const refreshed: string[] = [];
+    const started = performance.now();
+    const s = await resolveVcsStatus(repo, cfg(0), Date.now(), { deadlineMs: 50, compute: slow(newStatus, 500), refreshInBackground: (cwd) => refreshed.push(cwd) });
+    expect(performance.now() - started).toBeLessThan(300);
+    expect(s).toEqual(oldStatus);
+    expect(refreshed).toEqual([repo]);
+  });
+
+  test("with nothing cached yet a late status renders nothing rather than waiting", async () => {
+    const repo = freshRepo("late-empty");
+    const s = await resolveVcsStatus(repo, cfg(0), Date.now(), { deadlineMs: 50, compute: slow(newStatus, 500), refreshInBackground: () => {} });
+    expect(s).toBeNull();
+  });
+
+  test("the detached helper really fills the cache for the next render", async () => {
+    const repo = freshRepo("detached");
+    fs.writeFileSync(path.join(repo, "dirty.txt"), "x\n");
+    // Force a deadline miss so the real spawnDetachedRefresh path runs.
+    await resolveVcsStatus(repo, cfg(0), Date.now(), { deadlineMs: 1, compute: slow(newStatus, 2000) });
+    let entry = readVcsCache(repo);
+    for (let i = 0; i < 60 && !entry?.status; i++) {
+      await Bun.sleep(50);
+      entry = readVcsCache(repo);
+    }
+    expect(entry?.status?.branch).toBe("main");
+    expect(entry?.status?.isDirty).toBe(true);
+    expect(fs.existsSync(`${vcsCachePath(repo)}.lock`)).toBe(false);
+  });
+
+  test("refreshVcsCache computes and stores a status", async () => {
+    const repo = freshRepo("refresh");
+    const s = await refreshVcsCache(repo);
+    expect(s?.branch).toBe("main");
+    expect(readVcsCache(repo)?.status?.branch).toBe("main");
   });
 });
 

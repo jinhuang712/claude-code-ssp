@@ -11,7 +11,7 @@ import { parseTranscript } from "../data/transcript.js";
 import type { StdinData, TranscriptData } from "../data/types.js";
 import { formatDuration } from "./api.js";
 import type { Ctx, FooterConfig } from "./types.js";
-import { resolveVcsStatus } from "./vcs-cache.js";
+import { resolveVcsStatus, VCS_DEADLINE_MS } from "./vcs-cache.js";
 
 // Kept importable from here for existing callers; the implementation lives in vcs-cache.ts.
 export { resolveVcsStatus } from "./vcs-cache.js";
@@ -19,8 +19,14 @@ export { resolveVcsStatus } from "./vcs-cache.js";
 export interface BuildOptions {
   columns?: number;
   now?: number;
-  /** Per-collector deadline in ms. */
+  /** Deadline in ms for the local collectors (transcript, config counts). */
   deadlineMs?: number;
+  /**
+   * How long to wait for a fresh git/jj status before rendering the cached one instead (the cache
+   * is then refreshed in the background). Kept short: git is the only collector that shells out and
+   * can stall on big or network repos, while the whole render must beat Claude Code's ~300 ms debounce.
+   */
+  gitDeadlineMs?: number;
 }
 
 async function bounded<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
@@ -58,7 +64,8 @@ export async function buildContext(stdin: StdinData, config: FooterConfig, opts:
 
   const transcriptP = bounded(parseTranscript(stdin.transcript_path ?? ""), deadline, EMPTY_TRANSCRIPT);
   const countsP = bounded(countConfigs(cwd), deadline, { claudeMdCount: 0, rulesCount: 0, mcpCount: 0, hooksCount: 0 });
-  const gitP = bounded(resolveVcsStatus(cwd, config, now), deadline, null);
+  // resolveVcsStatus enforces its own, much shorter deadline and falls back to the cached status.
+  const gitP = resolveVcsStatus(cwd, config, now, { deadlineMs: opts.gitDeadlineMs ?? VCS_DEADLINE_MS }).catch(() => null);
 
   const transcript = await transcriptP;
   applyContextWindowFallback(stdin, {}, transcript.sessionName, {
