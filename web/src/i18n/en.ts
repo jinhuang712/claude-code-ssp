@@ -126,7 +126,7 @@ export const en = {
 
   themes: {
     title: "Color theme",
-    hint: "Changes the terminal colors; this panel's accent color follows along",
+    hint: "The colors every widget uses in your terminal",
   },
 
   bars: {

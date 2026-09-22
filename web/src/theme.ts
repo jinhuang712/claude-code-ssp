@@ -100,6 +100,8 @@ const xtermPalette = (p: Palette16) => ({
  * dim/muted segments are judged against a realistic ground.
  */
 export const TERM_THEMES: Record<Scheme, Record<string, string>> = {
-  dark: { background: "#0b0e13", foreground: "#dfe4ec", cursor: "#0b0e13", selectionBackground: "#2a3342", ...xtermPalette(PALETTES.dark) },
-  light: { background: "#ffffff", foreground: "#1f2328", cursor: "#ffffff", selectionBackground: "#cfe3ff", ...xtermPalette(PALETTES.light) },
+  // Dark is Claude's slate (#141413), not pure black: the preview sits inside a warm panel and a
+  // blue-black ground read as a hole in the page. Keep in sync with --term-dark/--term-light.
+  dark: { background: "#141413", foreground: "#e8e6dc", cursor: "#141413", selectionBackground: "#3a3935", ...xtermPalette(PALETTES.dark) },
+  light: { background: "#ffffff", foreground: "#1f1e1d", cursor: "#ffffff", selectionBackground: "#f3d9cc", ...xtermPalette(PALETTES.light) },
 };

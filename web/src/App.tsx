@@ -259,20 +259,6 @@ function Separators() {
   );
 }
 
-/*
-  The panel borrows its accent from the statusline theme being edited. It is written as the *raw*
-  terminal colour; index.css derives --accent from it (darkened in light mode for contrast).
-*/
-function useThemeAccent() {
-  const themes = useStore((s) => s.themes);
-  const theme = useStore((s) => s.config?.theme);
-  useEffect(() => {
-    const tokens = typeof theme === "string" ? themes.find((th) => th.name === theme)?.tokens : theme?.tokens;
-    const accent = uiColor(tokens?.accent, "#4cc9e0");
-    document.documentElement.style.setProperty("--accent-raw", accent);
-  }, [themes, theme]);
-}
-
 /* Mirror the resolved panel scheme to <html data-theme>; index.html sets the first value pre-paint. */
 function useSchemeAttr() {
   const scheme = useTheme((s) => s.scheme);
@@ -305,7 +291,6 @@ export default function App() {
   const t = useT();
   const { loading, error, config, init, toast, notify } = useStore();
   const mast = useRef<HTMLDivElement>(null);
-  useThemeAccent();
   useSchemeAttr();
   useHtmlLang();
   useMastheadHeight(mast);

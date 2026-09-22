@@ -120,7 +120,7 @@ export const zh: Messages = {
 
   themes: {
     title: "配色",
-    hint: "只影响终端里的颜色，面板的强调色会跟着换",
+    hint: "终端里每一项用的颜色",
   },
 
   bars: {
