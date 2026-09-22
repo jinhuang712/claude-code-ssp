@@ -75,6 +75,7 @@ export const en = {
       "vim-mode": "Vim mode",
       worktree: "In a git worktree",
     } as Record<string, string>,
+    tryingOn: (label: string) => `Previewing: ${label} — click to apply`,
     terminal: "Terminal background — pick the one your terminal uses, so colors are judged fairly",
     termAuto: "Match panel",
     termDark: "Dark terminal",
@@ -84,6 +85,7 @@ export const en = {
   presets: {
     title: "Presets",
     matches: "Your layout matches this preset",
+    hoverHint: "Hover or focus one to preview it above",
     customised: "Your layout is customised — picking a preset replaces it (Ctrl/⌘+Z undoes)",
     lines: (n: number) => (n === 1 ? "1 line" : `${n} lines`),
     minimal: { name: "Minimal", blurb: "One line: project, branch, model, context" },
@@ -142,6 +144,24 @@ export const en = {
     },
   },
 
+  separators: {
+    title: "Separator",
+    hint: "Drawn between widgets in the same zone",
+    custom: "Custom",
+    customLabel: "Custom separator",
+    spacesShown: "␣ marks a space",
+  },
+
+  welcome: {
+    title: "Set up your statusline",
+    steps: [
+      "Pick a preset below — or build your own layout, one line at a time.",
+      "Your first edit applies it to Claude Code (it asks first if you already use another statusline).",
+      "Open a Claude Code session: its real data shows up in the preview. Until then you see samples.",
+    ] as readonly string[],
+    dismiss: "Got it",
+  },
+
   picker: {
     dialog: "Add to the statusline",
     search: "Search by name or description",
@@ -178,7 +198,7 @@ export const en = {
 
   advanced: {
     title: "Advanced settings",
-    hint: "Separator, color mode, project config, diagnostics",
+    hint: "Right margin, color mode, snapshots, project config, restore",
     separator: "Separator between widgets",
     rightMargin: "Right margin (columns)",
     rightMarginHint: "Claude Code's own padding — raise it if the right edge wraps",
@@ -194,6 +214,8 @@ export const en = {
   },
 
   doctor: {
+    section: "Diagnostics",
+    sectionHint: "Where each setting comes from, custom widgets, raw input",
     title: "Diagnostics",
     refresh: "Refresh",
     loading: "Loading diagnostics…",

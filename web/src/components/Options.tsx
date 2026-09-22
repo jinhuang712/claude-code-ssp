@@ -286,14 +286,12 @@ function OptionsBody() {
           <button className="btn btn-danger" onClick={() => s.removeAt(sel)}>
             {t.options.removeWidget}
           </button>
-          {s.advanced && (
-            <details className="text-xs">
-              <summary className="hint cursor-pointer">JSON</summary>
-              <pre className="mono mt-1 max-h-40 overflow-auto p-2 text-xs" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
-                {JSON.stringify(w, null, 2)}
-              </pre>
-            </details>
-          )}
+          <details className="text-xs">
+            <summary className="hint cursor-pointer">JSON</summary>
+            <pre className="mono mt-1 max-h-40 overflow-auto p-2 text-xs" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
+              {JSON.stringify(w, null, 2)}
+            </pre>
+          </details>
         </div>
       </div>
     </>

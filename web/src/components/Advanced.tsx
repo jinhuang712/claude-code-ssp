@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { api, type DoctorReport } from "../api";
 import { useT } from "../i18n";
-import { useStore } from "../store";
 import { describeStatusLine } from "../statusline";
+import { useStore } from "../store";
 
 /** The way out: put back whatever this configurator replaced (or remove it when there was nothing). */
 function Restore() {
@@ -35,7 +35,7 @@ function projectRootOf(dir: string): string {
   return dir.replace(/[\\/]\.claude[\\/]claude-code-ssp[\\/]widgets[\\/]?$/, "");
 }
 
-function Doctor() {
+function DoctorReportView() {
   const t = useT();
   const cwd = useStore((s) => s.projectCwd);
   const trustProject = useStore((s) => s.trustProject);
@@ -49,21 +49,23 @@ function Doctor() {
   }, [cwd]);
   if (err) return <p className="hint">{t.doctor.failed(err)}</p>;
   if (!r) return <p className="hint">{t.doctor.loading}</p>;
+  const skipped = r.plugins.skipped ?? [];
   return (
     <div className="flex flex-col gap-3">
       <div className="row">
-        <span>{t.doctor.title}</span>
+        <span>{t.doctor.layers}</span>
         <button className="btn" onClick={() => void load()}>
           {t.doctor.refresh}
         </button>
       </div>
       <div>
-        <div className="hint mb-1">{t.doctor.layers}</div>
         {r.layers.map((l) => (
           <div key={l.name} className="mono text-xs flex gap-2">
             <span style={{ color: l.exists ? "var(--fg)" : "var(--muted)" }}>{l.exists ? "✓" : "–"}</span>
             <span className="w-20 shrink-0">{t.doctor.layerNames[l.name] ?? l.name}</span>
-            <span className="hint truncate">{l.path ?? t.doctor.builtIn}</span>
+            <span className="hint truncate" title={l.path ?? undefined}>
+              {l.path ?? t.doctor.builtIn}
+            </span>
             {l.error && <span style={{ color: "var(--danger)" }}>{l.error}</span>}
           </div>
         ))}
@@ -71,7 +73,7 @@ function Doctor() {
       <div>
         <div className="hint mb-1">{t.doctor.pluginDirs}</div>
         {r.plugins.dirs.map((d) => (
-          <div key={d} className="mono text-xs hint truncate">
+          <div key={d} className="mono text-xs hint truncate" title={d}>
             {d}
           </div>
         ))}
@@ -85,7 +87,7 @@ function Doctor() {
             ✗ {e.file}: {e.message}
           </div>
         ))}
-        {(r.plugins.skipped ?? []).map((sk) => (
+        {skipped.map((sk) => (
           <div key={sk.dir} className="skipped">
             <div className="mono text-xs">
               <span style={{ color: "var(--warn)" }}>
@@ -101,7 +103,7 @@ function Doctor() {
             </div>
           </div>
         ))}
-        {!r.plugins.loaded.length && !r.plugins.errors.length && !(r.plugins.skipped ?? []).length && <div className="hint text-xs">{t.doctor.noPlugins}</div>}
+        {!r.plugins.loaded.length && !r.plugins.errors.length && !skipped.length && <div className="hint text-xs">{t.doctor.noPlugins}</div>}
       </div>
       <details className="text-xs">
         <summary className="hint cursor-pointer">{t.doctor.statusLine(r.settings.path)}</summary>
@@ -119,109 +121,141 @@ function Doctor() {
   );
 }
 
+/** A collapsible page section whose open state is remembered per browser. */
+function Disclosure({ storageKey, title, hint, children }: { storageKey: string; title: string; hint: string; children: React.ReactNode }) {
+  const id = useId();
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem(storageKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggle = () => {
+    setOpen(!open);
+    try {
+      localStorage.setItem(storageKey, open ? "0" : "1");
+    } catch {
+      /* not remembered */
+    }
+  };
+  return (
+    <section className="section">
+      <button className="disclosure" aria-expanded={open} aria-controls={id} onClick={toggle}>
+        <i aria-hidden="true">▸</i>
+        {title}
+        <span className="hint">{hint}</span>
+      </button>
+      {open && (
+        <div id={id} className="panel">
+          {children}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Settings most people never need: margins, colour depth, snapshots, project files, the way out. */
 export function Advanced() {
   const t = useT();
   const s = useStore();
   const c = s.config!;
   const project = s.layers.find((l) => l.name === "project");
+  const marginId = useId();
+  const colorId = useId();
+  const captureId = useId();
+  return (
+    <Disclosure storageKey="ssp.advanced" title={t.advanced.title} hint={t.advanced.hint}>
+      <div className="row">
+        <label htmlFor={marginId}>
+          {t.advanced.rightMargin}
+          <span className="hint ml-2">{t.advanced.rightMarginHint}</span>
+        </label>
+        <input
+          id={marginId}
+          className="field !w-20"
+          type="number"
+          min={0}
+          max={20}
+          value={c.columnsOffset}
+          onChange={(e) =>
+            s.setConfig((x) => {
+              x.columnsOffset = Number(e.target.value);
+            })
+          }
+        />
+      </div>
+      <div className="row">
+        <label htmlFor={colorId}>{t.advanced.colorMode}</label>
+        <select
+          id={colorId}
+          className="field !w-auto"
+          value={c.colorLevel}
+          onChange={(e) =>
+            s.setConfig((x) => {
+              x.colorLevel = e.target.value as typeof x.colorLevel;
+            })
+          }
+        >
+          {(["auto", "truecolor", "256", "16", "none"] as const).map((lv) => (
+            <option key={lv} value={lv}>
+              {t.advanced.colorLevels[lv]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="row">
+        <label htmlFor={captureId}>
+          {t.advanced.capture}
+          <span className="hint ml-2">{t.advanced.captureHint(s.paths?.samples ?? "~/.claude/plugins/claude-code-ssp/samples")}</span>
+        </label>
+        <input
+          id={captureId}
+          type="checkbox"
+          className="h-4 w-4"
+          checked={c.captureSamples}
+          onChange={(e) =>
+            s.setConfig((x) => {
+              x.captureSamples = e.target.checked;
+            })
+          }
+        />
+      </div>
+      <div className="row">
+        <span className="min-w-0">
+          {t.advanced.saveProject}
+          <span className="hint block truncate" title={project?.path ?? undefined}>
+            {project?.path}
+          </span>
+        </span>
+        <button className="btn" onClick={() => void s.saveAsProject()}>
+          {project?.exists ? t.advanced.overwriteProject : t.advanced.saveAsProject}
+        </button>
+      </div>
+      <Restore />
+    </Disclosure>
+  );
+}
+
+/** Where every setting came from, which custom widgets loaded (or were refused), and raw inputs. */
+export function Diagnostics() {
+  const t = useT();
+  const c = useStore((s) => s.config!);
   const [pluginsA, pluginsB] = t.advanced.pluginsHint;
   return (
-    <section className="section">
-      <button className="disclosure" aria-expanded={s.advanced} onClick={() => s.setAdvanced(!s.advanced)}>
-        <i>▸</i>
-        {t.advanced.title}
-        <span className="hint">{t.advanced.hint}</span>
-      </button>
-      {s.advanced && (
-        <div className="panel">
-          <label className="row">
-            <span>{t.advanced.separator}</span>
-            <input
-              className="field mono !w-24"
-              value={c.separator}
-              onChange={(e) =>
-                s.setConfig((x) => {
-                  x.separator = e.target.value;
-                })
-              }
-            />
-          </label>
-          <label className="row">
-            <span>
-              {t.advanced.rightMargin}
-              <span className="hint ml-2">{t.advanced.rightMarginHint}</span>
-            </span>
-            <input
-              className="field !w-20"
-              type="number"
-              min={0}
-              max={20}
-              value={c.columnsOffset}
-              onChange={(e) =>
-                s.setConfig((x) => {
-                  x.columnsOffset = Number(e.target.value);
-                })
-              }
-            />
-          </label>
-          <label className="row">
-            <span>{t.advanced.colorMode}</span>
-            <select
-              className="field !w-auto"
-              value={c.colorLevel}
-              onChange={(e) =>
-                s.setConfig((x) => {
-                  x.colorLevel = e.target.value as typeof x.colorLevel;
-                })
-              }
-            >
-              {(["auto", "truecolor", "256", "16", "none"] as const).map((lv) => (
-                <option key={lv} value={lv}>
-                  {t.advanced.colorLevels[lv]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="row">
-            <span>
-              {t.advanced.capture}
-              <span className="hint ml-2">{t.advanced.captureHint(s.paths?.samples ?? "~/.claude/plugins/claude-code-ssp/samples")}</span>
-            </span>
-            <input
-              type="checkbox"
-              className="h-4 w-4"
-              checked={c.captureSamples}
-              onChange={(e) =>
-                s.setConfig((x) => {
-                  x.captureSamples = e.target.checked;
-                })
-              }
-            />
-          </label>
-          <div className="row">
-            <span>
-              {t.advanced.saveProject}
-              <span className="hint ml-2">{project?.path}</span>
-            </span>
-            <button className="btn" onClick={() => void s.saveAsProject()}>
-              {project?.exists ? t.advanced.overwriteProject : t.advanced.saveAsProject}
-            </button>
-          </div>
-          <Restore />
-          <Doctor />
-          <details className="text-xs">
-            <summary className="hint cursor-pointer">{t.advanced.configJson}</summary>
-            <pre className="mono mt-1 max-h-64 overflow-auto p-2 text-xs" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
-              {JSON.stringify(c, null, 2)}
-            </pre>
-          </details>
-          <p className="hint">
-            {pluginsA}
-            <code className="mono">~/.config/claude-code-ssp/widgets/</code>
-            {pluginsB}
-          </p>
-        </div>
-      )}
-    </section>
+    <Disclosure storageKey="ssp.diagnostics" title={t.doctor.section} hint={t.doctor.sectionHint}>
+      <DoctorReportView />
+      <details className="text-xs">
+        <summary className="hint cursor-pointer">{t.advanced.configJson}</summary>
+        <pre className="mono mt-1 max-h-64 overflow-auto p-2 text-xs" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
+          {JSON.stringify(c, null, 2)}
+        </pre>
+      </details>
+      <p className="hint">
+        {pluginsA}
+        <code className="mono">~/.config/claude-code-ssp/widgets/</code>
+        {pluginsB}
+      </p>
+    </Disclosure>
   );
 }

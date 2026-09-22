@@ -339,6 +339,8 @@ input[type="checkbox"] {
   border-radius: 2px;
   overflow: hidden;
   background: var(--bg-deep);
+  /* Keeps near-white themes (mono) visible on the light panel. */
+  box-shadow: 0 0 0 1px var(--line);
 }
 .strip > i {
   display: block;
@@ -358,6 +360,7 @@ input[type="checkbox"] {
 
 /* ---- preview: the terminal is the hero ---- */
 .term-frame {
+  position: relative;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-2);
   background: var(--bg-deep);
@@ -968,6 +971,44 @@ input[type="checkbox"] {
   margin-top: 4px;
   min-width: 0;
   overflow: hidden;
+}
+/* "Previewing: …" while a choice is hovered. Absolutely positioned so it can never change the
+   masthead's height (which is what made hover previews loop). */
+.tryon-badge {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  z-index: 1;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+.tag-accent {
+  background: color-mix(in srgb, var(--accent) 20%, var(--panel));
+  color: var(--fg);
+}
+/* Separator chips: the separator itself stands out between two neutral words. */
+.sep-sample {
+  white-space: pre;
+  color: var(--muted);
+}
+.sep-sample b {
+  font-weight: 400;
+  color: var(--fg);
+}
+/* First-run guide */
+.welcome {
+  padding: 14px 18px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line-strong));
+  border-radius: var(--r-2);
+  background: color-mix(in srgb, var(--accent) 6%, var(--panel));
+}
+.welcome ol {
+  margin: 8px 0 12px;
+  padding-left: 20px;
+  list-style: decimal;
+  color: var(--fg-2);
+}
+.welcome li + li {
+  margin-top: 4px;
 }
 .tag-warn {
   background: color-mix(in srgb, var(--warn) 18%, var(--panel));

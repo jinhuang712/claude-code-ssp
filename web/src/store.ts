@@ -90,7 +90,6 @@ interface State {
    */
   consent: { current: unknown } | null;
   consentDismissed: boolean;
-  advanced: boolean;
   /** Undo stack of pre-edit snapshots (cap 30); typing bursts coalesce into one step. */
   past: FooterConfig[];
   /** Show the center zone even while no line uses it (a viewer preference, remembered per browser). */
@@ -99,6 +98,11 @@ interface State {
   focusPos: Selection | null;
   /** Latest screen-reader announcement (rendered into an aria-live region). */
   live: string;
+  /**
+   * A look being tried on (hover/focus on a preset, theme or bar style): merged over the config for
+   * the preview only — never saved. `label` names it in the preview toolbar.
+   */
+  tryOn: { patch: Partial<FooterConfig>; label: string } | null;
 
   init(): Promise<void>;
   setConfig(mutate: (c: FooterConfig) => void): void;
@@ -132,11 +136,12 @@ interface State {
   dismissConsent(): void;
   resetCounters(): Promise<void>;
   refreshPreview(): Promise<void>;
-  setAdvanced(v: boolean): void;
   setShowCenter(v: boolean): void;
   /** Keyboard move: one step within the zone, across to the neighbouring zone at an edge, or to the line above/below. */
   nudge(sel: Selection, dir: "left" | "right" | "up" | "down"): void;
   claimFocus(): void;
+  /** Preview a patch without applying it; null goes back to the real config. */
+  setTryOn(t: { patch: Partial<FooterConfig>; label: string } | null): void;
   notify(msg: string | null): void;
 }
 
@@ -224,11 +229,11 @@ export const useStore = create<State>((set, get) => {
     installPlan: null,
     consent: null,
     consentDismissed: false,
-    advanced: pref("ssp.advanced") === "1",
     past: [],
     showCenter: pref("ssp.center") === "1",
     focusPos: null,
     live: "",
+    tryOn: null,
 
     async init() {
       try {
@@ -496,20 +501,16 @@ export const useStore = create<State>((set, get) => {
     },
 
     async refreshPreview() {
-      const { config, sampleId, columns } = get();
+      const { config, sampleId, columns, tryOn } = get();
       if (!config) return;
       try {
-        const preview = await api.render(config, sampleId, columns);
-        if (get().columns !== columns) return; // a newer request is on its way
+        const preview = await api.render(tryOn ? { ...config, ...tryOn.patch } : config, sampleId, columns);
+        // A newer request is on its way (width changed, or the try-on started/ended meanwhile).
+        if (get().columns !== columns || get().tryOn !== tryOn) return;
         set({ preview, previewColumns: columns });
       } catch (err) {
         set({ toast: tr().toast.previewFailed(err instanceof Error ? err.message : String(err)) });
       }
-    },
-
-    setAdvanced(v) {
-      setPref("ssp.advanced", v ? "1" : "0");
-      set({ advanced: v });
     },
 
     setShowCenter(v) {
@@ -550,6 +551,13 @@ export const useStore = create<State>((set, get) => {
     },
 
     claimFocus: () => set({ focusPos: null }),
+
+    setTryOn(t) {
+      if (t === null && get().tryOn === null) return;
+      set({ tryOn: t });
+      // Short debounce: sweeping the pointer across a row of choices shouldn't fire a render per chip.
+      schedulePreview(t ? 60 : 0);
+    },
 
     notify: (toast) => set({ toast }),
   };

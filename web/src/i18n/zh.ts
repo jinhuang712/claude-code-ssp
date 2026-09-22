@@ -69,6 +69,7 @@ export const zh: Messages = {
       "vim-mode": "Vim 模式",
       worktree: "在 git worktree 里",
     },
+    tryingOn: (label) => `预览中：${label}（点击才会应用）`,
     terminal: "终端背景：选你终端实际用的那种，颜色才看得准",
     termAuto: "跟随面板",
     termDark: "深色终端",
@@ -78,6 +79,7 @@ export const zh: Messages = {
   presets: {
     title: "预设",
     matches: "当前布局就是这个预设",
+    hoverHint: "鼠标悬停或键盘聚焦即可在上方预览",
     customised: "当前布局已在预设基础上改动，点一个预设会整体替换（Ctrl/⌘+Z 可撤销）",
     lines: (n) => `${n} 行`,
     minimal: { name: "极简", blurb: "一行：项目 · 分支 · 模型 · 上下文" },
@@ -136,6 +138,24 @@ export const zh: Messages = {
     },
   },
 
+  separators: {
+    title: "分隔符",
+    hint: "同一区里各项之间的分隔",
+    custom: "自定义",
+    customLabel: "自定义分隔符",
+    spacesShown: "␣ 表示空格",
+  },
+
+  welcome: {
+    title: "三步设置你的状态栏",
+    steps: [
+      "在下面选一个预设，或者一行一行自己搭。",
+      "第一次改动会自动应用到 Claude Code（如果你已经在用别的状态栏，会先问你）。",
+      "打开一个 Claude Code 会话，预览里就会出现真实数据；在那之前显示的是示例。",
+    ],
+    dismiss: "知道了",
+  },
+
   picker: {
     dialog: "添加到状态栏",
     search: "搜索名称或说明",
@@ -172,7 +192,7 @@ export const zh: Messages = {
 
   advanced: {
     title: "高级设置",
-    hint: "分隔符、颜色模式、项目级配置、诊断",
+    hint: "右边留白、颜色模式、快照、项目级配置、恢复",
     separator: "项目之间的分隔符",
     rightMargin: "右边留白（列）",
     rightMarginHint: "Claude Code 自身边距，右侧贴边有换行时调大",
@@ -188,6 +208,8 @@ export const zh: Messages = {
   },
 
   doctor: {
+    section: "诊断",
+    sectionHint: "每项设置来自哪里、自定义 widget、原始输入",
     title: "诊断",
     refresh: "刷新",
     loading: "诊断加载中…",

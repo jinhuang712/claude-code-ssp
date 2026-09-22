@@ -11,6 +11,8 @@ export function Preview() {
   const t = useT();
   const host = useRef<HTMLDivElement>(null);
   const term = useRef<Terminal | null>(null);
+  /** Rows reserved by the last try-on, kept while the real config still has `forLines` lines. */
+  const hold = useRef<{ rows: number; forLines: number } | null>(null);
   const preview = useStore((s) => s.preview);
   const previewColumns = useStore((s) => s.previewColumns);
   const columns = useStore((s) => s.columns);
@@ -18,6 +20,7 @@ export function Preview() {
   const columnsMode = useStore((s) => s.columnsMode);
   const setColumnsMode = useStore((s) => s.setColumnsMode);
   const lineCount = useStore((s) => s.config?.lines.length ?? 0);
+  const tryOn = useStore((s) => s.tryOn);
   const termBg = useTheme((s) => s.termBg);
   const setTermBg = useTheme((s) => s.setTermBg);
   const scheme = useTheme(termScheme);
@@ -81,7 +84,19 @@ export function Preview() {
     const xt = term.current;
     if (!xt || !preview || previewColumns !== columns) return;
     const lines = preview.lines;
-    const rows = Math.max(1, lines.length);
+    // Height is sticky around try-ons. Hovering a 1-line preset used to shrink the preview, which
+    // moved the preset out from under the pointer (mouseleave → real config → grows back →
+    // mouseenter …) and looped every ~80 ms. So a try-on may grow the preview but never shrink it,
+    // and the grown height is kept until the real config's line count changes.
+    let rows = Math.max(1, lines.length);
+    if (tryOn) {
+      rows = Math.max(rows, xt.rows);
+      hold.current = { rows, forLines: lineCount };
+    } else if (hold.current?.forLines === lineCount) {
+      rows = Math.max(rows, hold.current.rows);
+    } else {
+      hold.current = null;
+    }
     if (xt.cols !== columns || xt.rows !== rows) xt.resize(columns, rows);
     xt.reset();
     // If a line still wraps inside xterm (a glyph whose width the engine and xterm disagree on),
@@ -93,13 +108,18 @@ export function Preview() {
       // xterm keeps the bottom anchored on resize; pin the top so line 1 is what shows first.
       xt.scrollToTop();
     });
-  }, [preview, previewColumns, columns]);
+  }, [preview, previewColumns, columns, tryOn, lineCount]);
 
   const shown = preview?.lines.length ?? 0;
   const hidden = Math.max(0, lineCount - shown);
   const filledCount = preview?.empty?.filter((e) => e.filled).length ?? 0;
   const hiddenCount = (preview?.empty?.length ?? 0) - filledCount;
-  const note = [filledCount ? t.preview.filled(filledCount) : "", hiddenCount ? t.preview.hidden(hiddenCount) : "", hidden ? t.preview.emptyLines(hidden) : ""].filter(Boolean).join(t.preview.noteJoin);
+  const liveNote = [filledCount ? t.preview.filled(filledCount) : "", hiddenCount ? t.preview.hidden(hiddenCount) : "", hidden ? t.preview.emptyLines(hidden) : ""].filter(Boolean).join(t.preview.noteJoin);
+  // During a try-on the note describes the real config, not the one being hovered: its numbers would
+  // be wrong, and the row appearing/disappearing would change the height (see the hover loop above).
+  const realNote = useRef("");
+  if (!tryOn) realNote.current = liveNote;
+  const note = tryOn ? realNote.current : liveNote;
 
   return (
     <div className="term-frame">
@@ -108,6 +128,8 @@ export function Preview() {
         <span className="meta mono" title={t.preview.renderTime}>
           {preview ? `${preview.ms.toFixed(1)} ms` : ""}
         </span>
+        {/* Out of flow (absolute): a tag that wrapped the toolbar would change the height and restart the hover loop. */}
+        {tryOn && <span className="tag tag-accent tryon-badge">{t.preview.tryingOn(tryOn.label)}</span>}
         <div className="term-controls">
           <div className="cols">
           <select
