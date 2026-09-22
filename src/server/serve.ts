@@ -15,6 +15,7 @@ import { listThemes } from "../core/theme.js";
 import type { FooterConfig } from "../core/types.js";
 import type { StdinData } from "../data/types.js";
 import { registerBuiltinWidgets } from "../widgets/index.js";
+import { guardRequest, HttpError, MAX_BODY_BYTES, readJson } from "./guard.js";
 import { install, planInstall, settingsPath } from "./install.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -87,7 +88,7 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
       return json({ ...eff, paths: { user: userConfigPath(), project: projectConfigPath(cwd) } });
     }
     case "PUT /api/config": {
-      const body = (await req.json()) as { scope?: "user" | "project"; config: Partial<FooterConfig> };
+      const body = await readJson<{ scope?: "user" | "project"; config: Partial<FooterConfig> }>(req);
       const normalized = normalizeConfig(body.config ?? {});
       const { $schema: _s, ...toWrite } = { ...body.config, version: normalized.version } as Partial<FooterConfig>;
       const written = body.scope === "project" ? writeProjectConfig(cwd, toWrite) : writeUserConfig(toWrite);
@@ -134,7 +135,7 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
       return s ? json(s) : json({ error: "not found" }, 404);
     }
     case "POST /api/render": {
-      const body = (await req.json()) as { config?: Partial<FooterConfig>; sampleId?: string; payload?: unknown; columns?: number; fillEmpty?: boolean };
+      const body = await readJson<{ config?: Partial<FooterConfig>; sampleId?: string; payload?: unknown; columns?: number; fillEmpty?: boolean }>(req);
       const config = normalizeConfig(body.config ?? loadEffectiveConfig(cwd).config);
       // The preview is painted by xterm.js, which speaks truecolor; "auto" would otherwise follow this server's env.
       if (config.colorLevel === "auto") config.colorLevel = "truecolor";
@@ -147,7 +148,7 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
     }
     case "POST /api/reset": {
       const { resetLatestSession, undoReset } = await import("./reset.js");
-      const body = (await req.json().catch(() => ({}))) as { sessionId?: string; undo?: boolean };
+      const body = await readJson<{ sessionId?: string; undo?: boolean }>(req);
       if (body.undo && body.sessionId) {
         undoReset(body.sessionId);
         return json({ ok: true, undone: body.sessionId });
@@ -181,6 +182,27 @@ function serveStatic(pathname: string): Response {
   return new Response(Bun.file(file), { headers: { "content-type": MIME[ext] ?? "application/octet-stream" } });
 }
 
+/**
+ * The whole HTTP surface as a plain function of (request, port), so tests can drive it without
+ * binding a socket. `port` is the port we are actually served on — the guard needs it to know which
+ * Host / Origin values are ours.
+ */
+export async function handleRequest(req: Request, port: number): Promise<Response> {
+  const denied = guardRequest(req, port);
+  if (denied) return denied;
+  const url = new URL(req.url);
+  if (url.pathname.startsWith("/api/")) {
+    try {
+      return await handleApi(req, url);
+    } catch (err) {
+      if (err instanceof HttpError) return json({ error: err.message }, err.status);
+      return json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  }
+  if (req.method !== "GET" && req.method !== "HEAD") return json({ error: "method not allowed" }, 405);
+  return serveStatic(url.pathname);
+}
+
 export async function serve(opts: { port: number; open?: boolean }): Promise<void> {
   registerBuiltinWidgets();
   const { config } = loadEffectiveConfig(process.cwd());
@@ -188,22 +210,9 @@ export async function serve(opts: { port: number; open?: boolean }): Promise<voi
   const server = Bun.serve({
     hostname: "127.0.0.1",
     port: opts.port,
-    async fetch(req) {
-      const url = new URL(req.url);
-      if (url.pathname.startsWith("/api/")) {
-        try {
-          const res = await handleApi(req, url);
-          res.headers.set("access-control-allow-origin", "*");
-          res.headers.set("access-control-allow-headers", "content-type");
-          res.headers.set("access-control-allow-methods", "GET,PUT,POST,OPTIONS");
-          return res;
-        } catch (err) {
-          return json({ error: err instanceof Error ? err.message : String(err) }, 500);
-        }
-      }
-      if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type", "access-control-allow-methods": "GET,PUT,POST,OPTIONS" } });
-      return serveStatic(url.pathname);
-    },
+    // Bun enforces this before our handler runs; readJson re-checks for bodies without Content-Length.
+    maxRequestBodySize: MAX_BODY_BYTES,
+    fetch: (req, srv) => handleRequest(req, srv.port ?? opts.port),
   });
   const address = `http://127.0.0.1:${server.port}`;
   console.log(`claude-code-ssp configurator → ${address}`);

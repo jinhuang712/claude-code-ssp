@@ -109,7 +109,7 @@ export const api = {
   render: (config: FooterConfig, sampleId: string | null, columns: number, fillEmpty = true) =>
     fetch("/api/render", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ config, sampleId, columns, fillEmpty }) }).then(j<RenderResult>),
   installPlan: () => fetch("/api/install").then(j<{ settingsFile: string; statusLine: Record<string, unknown>; previous: unknown }>),
-  install: () => fetch("/api/install", { method: "POST" }).then(j<{ settingsFile: string; backup: string | null }>),
+  install: () => fetch("/api/install", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" }).then(j<{ settingsFile: string; backup: string | null }>),
   reset: (sessionId?: string) => fetch("/api/reset", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId }) }).then(j<{ sessionId: string; baseline: { at: number } }>),
   undoReset: (sessionId: string) => fetch("/api/reset", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, undo: true }) }).then(j<{ ok: true }>),
 };
