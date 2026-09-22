@@ -33,6 +33,8 @@ export interface VcsCacheEntry {
   /** Opaque fingerprint of the repo's marker files; any change invalidates the entry. */
   markers: string;
   status: GitStatus | null;
+  /** How long computing `status` took; marks repos too slow to wait for (see resolveVcsStatus). */
+  tookMs?: number;
 }
 
 /** Default render deadline for a fresh VCS status, in ms. Well under Claude Code's ~300 ms debounce. */
@@ -150,8 +152,9 @@ export async function refreshVcsCache(cwd: string): Promise<GitStatus | null> {
   const m = vcsMarkers(cwd);
   if (!m) return null;
   const savedAt = Date.now();
+  const startedAt = performance.now();
   const status = await computeStatus(m.vcs, cwd);
-  writeVcsCache(cwd, { savedAt, ...m, status });
+  writeVcsCache(cwd, { savedAt, ...m, status, tookMs: performance.now() - startedAt });
   try {
     fs.rmSync(`${vcsCachePath(cwd)}.lock`, { force: true });
   } catch {
@@ -206,23 +209,35 @@ export async function resolveVcsStatus(
   if (!m) return null;
   const cached = readVcsCache(cwd);
   const sameRepo = cached !== null && cached.vcs === m.vcs;
-  if (sameRepo && cached.markers === m.markers && now - cached.savedAt < config.git.cacheMs) return cached.status;
+  const sameMarkers = sameRepo && cached.markers === m.markers;
+  if (sameMarkers && now - cached.savedAt < config.git.cacheMs) return cached.status;
+  const deadlineMs = opts.deadlineMs ?? VCS_DEADLINE_MS;
+  const refreshInBackground = opts.refreshInBackground ?? spawnDetachedRefresh;
+
+  // Known-slow repo (its last status took longer than the deadline) and nothing structural changed,
+  // only the TTL ran out: waiting would just burn the deadline on every render and end in the same
+  // cached answer. Serve it right away and let the helper refresh it.
+  if (sameMarkers && (cached.tookMs ?? 0) > deadlineMs) {
+    refreshInBackground(cwd);
+    return cached.status;
+  }
 
   const compute = opts.compute ?? computeStatus;
+  const startedAt = performance.now();
   const fresh = compute(m.vcs, cwd).then(
     (status) => {
-      writeVcsCache(cwd, { savedAt: now, ...m, status });
+      writeVcsCache(cwd, { savedAt: now, ...m, status, tookMs: performance.now() - startedAt });
       return { status };
     },
     () => ({ status: null }),
   );
   let timer: ReturnType<typeof setTimeout> | undefined;
   const late = new Promise<null>((resolve) => {
-    timer = setTimeout(() => resolve(null), opts.deadlineMs ?? VCS_DEADLINE_MS);
+    timer = setTimeout(() => resolve(null), deadlineMs);
   });
   const won = await Promise.race([fresh, late]);
   clearTimeout(timer);
   if (won) return won.status;
-  (opts.refreshInBackground ?? spawnDetachedRefresh)(cwd);
+  refreshInBackground(cwd);
   return sameRepo ? cached.status : null;
 }

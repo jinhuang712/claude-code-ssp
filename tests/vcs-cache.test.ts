@@ -73,6 +73,34 @@ describe("render deadline", () => {
     expect(refreshed).toEqual([repo]);
   });
 
+  test("a known-slow repo whose TTL ran out is served from cache at once, refreshed in the background", async () => {
+    const repo = freshRepo("known-slow");
+    // First render: the status takes 120 ms, over a 50 ms deadline → recorded as slow.
+    await resolveVcsStatus(repo, cfg(0), Date.now(), { deadlineMs: 500, compute: slow(oldStatus, 120) });
+    expect(readVcsCache(repo)!.tookMs!).toBeGreaterThan(100);
+    const refreshed: string[] = [];
+    let computed = 0;
+    const started = performance.now();
+    const s = await resolveVcsStatus(repo, cfg(0), Date.now(), {
+      deadlineMs: 50,
+      compute: async () => (computed++, newStatus),
+      refreshInBackground: (cwd) => refreshed.push(cwd),
+    });
+    expect(performance.now() - started).toBeLessThan(40); // no deadline wait
+    expect(s).toEqual(oldStatus);
+    expect(computed).toBe(0);
+    expect(refreshed).toEqual([repo]);
+  });
+
+  test("a known-slow repo still waits after a commit (markers changed), because the cache is wrong now", async () => {
+    const repo = freshRepo("slow-commit");
+    await resolveVcsStatus(repo, cfg(0), Date.now(), { deadlineMs: 500, compute: slow(oldStatus, 120) });
+    fs.writeFileSync(path.join(repo, "a.txt"), "changed\n");
+    git(repo, "commit", "-q", "-am", "move HEAD");
+    const s = await resolveVcsStatus(repo, cfg(0), Date.now(), { deadlineMs: 500, compute: async () => newStatus, refreshInBackground: () => {} });
+    expect(s).toEqual(newStatus);
+  });
+
   test("with nothing cached yet a late status renders nothing rather than waiting", async () => {
     const repo = freshRepo("late-empty");
     const s = await resolveVcsStatus(repo, cfg(0), Date.now(), { deadlineMs: 50, compute: slow(newStatus, 500), refreshInBackground: () => {} });
