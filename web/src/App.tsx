@@ -42,6 +42,9 @@ function Welcome() {
   return (
     <section className="section welcome" aria-labelledby="welcome-title">
       <h2 id="welcome-title" className="h2">
+        <span className="brand-mark" aria-hidden="true">
+          ✻
+        </span>
         {t.welcome.title}
       </h2>
       <ol>
@@ -50,7 +53,7 @@ function Welcome() {
         ))}
       </ol>
       <button
-        className="btn"
+        className="btn btn-primary"
         onClick={() => {
           setDismissed(true);
           try {

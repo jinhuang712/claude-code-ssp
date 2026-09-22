@@ -3,6 +3,7 @@ import { api, type DoctorReport } from "../api";
 import { useT } from "../i18n";
 import { describeStatusLine } from "../statusline";
 import { useStore } from "../store";
+import { Icon } from "./Icon";
 
 /** The way out: put back whatever this configurator replaced (or remove it when there was nothing). */
 function Restore() {
@@ -140,17 +141,21 @@ function Disclosure({ storageKey, title, hint, children }: { storageKey: string;
     }
   };
   return (
-    <section className="section">
-      <button className="disclosure" aria-expanded={open} aria-controls={id} onClick={toggle}>
-        <i aria-hidden="true">▸</i>
-        {title}
-        <span className="hint">{hint}</span>
-      </button>
-      {open && (
-        <div id={id} className="panel">
-          {children}
-        </div>
-      )}
+    <section className="section disclosure-section">
+      <div className="disclosure-card" data-open={open}>
+        <h2 className="disclosure-h">
+          <button className="disclosure" aria-expanded={open} aria-controls={id} onClick={toggle}>
+            <Icon name="chevron" className="disclosure-chevron" />
+            <span className="disclosure-title">{title}</span>
+            <span className="hint">{hint}</span>
+          </button>
+        </h2>
+        {open && (
+          <div id={id} className="panel">
+            {children}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

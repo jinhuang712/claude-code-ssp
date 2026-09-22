@@ -1030,41 +1030,55 @@ input[type="checkbox"] {
   text-underline-offset: 2px;
 }
 
-/* ---- disclosure ---- */
+/* ---- disclosure: a card whose header row opens it (Advanced settings, Diagnostics) ---- */
+.disclosure-section + .disclosure-section {
+  margin-top: var(--sp-3);
+}
+.disclosure-card {
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  background: var(--panel);
+}
+.disclosure-h {
+  margin: 0;
+  font: inherit;
+}
 .disclosure {
-  display: inline-flex;
+  display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 2px 8px;
+  gap: 2px 10px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--r-2);
   text-align: left;
-  font-size: var(--fs-sm);
-  color: var(--fg-2);
+  color: var(--fg);
+}
+.disclosure:hover {
+  background: color-mix(in srgb, var(--fg) 3%, transparent);
+}
+.disclosure-title {
+  font-weight: 600;
 }
 /* On a phone the hint drops under the title instead of squeezing it into a column. */
 .disclosure > .hint {
   flex: 1 1 220px;
+  font-size: var(--fs-sm);
 }
-.disclosure:hover {
-  color: var(--fg);
+.disclosure-chevron {
+  align-self: center;
+  color: var(--muted);
+  transition: transform 0.15s;
 }
-.disclosure > i {
-  display: inline-block;
-  width: 10px;
-  font-style: normal;
-  transition: transform 0.12s;
-}
-.disclosure[aria-expanded="true"] > i {
+.disclosure[aria-expanded="true"] .disclosure-chevron {
   transform: rotate(90deg);
 }
 .panel {
-  margin-top: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-2);
-  background: var(--panel);
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  border-top: 1px solid var(--line);
 }
 
 /* ---- drawer: option and picker panels slide in on the right, below the sticky preview,
@@ -1382,21 +1396,37 @@ input[type="checkbox"] {
   font-weight: 400;
   color: var(--fg);
 }
-/* First-run guide */
+/* First-run guide, after Claude Code's own welcome box: ✻, a clay rule, numbered steps. */
 .welcome {
-  padding: 14px 18px;
-  border: 1px solid color-mix(in srgb, var(--clay) 45%, var(--line-strong));
+  padding: var(--sp-4) var(--sp-5) var(--sp-5);
+  border: 1px solid var(--clay);
   border-radius: var(--r-2);
   background: color-mix(in srgb, var(--clay) 6%, var(--panel));
 }
+.welcome .h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .welcome ol {
-  margin: 8px 0 12px;
-  padding-left: 20px;
-  list-style: decimal;
+  margin: 12px 0 18px;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
   color: var(--fg-2);
 }
+.welcome li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  counter-increment: step;
+}
+.welcome li::before {
+  content: counter(step) ".";
+  font-family: var(--font-mono);
+  color: var(--accent);
+}
 .welcome li + li {
-  margin-top: 4px;
+  margin-top: 6px;
 }
 .tag-warn {
   background: color-mix(in srgb, var(--warn) 18%, var(--panel));
@@ -1417,26 +1447,28 @@ input[type="checkbox"] {
 }
 .tag {
   padding: 0 6px;
-  border-radius: 2px;
+  border-radius: 4px;
   font-size: var(--fs-xs);
-  line-height: 16px;
+  line-height: 18px;
   background: var(--panel-2);
   color: var(--fg-2);
 }
 
+/* Inverted (fg on bg): a transient message has to stand apart from every surface it floats over. */
 .toast {
   position: fixed;
-  bottom: 20px;
+  bottom: 24px;
   left: 50%;
   z-index: 30;
-  max-width: 640px;
+  width: max-content;
+  max-width: min(640px, calc(100vw - 32px));
   transform: translateX(-50%);
-  border: 1px solid var(--line-strong);
-  background: var(--panel-2);
+  background: var(--fg);
+  color: var(--bg);
   border-radius: var(--r-2);
-  padding: 8px 16px;
+  padding: 10px 16px;
   font-size: var(--fs-sm);
-  box-shadow: 0 10px 30px var(--shadow);
+  box-shadow: 0 12px 32px var(--shadow);
 }
 
 /* ---- consent banner: asks before replacing another tool's statusLine ---- */
@@ -1446,8 +1478,8 @@ input[type="checkbox"] {
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px 16px;
-  margin-bottom: 12px;
-  padding: 10px 14px;
+  margin-bottom: 14px;
+  padding: 12px 16px;
   border: 1px solid color-mix(in srgb, var(--warn) 55%, var(--line-strong));
   border-radius: var(--r-2);
   background: color-mix(in srgb, var(--warn) 8%, var(--panel));
@@ -1475,9 +1507,8 @@ input[type="checkbox"] {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 20px;
-  margin-top: 56px;
-  padding-top: 16px;
+  gap: 10px 24px;
+  padding: var(--sp-4) 0 var(--sp-6);
   border-top: 1px solid var(--line);
   font-size: var(--fs-xs);
   color: var(--muted);
@@ -1488,6 +1519,9 @@ input[type="checkbox"] {
   gap: 8px;
 }
 .footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: var(--muted);
 }
 .footer-link:hover {
