@@ -81,12 +81,16 @@ function sweepRepo(): string {
 export async function sampleContexts(): Promise<SweepContext[]> {
   ensureBuiltins();
   process.env[SWEEP_ENV] = "prod";
-  const out: SweepContext[] = [];
-  for (const f of fs.readdirSync(FIXTURES_DIR).filter((x) => x.endsWith(".json"))) {
-    const file = path.join(FIXTURES_DIR, f);
-    const payload = prepareFixture(JSON.parse(fs.readFileSync(file, "utf8")), file);
-    out.push({ id: f.replace(/\.json$/, ""), ctx: await buildContext(payload, normalizeConfig({ ...BASE, lines: [] }), { columns: 200, now: Date.now() }) });
-  }
+  const out: SweepContext[] = await Promise.all(
+    fs
+      .readdirSync(FIXTURES_DIR)
+      .filter((x) => x.endsWith(".json"))
+      .map(async (f) => {
+        const file = path.join(FIXTURES_DIR, f);
+        const payload = prepareFixture(JSON.parse(fs.readFileSync(file, "utf8")), file);
+        return { id: f.replace(/\.json$/, ""), ctx: await buildContext(payload, normalizeConfig({ ...BASE, lines: [] }), { columns: 200, now: Date.now() }) };
+      }),
+  );
   const basicFile = path.join(FIXTURES_DIR, "basic.json");
   const repo = sweepRepo();
   const inRepo = prepareFixture({ ...JSON.parse(fs.readFileSync(basicFile, "utf8")), cwd: repo }, basicFile);
@@ -106,6 +110,8 @@ export function renderOne(inst: WidgetInstance, ctx: SweepContext["ctx"]): { raw
   return { raw: r.lines[0] ?? "", errors: r.errors.map((e) => e.message) };
 }
 
+// Strips SGR colour codes and OSC 8 hyperlinks: matching ESC/BEL control characters is the point.
+// eslint-disable-next-line no-control-regex
 export const plain = (s: string) => s.replace(/\x1b\[[0-9;]*m|\x1b\]8;[^\x07\x1b]*(\x07|\x1b\\)/g, "");
 
 export function builtinWidgets() {
@@ -116,5 +122,5 @@ export function builtinWidgets() {
 /** Options a widget instance needs so that `name` can take effect (from x-requires). */
 export function requirementsOf(schema: JsonSchema): Record<string, unknown> {
   const req = schema["x-requires"];
-  return req && typeof req === "object" ? (req as Record<string, unknown>) : {};
+  return req && typeof req === "object" ? req : {};
 }
