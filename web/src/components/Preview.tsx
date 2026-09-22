@@ -3,6 +3,7 @@ import { Terminal } from "@xterm/xterm";
 import { useEffect, useRef } from "react";
 import { useT } from "../i18n";
 import { useStore } from "../store";
+import { parseAnsi } from "./Ansi";
 import { TERM_THEMES, termScheme, useTheme, type TermBg } from "../theme";
 
 export function Preview() {
@@ -38,6 +39,15 @@ export function Preview() {
     const f = new FitAddon();
     xt.loadAddon(f);
     xt.open(host.current);
+    // xterm keeps a hidden <textarea> for keyboard input. With stdin disabled it is useless here,
+    // but it still takes focus and swallows Tab — a keyboard trap that made everything below the
+    // preview unreachable. Take it out of the tab order and the accessibility tree; screen readers
+    // get the plain-text copy rendered next to the canvas instead.
+    const helper = host.current.querySelector<HTMLTextAreaElement>("textarea.xterm-helper-textarea");
+    if (helper) {
+      helper.tabIndex = -1;
+      helper.setAttribute("aria-hidden", "true");
+    }
     term.current = xt;
     const refit = () => {
       if (useStore.getState().columnsMode !== "auto") return;
@@ -147,7 +157,11 @@ export function Preview() {
       {/* The note gets its own row: squeezed into the toolbar it wrapped one word per line. */}
       {note && <p className="term-note">{note}</p>}
       <div className="term" data-fixed={columnsMode !== "auto"} data-scheme={scheme}>
-        <div ref={host} className="w-full" />
+        <div ref={host} className="w-full" aria-hidden="true" />
+        {/* What a screen reader announces instead of the canvas: the same lines as plain text. */}
+        <pre className="sr-only" aria-label={t.preview.title}>
+          {(preview?.lines ?? []).map((l) => parseAnsi(l).map((r) => r.text).join("")).join("\n")}
+        </pre>
       </div>
       {preview?.errors.length ? <p className="term-errors">{preview.errors.map((e) => `${e.widget}: ${e.message}`).join("　")}</p> : null}
     </div>
