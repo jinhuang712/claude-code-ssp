@@ -76,7 +76,15 @@ export function Preview() {
     const rows = Math.max(1, lines.length);
     if (xt.cols !== columns || xt.rows !== rows) xt.resize(columns, rows);
     xt.reset();
-    xt.write(lines.join("\r\n"));
+    // If a line still wraps inside xterm (a glyph whose width the engine and xterm disagree on),
+    // the buffer grows past `rows` and the first line scrolls out of view. Grow to fit instead,
+    // so the preview never silently hides a line.
+    xt.write(lines.join("\r\n"), () => {
+      const used = xt.buffer.active.length;
+      if (used > xt.rows) xt.resize(xt.cols, used);
+      // xterm keeps the bottom anchored on resize; pin the top so line 1 is what shows first.
+      xt.scrollToTop();
+    });
   }, [preview, previewColumns, columns]);
 
   const shown = preview?.lines.length ?? 0;
@@ -92,8 +100,8 @@ export function Preview() {
         <span className="meta mono" title={t.preview.renderTime}>
           {preview ? `${preview.ms.toFixed(1)} ms` : ""}
         </span>
-        {note && <span>{note}</span>}
-        <div className="cols ml-auto">
+        <div className="term-controls">
+          <div className="cols">
           <select
             className="field !w-auto !py-0.5"
             value={columnsMode === "auto" ? "auto" : "fixed"}
@@ -104,37 +112,40 @@ export function Preview() {
             <option value="auto">{t.preview.fitWindow}</option>
             <option value="fixed">{t.preview.fixedColumns}</option>
           </select>
-          {columnsMode === "auto" ? (
-            <span className="mono meta">{t.preview.columns(columns)}</span>
-          ) : (
-            <input
-              className="field mono !w-16 !py-0.5"
-              type="number"
-              min={40}
-              max={400}
-              value={columns}
-              aria-label={t.preview.fixedColumns}
-              onChange={(e) => {
-                const n = Number(e.target.value);
-                if (n >= 40) setColumnsMode(n);
-              }}
-            />
-          )}
+            {columnsMode === "auto" ? (
+              <span className="mono meta">{t.preview.columns(columns)}</span>
+            ) : (
+              <input
+                className="field mono !w-16 !py-0.5"
+                type="number"
+                min={40}
+                max={400}
+                value={columns}
+                aria-label={t.preview.fixedColumns}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  if (n >= 40) setColumnsMode(n);
+                }}
+              />
+            )}
+          </div>
+          <select className="field !w-auto !py-0.5" value={termBg} onChange={(e) => setTermBg(e.target.value as TermBg)} title={t.preview.terminal} aria-label={t.preview.terminal}>
+            <option value="auto">{t.preview.termAuto}</option>
+            <option value="dark">{t.preview.termDark}</option>
+            <option value="light">{t.preview.termLight}</option>
+          </select>
+          <select className="field sample-select !py-0.5" value={sampleId ?? ""} onChange={(e) => setSample(e.target.value || null)} title={t.preview.sample} aria-label={t.preview.sample}>
+            {samples.length === 0 && <option value="">{t.preview.noSamples}</option>}
+            {samples.map((sm) => (
+              <option key={sm.id} value={sm.id}>
+                {sm.source === "live" ? t.preview.liveSample(sm.label) : t.preview.fixtureSample(sm.label)}
+              </option>
+            ))}
+          </select>
         </div>
-        <select className="field !w-auto !py-0.5" value={termBg} onChange={(e) => setTermBg(e.target.value as TermBg)} title={t.preview.terminal} aria-label={t.preview.terminal}>
-          <option value="auto">{t.preview.termAuto}</option>
-          <option value="dark">{t.preview.termDark}</option>
-          <option value="light">{t.preview.termLight}</option>
-        </select>
-        <select className="field !w-auto !py-0.5" value={sampleId ?? ""} onChange={(e) => setSample(e.target.value || null)} title={t.preview.sample} aria-label={t.preview.sample}>
-          {samples.length === 0 && <option value="">{t.preview.noSamples}</option>}
-          {samples.map((sm) => (
-            <option key={sm.id} value={sm.id}>
-              {sm.source === "live" ? t.preview.liveSample(sm.label) : t.preview.fixtureSample(sm.label)}
-            </option>
-          ))}
-        </select>
       </div>
+      {/* The note gets its own row: squeezed into the toolbar it wrapped one word per line. */}
+      {note && <p className="term-note">{note}</p>}
       <div className="term" data-fixed={columnsMode !== "auto"} data-scheme={scheme}>
         <div ref={host} className="w-full" />
       </div>
