@@ -20,6 +20,32 @@ describe("render budget", () => {
     expect(ms).toBeLessThan(20);
   });
 
+  /*
+    The number that matters is the whole `render` command as Claude Code runs it: process start,
+    imports, config load, context collection, layout and exit. Timing only render() (above) missed
+    exactly the regressions that hurt, such as an accidental server/UI import on the hot path.
+    Measured on an M-series Mac this is ~22 ms warm. The 60 ms bound leaves ~2.5× headroom for
+    slower CI machines while still failing on a real regression; the median of several warm runs
+    keeps a single scheduler hiccup from flaking the test.
+  */
+  test("the real CLI renders the fixture end to end within budget (median of warm runs)", () => {
+    const root = new URL("..", import.meta.url).pathname;
+    const run = () => {
+      const t0 = performance.now();
+      const r = Bun.spawnSync({ cmd: ["bun", "src/cli/main.ts", "render", "--fixture", "src/fixtures/basic.json"], cwd: root, env: { ...process.env, COLUMNS: "120" }, stdout: "pipe", stderr: "pipe" });
+      return { ms: performance.now() - t0, code: r.exitCode, out: r.stdout.toString() };
+    };
+    run(); // warm the filesystem cache and Bun's transpile cache
+    const runs = Array.from({ length: 7 }, run);
+    for (const r of runs) {
+      expect(r.code).toBe(0);
+      expect(r.out).not.toContain("[claude-code-ssp] error");
+      expect(r.out.trim().split("\n").length).toBeGreaterThanOrEqual(2);
+    }
+    const median = runs.map((r) => r.ms).sort((a, b) => a - b)[Math.floor(runs.length / 2)]!;
+    expect(median).toBeLessThan(60);
+  });
+
   test("every builtin widget renders without throwing on the fixture and on an empty payload", async () => {
     registerBuiltinWidgets();
     const { listWidgets } = await import("../src/core/registry.ts");
