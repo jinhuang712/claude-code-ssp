@@ -15,6 +15,15 @@ describe("visualWidth", () => {
     expect(visualWidth("\x1b]8;;http://x\x07link\x1b]8;;\x07")).toBe(4);
     expect(stripAnsi("\x1b[1;31mX\x1b[0m")).toBe("X");
   });
+  test("emoji follow Ink/string-width widths (what Claude Code lays the row out with)", () => {
+    expect(visualWidth("⚡")).toBe(2); // fast-mode marker in model.badge
+    expect(visualWidth("⚠️")).toBe(2); // VS16 emoji presentation
+    expect(visualWidth("⚠")).toBe(1); // text presentation stays narrow
+    expect(visualWidth("🟢")).toBe(2);
+    expect(visualWidth("👨‍👩‍👧")).toBe(2); // one ZWJ grapheme, not 6
+    expect(visualWidth("é")).toBe(1); // combining acute
+    expect(visualWidth("\x1b]8;;http://x\x1b\\link\x1b]8;;\x1b\\")).toBe(4); // OSC 8 with ST terminator
+  });
   test("truncate keeps cells within budget", () => {
     expect(truncateVisual("abcdefgh", 5)).toBe("abcd…");
     expect(visualWidth(truncateVisual("中文字符串", 5))).toBeLessThanOrEqual(5);
