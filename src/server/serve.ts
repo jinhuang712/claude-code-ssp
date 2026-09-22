@@ -16,7 +16,7 @@ import type { FooterConfig } from "../core/types.js";
 import type { StdinData } from "../data/types.js";
 import { registerBuiltinWidgets } from "../widgets/index.js";
 import { guardRequest, HttpError, MAX_BODY_BYTES, readJson } from "./guard.js";
-import { install, planInstall, settingsPath } from "./install.js";
+import { install, NeedsConfirmError, planInstall, settingsPath, uninstall } from "./install.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = fs.realpathSync(path.resolve(here, "..", ".."));
@@ -209,8 +209,20 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
     case "GET /api/install":
       return json(planInstall());
     case "POST /api/install": {
-      const r = install();
-      return json(r);
+      // The panel auto-applies on the first save; that must never silently replace someone's
+      // claude-hud or custom script. 409 tells the UI to show what would be replaced and ask.
+      const body = await readJson<{ confirmReplace?: boolean }>(req);
+      try {
+        const r = install({ confirmReplace: body.confirmReplace === true });
+        return json(r);
+      } catch (err) {
+        if (err instanceof NeedsConfirmError) return json({ error: "needs-confirm", current: err.current }, 409);
+        throw err;
+      }
+    }
+    case "POST /api/uninstall": {
+      await readJson(req); // enforce the JSON body contract even though there are no parameters
+      return json(uninstall());
     }
     default:
       return json({ error: "not found" }, 404);
