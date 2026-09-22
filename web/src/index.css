@@ -599,11 +599,25 @@ input[type="checkbox"] {
   color: var(--warn);
 }
 
+/* A raised surface that groups one editor (the layout, the style choices). */
+.card {
+  padding: var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  background: var(--panel);
+}
+
 /* ---- layout editor: each row is a statusline line; zones size to their content ----
    Zones used to split 50/50, which wrapped a busy right side while the left sat half empty.
    Now the left zone takes the slack (never below 30%), center and right take what their chips
    need (right up to 60%) and only then wrap. Dividers no longer line up down the page — each
    row reads on its own, like the terminal line it stands for. */
+.layout-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--sp-2) var(--sp-3) var(--sp-3) var(--sp-2);
+}
 .linelist {
   display: flex;
   flex-direction: column;
@@ -613,13 +627,13 @@ input[type="checkbox"] {
   display: grid;
   grid-template-columns: 28px 1fr;
   column-gap: 8px;
-  margin-bottom: 4px;
 }
 .linehead-zones {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-height: 28px;
   padding: 0 10px;
   font-size: var(--fs-xs);
   color: var(--muted);
@@ -648,8 +662,8 @@ input[type="checkbox"] {
 }
 /* The line number doubles as the line's menu button. */
 .linerow-num {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--r-1);
   border: 1px solid transparent;
   font-size: var(--fs-xs);
@@ -663,12 +677,13 @@ input[type="checkbox"] {
   color: var(--fg);
 }
 
+/* A line: a recessed well in the card, chips raised on it. */
 .linerow-body {
   display: flex;
-  border: 1px solid var(--line-strong);
-  background: var(--panel);
+  border: 1px solid var(--line);
+  background: var(--sunken);
   border-radius: var(--r-1);
-  min-height: 42px;
+  min-height: 46px;
   min-width: 0;
 }
 
@@ -676,9 +691,10 @@ input[type="checkbox"] {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
-  padding: 7px 10px;
+  gap: 6px;
+  padding: 8px 10px;
   min-width: 0;
+  border-radius: var(--r-1);
 }
 .zone[data-zone="left"] {
   flex: 1 1 30%;
@@ -751,24 +767,24 @@ input[type="checkbox"] {
   color: var(--fg-2);
 }
 
-/* a chip is one widget; the coloured left edge is its category */
+/* A chip is one widget; the dot before its name is its category colour. */
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  height: 26px;
-  padding: 0 2px 0 8px;
+  height: 28px;
+  padding: 0 3px 0 9px;
   border-radius: var(--r-1);
   border: 1px solid var(--line-strong);
-  border-left: 3px solid var(--cat, var(--muted));
-  background: var(--bg-deep);
+  background: var(--panel);
+  box-shadow: 0 1px 1px var(--shadow);
   font-size: var(--fs-sm);
   cursor: grab;
   user-select: none;
   transition: border-color 0.12s, background 0.12s;
 }
 .chip:hover {
-  background: var(--panel-2);
+  border-color: var(--field-line);
 }
 .chip[data-ghost="true"] {
   cursor: grabbing;
@@ -780,15 +796,24 @@ input[type="checkbox"] {
 }
 .chip[data-selected="true"] {
   border-color: var(--clay);
-  border-left-color: var(--cat, var(--clay));
+  box-shadow: 0 0 0 1px var(--clay);
 }
 .chip-name {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0 4px;
+  height: 100%;
+  padding: 0 4px 0 0;
   line-height: 1;
   color: var(--fg);
+}
+.chip-name::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cat, var(--muted));
 }
 .chip-label {
   color: var(--muted);
@@ -805,6 +830,7 @@ input[type="checkbox"] {
 .chip[data-empty="true"] {
   border-style: dashed;
   background: transparent;
+  box-shadow: none;
 }
 .chip[data-empty="true"] .chip-name {
   color: var(--fg-2);
@@ -817,40 +843,45 @@ input[type="checkbox"] {
   background: var(--panel-2);
   color: var(--muted);
 }
+/* Always visible (a hover-only × can't be found by touch or by someone scanning the row). */
 .chip-x {
-  width: 18px;
-  height: 18px;
-  border-radius: var(--r-1);
-  font-size: var(--fs-sm);
-  line-height: 1;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
   color: var(--muted);
-  opacity: 0.55;
-  transition: opacity 0.1s, background 0.1s;
-}
-.chip:hover .chip-x,
-.chip-x:focus-visible {
-  opacity: 1;
+  transition: color 0.1s, background 0.1s;
 }
 .chip-x:hover {
-  background: var(--line-strong);
+  background: var(--panel-2);
   color: var(--fg);
 }
 
-.addchip {
+/* The "+" at the end of a zone, and the "Add line" row under the last line: dashed = a slot. */
+.addchip,
+.addline {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 26px;
+  gap: 6px;
+  height: 28px;
   padding: 0 8px;
   border-radius: var(--r-1);
-  border: 1px dashed var(--line-strong);
+  border: 1px dashed var(--field-line);
   font-size: var(--fs-xs);
   color: var(--muted);
-  transition: color 0.1s, border-color 0.1s;
+  transition: color 0.1s, border-color 0.1s, background 0.1s;
 }
-.addchip:hover {
+.addchip:hover,
+.addline:hover {
   color: var(--fg);
-  border-color: var(--fg-2);
+  border-color: var(--clay);
+  background: color-mix(in srgb, var(--clay) 7%, transparent);
+}
+.addline {
+  justify-content: center;
+  height: 36px;
+  font-size: var(--fs-sm);
 }
 
 /* enum options: every value shows what it renders to */

@@ -19,6 +19,7 @@ import type { LineConfig, WidgetInstance, Zone } from "../api";
 import { CAT_COLOR } from "../colors";
 import { useT, widgetName } from "../i18n";
 import { effectiveLabel, emptyStateAt, hasCenter, useStore } from "../store";
+import { Icon } from "./Icon";
 import { Popover } from "./Popover";
 
 /*
@@ -138,7 +139,7 @@ function Chip({ id, line, zone, index, item }: { id: string; line: number; zone:
         aria-label={`${t.layout.remove}: ${name}`}
         title={t.layout.remove}
       >
-        ×
+        <Icon name="x" size={12} />
       </button>
     </span>
   );
@@ -165,7 +166,8 @@ function ZoneBox({ line, zone, items, at, caret }: { line: number; zone: Zone; i
         ))}
         {caret !== null && caret >= items.length && <Caret />}
         <button className="addchip" onClick={() => openPicker(line, zone)} aria-label={t.layout.addTo(line + 1, t.layout.zones[zone])} title={t.layout.addTo(line + 1, t.layout.zones[zone])}>
-          ＋{empty && zone !== "center" && <span>{t.layout.emptyZone[zone]}</span>}
+          <Icon name="plus" size={14} />
+          {empty && zone !== "center" && <span>{t.layout.emptyZone[zone]}</span>}
         </button>
       </div>
     </SortableContext>
@@ -318,10 +320,12 @@ export function Layout() {
   }
 
   return (
-    <section className="section">
+    <section className="section" aria-labelledby="layout-title">
       <div className="section-head">
-        <h2 className="h2">{t.layout.title}</h2>
-        <span className="hint">{t.layout.hint}</span>
+        <h2 id="layout-title" className="h2">
+          {t.layout.title}
+        </h2>
+        <p className="hint">{t.layout.hint}</p>
       </div>
       <p id={CHIP_HELP_ID} className="sr-only">
         {t.layout.chipHelp}
@@ -329,6 +333,7 @@ export function Layout() {
       <p className="sr-only" aria-live="polite">
         {live}
       </p>
+      <div className="card layout-card">
       <div className="linehead">
         <span />
         <div className="linehead-zones">
@@ -358,9 +363,15 @@ export function Layout() {
         </div>
         <DragOverlay dropAnimation={null}>{dragging ? <ChipFace widget={dragging.split("#")[0]!} ghost /> : null}</DragOverlay>
       </DndContext>
-      <button className="btn mt-3" onClick={addLine}>
-        ＋ {t.layout.addLine}
-      </button>
+      {/* Sits in the rows' column, as the next row would: adding a line reads as extending the list. */}
+      <div className="linerow">
+        <span />
+        <button className="addline" onClick={addLine}>
+          <Icon name="plus" size={14} />
+          {t.layout.addLine}
+        </button>
+      </div>
+      </div>
     </section>
   );
 }
