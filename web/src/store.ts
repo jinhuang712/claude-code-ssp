@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { tr } from "./i18n";
+import { tr, widgetName } from "./i18n";
 import { api, type ConfigLayer, type FooterConfig, type LineConfig, type RenderResult, type SampleMeta, type ThemeDef, type WidgetInstance, type WidgetManifest, type Zone } from "./api";
 
 export interface Selection {
@@ -57,6 +57,12 @@ interface State {
   advanced: boolean;
   /** Undo stack of pre-edit snapshots (cap 30); typing bursts coalesce into one step. */
   past: FooterConfig[];
+  /** Show the center zone even while no line uses it (a viewer preference, remembered per browser). */
+  showCenter: boolean;
+  /** Where keyboard focus should land after a keyboard move; the chip rendered there claims it. */
+  focusPos: Selection | null;
+  /** Latest screen-reader announcement (rendered into an aria-live region). */
+  live: string;
 
   init(): Promise<void>;
   setConfig(mutate: (c: FooterConfig) => void): void;
@@ -81,6 +87,10 @@ interface State {
   resetCounters(): Promise<void>;
   refreshPreview(): Promise<void>;
   setAdvanced(v: boolean): void;
+  setShowCenter(v: boolean): void;
+  /** Keyboard move: one step within the zone, across to the neighbouring zone at an edge, or to the line above/below. */
+  nudge(sel: Selection, dir: "left" | "right" | "up" | "down"): void;
+  claimFocus(): void;
   notify(msg: string | null): void;
 }
 
@@ -114,6 +124,9 @@ export const useStore = create<State>((set, get) => ({
   installed: null,
   advanced: localStorage.getItem("ssp.advanced") === "1",
   past: [],
+  showCenter: localStorage.getItem("ssp.center") === "1",
+  focusPos: null,
+  live: "",
 
   async init() {
     try {
@@ -334,8 +347,52 @@ export const useStore = create<State>((set, get) => ({
     set({ advanced: v });
   },
 
+  setShowCenter(v) {
+    localStorage.setItem("ssp.center", v ? "1" : "0");
+    set({ showCenter: v });
+  },
+
+  nudge(sel, dir) {
+    const c = get().config!;
+    const line = c.lines[sel.line];
+    if (!line) return;
+    const zones: Zone[] = hasCenter(get()) ? ["left", "center", "right"] : ["left", "right"];
+    const len = (l: LineConfig | undefined, z: Zone) => l?.[z]?.length ?? 0;
+    let to: Selection | null = null;
+    if (dir === "left" || dir === "right") {
+      const d = dir === "left" ? -1 : 1;
+      const i = sel.index + d;
+      if (i >= 0 && i < len(line, sel.zone)) to = { ...sel, index: i };
+      else {
+        // At the edge of a zone: hop into the neighbouring zone, entering from the near side.
+        const z = zones[zones.indexOf(sel.zone) + d];
+        if (z) to = { line: sel.line, zone: z, index: d < 0 ? len(line, z) : 0 };
+      }
+    } else {
+      const l = sel.line + (dir === "up" ? -1 : 1);
+      if (l >= 0 && l < c.lines.length) to = { line: l, zone: sel.zone, index: Math.min(sel.index, len(c.lines[l], sel.zone)) };
+    }
+    if (!to) return;
+    const target = to;
+    const id = line[sel.zone]?.[sel.index]?.widget ?? "";
+    get().setConfig((cc) => {
+      const [item] = zoneOf(cc.lines[sel.line]!, sel.zone).splice(sel.index, 1);
+      if (item) zoneOf(cc.lines[target.line]!, target.zone).splice(target.index, 0, item);
+    });
+    const t = tr();
+    const name = widgetName(t, get().widgets.find((w) => w.id === id), id);
+    set({ selection: null, focusPos: target, live: t.layout.moved(name, target.line + 1, t.layout.zones[target.zone], target.index + 1) });
+  },
+
+  claimFocus: () => set({ focusPos: null }),
+
   notify: (toast) => set({ toast }),
 }));
+
+/** The center zone is shown when the viewer asked for it or any line already uses it. */
+export function hasCenter(state: Pick<State, "showCenter" | "config">): boolean {
+  return state.showCenter || (state.config?.lines.some((l) => (l.center?.length ?? 0) > 0) ?? false);
+}
 
 export function widgetAt(state: State, sel: Selection | null): WidgetInstance | null {
   if (!sel || !state.config) return null;
