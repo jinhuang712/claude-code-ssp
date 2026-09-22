@@ -340,12 +340,26 @@ export function isEnterpriseModelId(modelId?: string): boolean {
   return ENTERPRISE_MODEL_IDS.has(modelId.toLowerCase());
 }
 
-export function getProviderLabel(stdin: StdinData): string | null {
-  if (process.env.CLAUDE_CODE_USE_BEDROCK === '1') {
+/**
+ * claude-code-ssp: which cloud a session is routed through, from either signal Claude Code gives —
+ * the CLAUDE_CODE_USE_* switch or the model id format. The provider label and the cost widget used
+ * to check different signals, so with a Bedrock alias id the badge said "Bedrock" while the cost
+ * (which reads $0 / is unreliable on routed billing) still showed.
+ */
+export function routedProvider(stdin: StdinData, env: NodeJS.ProcessEnv = process.env): 'Bedrock' | 'Vertex' | null {
+  if (env.CLAUDE_CODE_USE_BEDROCK === '1' || isBedrockModelId(stdin.model?.id)) {
     return 'Bedrock';
   }
-  if (process.env.CLAUDE_CODE_USE_VERTEX === '1') {
+  if (env.CLAUDE_CODE_USE_VERTEX === '1' || isVertexModelId(stdin.model?.id)) {
     return 'Vertex';
+  }
+  return null;
+}
+
+export function getProviderLabel(stdin: StdinData): string | null {
+  const routed = routedProvider(stdin);
+  if (routed) {
+    return routed;
   }
   if (isMiniMaxAnthropicEndpoint()) {
     return 'MiniMax';

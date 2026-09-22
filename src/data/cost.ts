@@ -1,5 +1,5 @@
 import type { SessionTokenUsage, StdinData } from './types.js';
-import { isBedrockModelId, isVertexModelId } from './stdin.js';
+import { routedProvider } from './stdin.js';
 
 type ModelPricing = {
   inputUsdPerMillion: number;
@@ -107,7 +107,8 @@ export function estimateSessionCost(
     return null;
   }
 
-  if (!options?.allowRoutedCost && (isBedrockModelId(stdin.model?.id) || isVertexModelId(stdin.model?.id))) {
+  // claude-code-ssp: same routed check as the provider label (env switch or model id).
+  if (!options?.allowRoutedCost && routedProvider(stdin)) {
     return null;
   }
 
@@ -148,7 +149,7 @@ export function getNativeCostUsd(stdin: StdinData, options?: { allowRoutedCost?:
     return null;
   }
 
-  if (isBedrockModelId(stdin.model?.id) || isVertexModelId(stdin.model?.id)) {
+  if (routedProvider(stdin)) {
     // Routed native billing reads $0.00 until the first response; use it only when opted in and positive.
     if (!options?.allowRoutedCost || nativeCost <= 0) {
       return null;
