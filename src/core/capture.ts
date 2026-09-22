@@ -21,7 +21,10 @@ function safeName(sessionId: string): string {
 
 export function captureSample(raw: unknown, now = Date.now()): void {
   try {
-    const sid = typeof (raw as { session_id?: unknown })?.session_id === "string" ? (raw as { session_id: string }).session_id : "unknown";
+    // Claude Code always sends session_id. Input without one is a hand-run render or a malformed
+    // payload; saving it produced an "unknown" session in the panel's picker, so skip it.
+    const sid = (raw as { session_id?: unknown })?.session_id;
+    if (typeof sid !== "string" || sid.trim() === "") return;
     const dir = samplesDir();
     const file = path.join(dir, `${safeName(sid)}.json`);
     try {
