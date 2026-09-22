@@ -19,10 +19,10 @@ open_url() {
 nap() { perl -e 'select(undef,undef,undef,0.1)'; }
 json_field() { sed -n "s/.*\"$1\":\"\{0,1\}\([^\",}]*\).*/\1/p"; }
 
-# web/dist is gitignored, so a pull leaves it missing or older than web/src.
+# web/dist is committed, stamped with a hash of the sources it was built from. It only needs a
+# rebuild in a dev checkout whose web/src changed since (mtimes are useless after a git pull).
 web_stale() {
-  [ -f "$ROOT/web/dist/index.html" ] || return 0
-  [ -n "$(find "$ROOT/web/src" "$ROOT/web/index.html" -newer "$ROOT/web/dist/index.html" -print 2>/dev/null | head -1)" ]
+  ! "$BUN" "$ROOT/scripts/web-hash.ts" --check
 }
 
 # Sets REASON to why the server on $PORT can't be reused (empty = reuse it) and STALE_PID to its pid.
@@ -38,6 +38,7 @@ check_running() {
   STALE_PID="$(printf '%s' "$h" | json_field pid)"
   root="$(printf '%s' "$h" | json_field root)"
   if [ "$root" != "$ROOT_REAL" ]; then REASON="was serving $root"
+  elif [ "$(printf '%s' "$h" | json_field sandbox)" = "true" ]; then REASON="it was a sandbox with throwaway copies"
   elif [ "$(printf '%s' "$h" | json_field codeChanged)" = "true" ]; then REASON="source changed since it started"
   fi
 }
@@ -73,7 +74,7 @@ case "${1:-config}" in
     built=""
     if web_stale; then
       if { [ -d "$ROOT/web/node_modules" ] || "$BUN" install --cwd "$ROOT/web"; } >"$BUILD_LOG" 2>&1 \
-        && "$BUN" run --cwd "$ROOT/web" build >>"$BUILD_LOG" 2>&1; then
+        && "$BUN" run --cwd "$ROOT" build:web >>"$BUILD_LOG" 2>&1; then
         built="rebuilt web UI · "
       else
         echo "web UI build failed; log:"; tail -20 "$BUILD_LOG"; exit 1
