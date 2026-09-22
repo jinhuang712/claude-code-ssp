@@ -350,6 +350,23 @@ export async function handleRequest(req: Request, port: number): Promise<Respons
   return serveStatic(url.pathname);
 }
 
+/**
+ * Open `url` in the default browser. Never throws: a missing opener (no xdg-open on a headless box)
+ * used to escape as an exception and take the freshly started server down with it.
+ * Windows has no `start` executable — it's a cmd builtin, and its first quoted argument is the
+ * window title, hence the empty "".
+ */
+function openBrowser(url: string): void {
+  const cmd = process.platform === "darwin" ? ["open", url] : process.platform === "win32" ? ["cmd", "/c", "start", "", url] : ["xdg-open", url];
+  const fallback = () => console.log(`open ${url} in your browser`);
+  try {
+    const child = Bun.spawn(cmd, { stdout: "ignore", stderr: "ignore" });
+    void child.exited.then((code) => code !== 0 && fallback());
+  } catch {
+    fallback();
+  }
+}
+
 export async function serve(opts: { port: number; open?: boolean }): Promise<void> {
   registerBuiltinWidgets();
   const { config } = loadEffectiveConfig(process.cwd());
@@ -364,8 +381,6 @@ export async function serve(opts: { port: number; open?: boolean }): Promise<voi
   const address = `http://127.0.0.1:${server.port}`;
   console.log(`claude-code-ssp configurator → ${address}`);
   if (plugins.errors.length) for (const e of plugins.errors) console.error(`plugin error ${e.file}: ${e.message}`);
-  if (opts.open) {
-    const opener = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
-    Bun.spawn([opener, address], { stdout: "ignore", stderr: "ignore" });
-  }
+  for (const s of plugins.skipped) console.error(`plugin dir skipped ${s.dir}: ${s.reason}`);
+  if (opts.open) openBrowser(address);
 }
