@@ -4,6 +4,7 @@
  */
 import type { RenderContext as DataContext } from "../data/types.js";
 import type { ResponseSpeed } from "./response-speed.js";
+import type { RepoRef } from "./git-remote.js";
 import type { ResetBaseline } from "./reset.js";
 
 /** Theme token or literal color ("#rrggbb", "208", "red", "brightBlue"). */
@@ -123,6 +124,8 @@ export interface Ctx extends DataContext {
   reset: ResetBaseline | null;
   /** Output speed of the latest long-enough response, from the transcript tail (see response-speed.ts). */
   responseSpeed?: ResponseSpeed | null;
+  /** `origin` from .git/config, filled only when Claude Code didn't send workspace.repo (git-remote.ts). */
+  originRepo?: RepoRef | null;
 }
 
 export interface WidgetApi {

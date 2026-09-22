@@ -53,13 +53,13 @@ export const gitBranch = defineWidget<{ showDirty: boolean; showAheadBehind: boo
 export const gitRepo = defineWidget<{ format: "owner/name" | "name" }>({
   id: "git.repo",
   name: "Repository",
-  description: "owner/name parsed by Claude Code from the origin remote.",
+  description: "owner/name of the origin remote (from Claude Code, or read from .git/config when it isn't sent).",
   category: "git",
   sample: "acme/webapp",
   schema: { type: "object", properties: { format: { type: "string", enum: ["owner/name", "name"], default: "owner/name" } } },
   defaults: { format: "owner/name" },
   render(ctx, o, api) {
-    const r = stdin(ctx).workspace?.repo;
+    const r = stdin(ctx).workspace?.repo ?? ctx.originRepo;
     if (!r?.name) return null;
     const text = o.format === "name" || !r.owner ? r.name : `${r.owner}/${r.name}`;
     const seg = api.seg(text, { fg: "git" });
