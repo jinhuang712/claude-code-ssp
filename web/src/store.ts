@@ -1,6 +1,21 @@
 import { create } from "zustand";
 import { tr, widgetName } from "./i18n";
-import { api, NeedsConfirm, type ConfigLayer, type InstallPlan, type FooterConfig, type LineConfig, type RenderResult, type SampleMeta, type ThemeDef, type WidgetInstance, type WidgetManifest, type Zone } from "./api";
+import { applyEdits } from "./layers";
+import {
+  api,
+  NeedsConfirm,
+  type ConfigLayer,
+  type EffectiveConfig,
+  type FooterConfig,
+  type InstallPlan,
+  type LineConfig,
+  type RenderResult,
+  type SampleMeta,
+  type ThemeDef,
+  type WidgetInstance,
+  type WidgetManifest,
+  type Zone,
+} from "./api";
 
 export interface Selection {
   line: number;
@@ -9,6 +24,8 @@ export interface Selection {
 }
 
 export type PresetId = "minimal" | "standard" | "full";
+/** Which config file edits are written to. */
+export type Scope = "user" | "project";
 
 /** Preset layouts. Names and blurbs are UI copy and live in the locale files (`presets.<id>`). */
 export const PRESETS: Record<PresetId, { lines: LineConfig[] }> = {
@@ -34,9 +51,20 @@ export const PRESETS: Record<PresetId, { lines: LineConfig[] }> = {
 interface State {
   loading: boolean;
   error: string | null;
+  /** The effective config being edited (defaults ← user ← project). */
   config: FooterConfig | null;
+  /** The effective config as of the last load/save; edits are the diff from here (see layers.ts). */
   saved: FooterConfig | null;
   layers: ConfigLayer[];
+  paths: EffectiveConfig["paths"] | null;
+  /** Where edits are saved. Defaults to the project file when the previewed project has one. */
+  scope: Scope;
+  /**
+   * The project the panel is looking at: the previewed live session's directory, or null for the
+   * directory the server was started in. Drives the project layer and project-scope saves.
+   */
+  projectCwd: string | null;
+  sandbox: boolean;
   widgets: WidgetManifest[];
   themes: ThemeDef[];
   samples: SampleMeta[];
@@ -75,7 +103,8 @@ interface State {
   init(): Promise<void>;
   setConfig(mutate: (c: FooterConfig) => void): void;
   undo(): void;
-  setSample(id: string | null): void;
+  setSample(id: string | null): Promise<void>;
+  setScope(scope: Scope): void;
   setColumns(n: number): void;
   setColumnsMode(m: "auto" | number): void;
   select(sel: Selection | null): void;
@@ -90,7 +119,12 @@ interface State {
   moveLine(i: number, dir: -1 | 1): void;
   updateAt(sel: Selection, mutate: (w: WidgetInstance) => void): void;
   applyPreset(id: PresetId): void;
-  saveNow(scope?: "user" | "project", opts?: { autoApply?: boolean }): Promise<void>;
+  /** Save pending edits to the current scope. `autoApply: false` skips the first-save install step. */
+  saveNow(opts?: { autoApply?: boolean }): Promise<void>;
+  /** Snapshot the current look into the previewed project's own config file and edit that from now on. */
+  saveAsProject(): Promise<void>;
+  /** Let a project's own widgets load (written to the *user* file; a project can't trust itself). */
+  trustProject(root: string): Promise<void>;
   /** Apply to Claude Code; `confirmReplace` is the user's explicit yes to replacing another statusLine. */
   install(confirmReplace?: boolean): Promise<void>;
   /** Stop using this statusline: restores the one it replaced, or removes ours. */
@@ -108,323 +142,418 @@ interface State {
 
 let previewTimer: ReturnType<typeof setTimeout> | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+/** When the last undo step was pushed; typing bursts within 1.5 s share one step. */
+let lastUndoPushAt = 0;
+
+/** localStorage can throw (blocked storage, private mode); per-viewer prefs just fall back. */
+function pref(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+function setPref(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* not remembered; still applies for this page view */
+  }
+}
 
 export function zoneOf(line: LineConfig, zone: Zone): WidgetInstance[] {
   if (!line[zone]) line[zone] = [];
   return line[zone]!;
 }
 
-export const useStore = create<State>((set, get) => ({
-  loading: true,
-  error: null,
-  config: null,
-  saved: null,
-  layers: [],
-  widgets: [],
-  themes: [],
-  samples: [],
-  sampleId: null,
-  columns: Number(localStorage.getItem("ssp.columns") ?? 120),
-  columnsMode: localStorage.getItem("ssp.columnsMode") === null || localStorage.getItem("ssp.columnsMode") === "auto" ? "auto" : Number(localStorage.getItem("ssp.columnsMode")),
-  preview: null,
-  previewColumns: 0,
-  selection: null,
-  picker: null,
-  toast: null,
-  saving: false,
-  saveError: null,
-  installed: null,
-  installPlan: null,
-  consent: null,
-  consentDismissed: false,
-  advanced: localStorage.getItem("ssp.advanced") === "1",
-  past: [],
-  showCenter: localStorage.getItem("ssp.center") === "1",
-  focusPos: null,
-  live: "",
+/** The directory a sample's session ran in, when it is a live one. */
+function cwdOf(samples: SampleMeta[], id: string | null): string | null {
+  const s = samples.find((x) => x.id === id);
+  return s?.source === "live" ? (s.cwd ?? null) : null;
+}
 
-  async init() {
-    try {
-      const [eff, widgets, themes, samples, plan] = await Promise.all([api.config(), api.widgets(), api.themes(), api.samples(), api.installPlan().catch(() => null)]);
-      const live = samples.find((s) => s.source === "live");
-      const sampleId = live?.id ?? samples[0]?.id ?? null;
-      set({
-        config: eff.config,
-        saved: structuredClone(eff.config),
-        layers: eff.layers,
-        widgets,
-        themes,
-        samples,
-        sampleId,
-        installed: plan ? plan.currentIsOurs : null,
-        installPlan: plan,
-        loading: false,
-      });
-      void get().refreshPreview();
-    } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : String(err) });
-    }
-  },
+/** Edit the project file when the project has one — its values override the user file's. */
+function defaultScope(layers: ConfigLayer[]): Scope {
+  return layers.some((l) => l.name === "project" && l.exists) ? "project" : "user";
+}
 
-  setConfig(mutate, undoable = true) {
-    const before = get().config!;
-    const c = structuredClone(before);
-    mutate(c);
-    if (JSON.stringify(c) === JSON.stringify(before)) return;
-    if (undoable) {
-      // Coalesce keystroke bursts: one undo step per 1.5s of continuous editing.
-      const past = get().past;
-      const lastPush = (get() as unknown as { _lastPushAt?: number })._lastPushAt ?? 0;
-      if (Date.now() - lastPush > 1500 || past.length === 0 || JSON.stringify(past[past.length - 1]) !== JSON.stringify(before)) {
-        (get() as unknown as { _lastPushAt?: number })._lastPushAt = Date.now();
-        set({ past: [...past.slice(-29), structuredClone(before)] });
-      }
-    }
-    set({ config: c });
+export const useStore = create<State>((set, get) => {
+  /** Adopt a freshly loaded effective config (after init, a save, or switching project). */
+  const adopt = (eff: EffectiveConfig, opts: { keepEdits?: boolean; resetScope?: boolean } = {}) =>
+    set({
+      saved: structuredClone(eff.config),
+      layers: eff.layers,
+      paths: eff.paths,
+      ...(opts.keepEdits ? {} : { config: eff.config }),
+      ...(opts.resetScope ? { scope: defaultScope(eff.layers) } : {}),
+    });
+
+  const schedulePreview = (ms: number) => {
     if (previewTimer) clearTimeout(previewTimer);
-    previewTimer = setTimeout(() => void get().refreshPreview(), 120);
+    previewTimer = setTimeout(() => void get().refreshPreview(), ms);
+  };
+  const scheduleSave = () => {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => void get().saveNow(), 800);
-  },
+  };
 
-  setSample(id) {
-    set({ sampleId: id });
-    void get().refreshPreview();
-  },
+  return {
+    loading: true,
+    error: null,
+    config: null,
+    saved: null,
+    layers: [],
+    paths: null,
+    scope: "user",
+    projectCwd: null,
+    sandbox: false,
+    widgets: [],
+    themes: [],
+    samples: [],
+    sampleId: null,
+    columns: Number(pref("ssp.columns") ?? 120),
+    columnsMode: pref("ssp.columnsMode") === null || pref("ssp.columnsMode") === "auto" ? "auto" : Number(pref("ssp.columnsMode")),
+    preview: null,
+    previewColumns: 0,
+    selection: null,
+    picker: null,
+    toast: null,
+    saving: false,
+    saveError: null,
+    installed: null,
+    installPlan: null,
+    consent: null,
+    consentDismissed: false,
+    advanced: pref("ssp.advanced") === "1",
+    past: [],
+    showCenter: pref("ssp.center") === "1",
+    focusPos: null,
+    live: "",
 
-  setColumns(n) {
-    if (n === get().columns) return;
-    localStorage.setItem("ssp.columns", String(n));
-    set({ columns: n });
-    if (previewTimer) clearTimeout(previewTimer);
-    previewTimer = setTimeout(() => void get().refreshPreview(), 80);
-  },
-
-  setColumnsMode(m) {
-    localStorage.setItem("ssp.columnsMode", String(m));
-    set({ columnsMode: m });
-    if (typeof m === "number") get().setColumns(m);
-  },
-
-  undo() {
-    const past = get().past;
-    const prev = past[past.length - 1];
-    if (!prev) return;
-    set({ past: past.slice(0, -1), config: structuredClone(prev), selection: null });
-    if (previewTimer) clearTimeout(previewTimer);
-    previewTimer = setTimeout(() => void get().refreshPreview(), 120);
-    if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => void get().saveNow(), 800);
-  },
-
-  select: (selection) => set({ selection, picker: null }),
-  openPicker: (line, zone) => set({ picker: { line, zone }, selection: null }),
-  closePicker: () => set({ picker: null }),
-
-  addWidget(line, zone, widget) {
-    get().setConfig((c) => {
-      zoneOf(c.lines[line]!, zone).push({ widget });
-    });
-    const idx = zoneOf(get().config!.lines[line]!, zone).length - 1;
-    set({ selection: { line, zone, index: idx }, picker: null });
-  },
-
-  removeAt(sel) {
-    get().setConfig((c) => {
-      zoneOf(c.lines[sel.line]!, sel.zone).splice(sel.index, 1);
-    });
-    set({ selection: null, toast: tr().toast.removed });
-  },
-
-  moveWidget(from, toLine, toZone, toIndex) {
-    get().setConfig((c) => {
-      const [item] = zoneOf(c.lines[from.line]!, from.zone).splice(from.index, 1);
-      if (!item) return;
-      const target = zoneOf(c.lines[toLine]!, toZone);
-      target.splice(toIndex ?? target.length, 0, item);
-    });
-    set({ selection: null });
-  },
-
-  reorder(line, zone, from, to) {
-    if (from === to) return;
-    get().setConfig((c) => {
-      const arr = zoneOf(c.lines[line]!, zone);
-      const [item] = arr.splice(from, 1);
-      if (item) arr.splice(to, 0, item);
-    });
-  },
-
-  addLine() {
-    get().setConfig((c) => {
-      c.lines.push({ left: [], right: [] });
-    });
-  },
-
-  removeLine(i) {
-    get().setConfig((c) => {
-      c.lines.splice(i, 1);
-    });
-    set({ selection: null, toast: tr().toast.lineRemoved });
-  },
-
-  moveLine(i, dir) {
-    const j = i + dir;
-    if (j < 0 || j >= get().config!.lines.length) return;
-    get().setConfig((c) => {
-      const [l] = c.lines.splice(i, 1);
-      if (l) c.lines.splice(j, 0, l);
-    });
-    set({ selection: null });
-  },
-
-  updateAt(sel, mutate) {
-    get().setConfig((c) => {
-      const w = zoneOf(c.lines[sel.line]!, sel.zone)[sel.index];
-      if (w) mutate(w);
-    });
-  },
-
-  applyPreset(id) {
-    get().setConfig((c) => {
-      c.lines = structuredClone(PRESETS[id].lines);
-    });
-    set({ selection: null, toast: tr().toast.presetApplied });
-  },
-
-  async saveNow(scope = "user", opts = {}) {
-    const c = get().config!;
-    const snapshot = JSON.stringify(c);
-    set({ saving: true });
-    try {
-      await api.saveConfig(c, scope);
-      const eff = await api.config();
-      // Adopt the server's normalized shape so "dirty" compares like with like — unless the user kept editing meanwhile.
-      const unchanged = JSON.stringify(get().config) === snapshot;
-      set({ saved: structuredClone(eff.config), layers: eff.layers, saving: false, saveError: null, ...(unchanged ? { config: eff.config } : {}) });
-      if (scope === "project") {
-        // Project `lines` replaces the user layer wholesale: later panel edits keep
-        // going to the user file and will NOT show in the row layout. Say so once.
-        set({ toast: tr().toast.savedProject });
+    async init() {
+      try {
+        const [widgets, themes, samples, plan, health] = await Promise.all([
+          api.widgets(),
+          api.themes(),
+          api.samples(),
+          api.installPlan().catch(() => null),
+          api.health().catch(() => null),
+        ]);
+        const live = samples.find((s) => s.source === "live");
+        const sampleId = live?.id ?? samples[0]?.id ?? null;
+        const projectCwd = cwdOf(samples, sampleId);
+        // The effective config depends on the project, so it loads after we know which one.
+        const eff = await api.config(projectCwd).catch(() => api.config());
+        set({ widgets, themes, samples, sampleId, projectCwd, sandbox: health?.sandbox === true, installed: plan ? plan.currentIsOurs : null, installPlan: plan, loading: false });
+        adopt(eff, { resetScope: true });
+        void get().refreshPreview();
+      } catch (err) {
+        set({ loading: false, error: err instanceof Error ? err.message : String(err) });
       }
-      // `render` re-reads the config file on every tick, but Claude Code only runs it when
-      // settings.json points at us — so the first successful save auto-applies, *unless* that
-      // would replace someone else's statusLine: then the header asks first (see `consent`).
-      if (opts.autoApply !== false && get().installed !== true) {
-        const plan = get().installPlan;
-        const foreign = plan !== null && plan.current !== null && plan.current !== undefined && !plan.currentIsOurs;
-        if (foreign) {
-          if (!get().consentDismissed) set({ consent: { current: plan.current } });
-        } else {
-          try {
-            await api.install(false);
-            set({ installed: true, installPlan: await api.installPlan().catch(() => plan) });
-          } catch (err) {
-            // The server is the final judge: it may see a foreign statusLine the stale plan missed.
-            if (err instanceof NeedsConfirm && !get().consentDismissed) set({ consent: { current: err.current } });
-            /* other failures: the manual button stays as a fallback and the next save retries */
-          }
+    },
+
+    setConfig(mutate, undoable = true) {
+      const before = get().config!;
+      const c = structuredClone(before);
+      mutate(c);
+      if (JSON.stringify(c) === JSON.stringify(before)) return;
+      if (undoable) {
+        // Coalesce keystroke bursts: one undo step per 1.5 s of continuous editing.
+        const past = get().past;
+        if (Date.now() - lastUndoPushAt > 1500 || past.length === 0 || JSON.stringify(past[past.length - 1]) !== JSON.stringify(before)) {
+          lastUndoPushAt = Date.now();
+          set({ past: [...past.slice(-29), structuredClone(before)] });
         }
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      set({ saving: false, saveError: msg, toast: tr().toast.saveFailed(msg) });
-    }
-  },
+      set({ config: c });
+      schedulePreview(120);
+      scheduleSave();
+    },
 
-  async install(confirmReplace = false) {
-    try {
-      await get().saveNow("user", { autoApply: false });
-      const r = await api.install(confirmReplace);
-      set({ installed: true, consent: null, installPlan: await api.installPlan().catch(() => get().installPlan), toast: tr().toast.installed(r.settingsFile) });
-    } catch (err) {
-      if (err instanceof NeedsConfirm) set({ consent: { current: err.current }, consentDismissed: false });
-      else set({ toast: tr().toast.installFailed(err instanceof Error ? err.message : String(err)) });
-    }
-  },
-
-  async uninstall() {
-    try {
-      const r = await api.uninstall();
-      set({ installed: false, installPlan: await api.installPlan().catch(() => null), toast: r.restored ? tr().toast.restored : tr().toast.uninstalled });
-    } catch (err) {
-      set({ toast: tr().toast.uninstallFailed(err instanceof Error ? err.message : String(err)) });
-    }
-  },
-
-  dismissConsent: () => set({ consent: null, consentDismissed: true }),
-
-  async resetCounters() {
-    // Reset the session being previewed when it is a live one; otherwise the most recent live one.
-    const { samples, sampleId } = get();
-    const live = samples.find((x) => x.id === sampleId && x.source === "live") ?? samples.find((x) => x.source === "live");
-    try {
-      const r = await api.reset(live?.id);
-      set({ toast: tr().toast.reset(r.sessionId.slice(0, 8)) });
-      void get().refreshPreview();
-    } catch (err) {
-      set({ toast: tr().toast.resetFailed(err instanceof Error ? err.message : String(err)) });
-    }
-  },
-
-  async refreshPreview() {
-    const { config, sampleId, columns } = get();
-    if (!config) return;
-    try {
-      const preview = await api.render(config, sampleId, columns);
-      if (get().columns !== columns) return; // a newer request is on its way
-      set({ preview, previewColumns: columns });
-    } catch (err) {
-      set({ toast: tr().toast.previewFailed(err instanceof Error ? err.message : String(err)) });
-    }
-  },
-
-  setAdvanced(v) {
-    localStorage.setItem("ssp.advanced", v ? "1" : "0");
-    set({ advanced: v });
-  },
-
-  setShowCenter(v) {
-    localStorage.setItem("ssp.center", v ? "1" : "0");
-    set({ showCenter: v });
-  },
-
-  nudge(sel, dir) {
-    const c = get().config!;
-    const line = c.lines[sel.line];
-    if (!line) return;
-    const zones: Zone[] = hasCenter(get()) ? ["left", "center", "right"] : ["left", "right"];
-    const len = (l: LineConfig | undefined, z: Zone) => l?.[z]?.length ?? 0;
-    let to: Selection | null = null;
-    if (dir === "left" || dir === "right") {
-      const d = dir === "left" ? -1 : 1;
-      const i = sel.index + d;
-      if (i >= 0 && i < len(line, sel.zone)) to = { ...sel, index: i };
-      else {
-        // At the edge of a zone: hop into the neighbouring zone, entering from the near side.
-        const z = zones[zones.indexOf(sel.zone) + d];
-        if (z) to = { line: sel.line, zone: z, index: d < 0 ? len(line, z) : 0 };
+    async setSample(id) {
+      const { samples, projectCwd } = get();
+      set({ sampleId: id });
+      const cwd = cwdOf(samples, id);
+      if (cwd !== projectCwd) {
+        // A different project means a different project layer. Flush pending edits to where they
+        // were meant to go first, then load the new project's view; undo can't cross projects.
+        if (saveTimer) {
+          clearTimeout(saveTimer);
+          saveTimer = null;
+          await get().saveNow();
+        }
+        try {
+          const eff = await api.config(cwd);
+          set({ projectCwd: cwd, past: [], selection: null });
+          adopt(eff, { resetScope: true });
+        } catch {
+          /* unknown to the server (e.g. an old sample): keep the current project */
+        }
       }
-    } else {
-      const l = sel.line + (dir === "up" ? -1 : 1);
-      if (l >= 0 && l < c.lines.length) to = { line: l, zone: sel.zone, index: Math.min(sel.index, len(c.lines[l], sel.zone)) };
-    }
-    if (!to) return;
-    const target = to;
-    const id = line[sel.zone]?.[sel.index]?.widget ?? "";
-    get().setConfig((cc) => {
-      const [item] = zoneOf(cc.lines[sel.line]!, sel.zone).splice(sel.index, 1);
-      if (item) zoneOf(cc.lines[target.line]!, target.zone).splice(target.index, 0, item);
-    });
-    const t = tr();
-    const name = widgetName(t, get().widgets.find((w) => w.id === id), id);
-    set({ selection: null, focusPos: target, live: t.layout.moved(name, target.line + 1, t.layout.zones[target.zone], target.index + 1) });
-  },
+      void get().refreshPreview();
+    },
 
-  claimFocus: () => set({ focusPos: null }),
+    setScope(scope) {
+      set({ scope });
+    },
 
-  notify: (toast) => set({ toast }),
-}));
+    setColumns(n) {
+      if (n === get().columns) return;
+      setPref("ssp.columns", String(n));
+      set({ columns: n });
+      schedulePreview(80);
+    },
+
+    setColumnsMode(m) {
+      setPref("ssp.columnsMode", String(m));
+      set({ columnsMode: m });
+      if (typeof m === "number") get().setColumns(m);
+    },
+
+    undo() {
+      const past = get().past;
+      const prev = past[past.length - 1];
+      if (!prev) return;
+      set({ past: past.slice(0, -1), config: structuredClone(prev), selection: null });
+      schedulePreview(120);
+      scheduleSave();
+    },
+
+    select: (selection) => set({ selection, picker: null }),
+    openPicker: (line, zone) => set({ picker: { line, zone }, selection: null }),
+    closePicker: () => set({ picker: null }),
+
+    addWidget(line, zone, widget) {
+      get().setConfig((c) => {
+        zoneOf(c.lines[line]!, zone).push({ widget });
+      });
+      const idx = zoneOf(get().config!.lines[line]!, zone).length - 1;
+      set({ selection: { line, zone, index: idx }, picker: null });
+    },
+
+    removeAt(sel) {
+      get().setConfig((c) => {
+        zoneOf(c.lines[sel.line]!, sel.zone).splice(sel.index, 1);
+      });
+      set({ selection: null, toast: tr().toast.removed });
+    },
+
+    moveWidget(from, toLine, toZone, toIndex) {
+      get().setConfig((c) => {
+        const [item] = zoneOf(c.lines[from.line]!, from.zone).splice(from.index, 1);
+        if (!item) return;
+        const target = zoneOf(c.lines[toLine]!, toZone);
+        target.splice(toIndex ?? target.length, 0, item);
+      });
+      set({ selection: null });
+    },
+
+    reorder(line, zone, from, to) {
+      if (from === to) return;
+      get().setConfig((c) => {
+        const arr = zoneOf(c.lines[line]!, zone);
+        const [item] = arr.splice(from, 1);
+        if (item) arr.splice(to, 0, item);
+      });
+    },
+
+    addLine() {
+      get().setConfig((c) => {
+        c.lines.push({ left: [], right: [] });
+      });
+    },
+
+    removeLine(i) {
+      get().setConfig((c) => {
+        c.lines.splice(i, 1);
+      });
+      set({ selection: null, toast: tr().toast.lineRemoved });
+    },
+
+    moveLine(i, dir) {
+      const j = i + dir;
+      if (j < 0 || j >= get().config!.lines.length) return;
+      get().setConfig((c) => {
+        const [l] = c.lines.splice(i, 1);
+        if (l) c.lines.splice(j, 0, l);
+      });
+      set({ selection: null });
+    },
+
+    updateAt(sel, mutate) {
+      get().setConfig((c) => {
+        const w = zoneOf(c.lines[sel.line]!, sel.zone)[sel.index];
+        if (w) mutate(w);
+      });
+    },
+
+    applyPreset(id) {
+      get().setConfig((c) => {
+        c.lines = structuredClone(PRESETS[id].lines);
+      });
+      set({ selection: null, toast: tr().toast.presetApplied });
+    },
+
+    async saveNow(opts = {}) {
+      const { config: c, saved, scope, layers, projectCwd } = get();
+      if (!c) return;
+      const snapshot = JSON.stringify(c);
+      const layer = layers.find((l) => l.name === scope)?.value ?? {};
+      set({ saving: true });
+      try {
+        await api.saveConfig(applyEdits(layer, saved, c) as Partial<FooterConfig>, scope, projectCwd);
+        const eff = await api.config(projectCwd);
+        // Adopt the server's normalized shape so "dirty" compares like with like — unless the user kept editing meanwhile.
+        adopt(eff, { keepEdits: JSON.stringify(get().config) !== snapshot });
+        set({ saving: false, saveError: null });
+        // `render` re-reads the config file on every tick, but Claude Code only runs it when
+        // settings.json points at us — so the first successful save auto-applies, *unless* that
+        // would replace someone else's statusLine: then the header asks first (see `consent`).
+        if (opts.autoApply !== false && get().installed !== true) {
+          const plan = get().installPlan;
+          const foreign = plan !== null && plan.current !== null && plan.current !== undefined && !plan.currentIsOurs;
+          if (foreign) {
+            if (!get().consentDismissed) set({ consent: { current: plan.current } });
+          } else {
+            try {
+              await api.install(false);
+              set({ installed: true, installPlan: await api.installPlan().catch(() => plan) });
+            } catch (err) {
+              // The server is the final judge: it may see a foreign statusLine the stale plan missed.
+              if (err instanceof NeedsConfirm && !get().consentDismissed) set({ consent: { current: err.current } });
+              /* other failures: the manual button stays as a fallback and the next save retries */
+            }
+          }
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        set({ saving: false, saveError: msg, toast: tr().toast.saveFailed(msg) });
+      }
+    },
+
+    async saveAsProject() {
+      const { config: c, layers, projectCwd } = get();
+      if (!c) return;
+      // The visual choices, merged over whatever the project file already had.
+      const project = layers.find((l) => l.name === "project")?.value ?? {};
+      const next = { ...project, lines: c.lines, theme: c.theme, separator: c.separator, colorLevel: c.colorLevel, ...(c.bar ? { bar: c.bar } : {}) };
+      try {
+        await api.saveConfig(next as Partial<FooterConfig>, "project", projectCwd);
+        adopt(await api.config(projectCwd));
+        set({ scope: "project", saveError: null, toast: tr().toast.savedProject });
+      } catch (err) {
+        set({ toast: tr().toast.saveFailed(err instanceof Error ? err.message : String(err)) });
+      }
+    },
+
+    async trustProject(root) {
+      const { layers, projectCwd } = get();
+      const user = (layers.find((l) => l.name === "user")?.value ?? {}) as Partial<FooterConfig>;
+      const trusted = [...new Set([...(user.plugins?.trustedProjects ?? []), root])];
+      const next = { ...user, plugins: { dirs: user.plugins?.dirs ?? [], ...user.plugins, trustedProjects: trusted } };
+      try {
+        await api.saveConfig(next, "user", projectCwd);
+        adopt(await api.config(projectCwd), { keepEdits: true });
+        set({ toast: tr().toast.trusted(root) });
+      } catch (err) {
+        set({ toast: tr().toast.saveFailed(err instanceof Error ? err.message : String(err)) });
+      }
+    },
+
+    async install(confirmReplace = false) {
+      try {
+        await get().saveNow({ autoApply: false });
+        const r = await api.install(confirmReplace);
+        set({ installed: true, consent: null, installPlan: await api.installPlan().catch(() => get().installPlan), toast: tr().toast.installed(r.settingsFile) });
+      } catch (err) {
+        if (err instanceof NeedsConfirm) set({ consent: { current: err.current }, consentDismissed: false });
+        else set({ toast: tr().toast.installFailed(err instanceof Error ? err.message : String(err)) });
+      }
+    },
+
+    async uninstall() {
+      try {
+        const r = await api.uninstall();
+        set({ installed: false, installPlan: await api.installPlan().catch(() => null), toast: r.restored ? tr().toast.restored : tr().toast.uninstalled });
+      } catch (err) {
+        set({ toast: tr().toast.uninstallFailed(err instanceof Error ? err.message : String(err)) });
+      }
+    },
+
+    dismissConsent: () => set({ consent: null, consentDismissed: true }),
+
+    async resetCounters() {
+      // Reset the session being previewed when it is a live one; otherwise the most recent live one.
+      const { samples, sampleId } = get();
+      const live = samples.find((x) => x.id === sampleId && x.source === "live") ?? samples.find((x) => x.source === "live");
+      try {
+        const r = await api.reset(live?.id);
+        set({ toast: tr().toast.reset(r.sessionId.slice(0, 8)) });
+        void get().refreshPreview();
+      } catch (err) {
+        set({ toast: tr().toast.resetFailed(err instanceof Error ? err.message : String(err)) });
+      }
+    },
+
+    async refreshPreview() {
+      const { config, sampleId, columns } = get();
+      if (!config) return;
+      try {
+        const preview = await api.render(config, sampleId, columns);
+        if (get().columns !== columns) return; // a newer request is on its way
+        set({ preview, previewColumns: columns });
+      } catch (err) {
+        set({ toast: tr().toast.previewFailed(err instanceof Error ? err.message : String(err)) });
+      }
+    },
+
+    setAdvanced(v) {
+      setPref("ssp.advanced", v ? "1" : "0");
+      set({ advanced: v });
+    },
+
+    setShowCenter(v) {
+      setPref("ssp.center", v ? "1" : "0");
+      set({ showCenter: v });
+    },
+
+    nudge(sel, dir) {
+      const c = get().config!;
+      const line = c.lines[sel.line];
+      if (!line) return;
+      const zones: Zone[] = hasCenter(get()) ? ["left", "center", "right"] : ["left", "right"];
+      const len = (l: LineConfig | undefined, z: Zone) => l?.[z]?.length ?? 0;
+      let to: Selection | null = null;
+      if (dir === "left" || dir === "right") {
+        const d = dir === "left" ? -1 : 1;
+        const i = sel.index + d;
+        if (i >= 0 && i < len(line, sel.zone)) to = { ...sel, index: i };
+        else {
+          // At the edge of a zone: hop into the neighbouring zone, entering from the near side.
+          const z = zones[zones.indexOf(sel.zone) + d];
+          if (z) to = { line: sel.line, zone: z, index: d < 0 ? len(line, z) : 0 };
+        }
+      } else {
+        const l = sel.line + (dir === "up" ? -1 : 1);
+        if (l >= 0 && l < c.lines.length) to = { line: l, zone: sel.zone, index: Math.min(sel.index, len(c.lines[l], sel.zone)) };
+      }
+      if (!to) return;
+      const target = to;
+      const id = line[sel.zone]?.[sel.index]?.widget ?? "";
+      get().setConfig((cc) => {
+        const [item] = zoneOf(cc.lines[sel.line]!, sel.zone).splice(sel.index, 1);
+        if (item) zoneOf(cc.lines[target.line]!, target.zone).splice(target.index, 0, item);
+      });
+      const t = tr();
+      const name = widgetName(t, get().widgets.find((w) => w.id === id), id);
+      set({ selection: null, focusPos: target, live: t.layout.moved(name, target.line + 1, t.layout.zones[target.zone], target.index + 1) });
+    },
+
+    claimFocus: () => set({ focusPos: null }),
+
+    notify: (toast) => set({ toast }),
+  };
+});
 
 /** The center zone is shown when the viewer asked for it or any line already uses it. */
 export function hasCenter(state: Pick<State, "showCenter" | "config">): boolean {

@@ -39,6 +39,11 @@ export const en = {
     reapply: "Re-apply",
     reapplyTitle: "Rarely needed: every save applies automatically. Use this to repair settings.json if something else changed it.",
     language: "Language",
+    sandbox: "Sandbox",
+    sandboxTitle: "This configurator edits temporary copies — nothing you change here reaches your real config or Claude Code.",
+    scope: "Saving to",
+    scopeUser: "Your settings (all projects)",
+    scopeProject: (name: string) => `This project only (${name})`,
   },
 
   preview: {
@@ -56,6 +61,20 @@ export const en = {
     noSamples: "No data available",
     liveSample: (label: string) => `My session · ${label}`,
     fixtureSample: (label: string) => `Sample · ${label}`,
+    /** One option per live session: which model, how long ago it last rendered. */
+    sessionOption: (project: string, model: string, when: string) => `${project} · ${model} · ${when}`,
+    unknownModel: "Unknown model",
+    builtInSamples: "Built-in samples",
+    otherProject: "Other",
+    fixtures: {
+      basic: "Typical session",
+      "fresh-session": "Fresh session",
+      "context-1m": "1M context window",
+      "no-rate-limits": "API key (no usage limits)",
+      "post-compact": "Right after /compact",
+      "vim-mode": "Vim mode",
+      worktree: "In a git worktree",
+    } as Record<string, string>,
     terminal: "Terminal background — pick the one your terminal uses, so colors are judged fairly",
     termAuto: "Match panel",
     termDark: "Dark terminal",
@@ -187,6 +206,9 @@ export const en = {
     statusLine: (path: string) => `statusLine in settings.json (${path})`,
     lastStdin: (time: string) => (time ? `Last stdin from Claude Code (${time})` : "Last stdin from Claude Code"),
     notCaptured: "Nothing captured yet — turn on “Save real stdin snapshots”.",
+    skipped: "Not loaded",
+    trust: "Trust this project",
+    trustHint: "Project widgets are code that runs on every statusline refresh. Only trust projects whose code you trust.",
   },
 
   consent: {
@@ -223,6 +245,7 @@ export const en = {
     reset: (id: string) => `Counters reset for session ${id}… — cost, tokens, API calls and lines changed restart from 0 on the next refresh`,
     resetFailed: (e: string) => `Couldn't reset: ${e}`,
     previewFailed: (e: string) => `Preview failed: ${e}`,
+    trusted: (dir: string) => `Trusted ${dir}. Its widgets load in the statusline right away; restart the configurator to see them in the “+” list.`,
     restored: "Your previous statusline is back. Open a new Claude Code session to see it.",
     uninstalled: "Removed from settings.json. Claude Code shows its default statusline again.",
     uninstallFailed: (e: string) => `Couldn't restore: ${e}`,

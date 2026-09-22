@@ -969,6 +969,23 @@ input[type="checkbox"] {
   min-width: 0;
   overflow: hidden;
 }
+.tag-warn {
+  background: color-mix(in srgb, var(--warn) 18%, var(--panel));
+  color: var(--fg);
+}
+.scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.skipped {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
 .tag {
   padding: 0 6px;
   border-radius: 2px;

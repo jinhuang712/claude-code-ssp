@@ -53,6 +53,25 @@ function statusOf(s: ReturnType<typeof useStore.getState>, t: Messages): { state
   return { state: "saved", text: t.header.saved };
 }
 
+/** Where edits are written. Hidden until the previewed project has its own config file. */
+function ScopeSelect() {
+  const t = useT();
+  const scope = useStore((s) => s.scope);
+  const setScope = useStore((s) => s.setScope);
+  const project = useStore((s) => s.layers.find((l) => l.name === "project"));
+  const projectName = useStore((s) => (s.projectCwd ?? project?.path ?? "").split(/[\\/]/).filter(Boolean).slice(-1)[0] ?? "");
+  if (!project?.exists && scope !== "project") return null;
+  return (
+    <label className="scope">
+      <span>{t.header.scope}</span>
+      <select className="field !w-auto !py-0.5" value={scope} onChange={(e) => setScope(e.target.value as "user" | "project")} title={scope === "project" ? (project?.path ?? "") : undefined}>
+        <option value="user">{t.header.scopeUser}</option>
+        <option value="project">{t.header.scopeProject(projectName)}</option>
+      </select>
+    </label>
+  );
+}
+
 export function Header() {
   const t = useT();
   const s = useStore();
@@ -62,6 +81,11 @@ export function Header() {
     <header className="topbar">
       <div className="topbar-id">
         <h1>{t.header.title}</h1>
+        {s.sandbox && (
+          <span className="tag tag-warn" title={t.header.sandboxTitle}>
+            {t.header.sandbox}
+          </span>
+        )}
         {/* Polite live region: screen readers hear "Saving… / Saved" without focus moving. */}
         <span className="status" data-state={state} role="status" title={s.saveError ? `${t.header.saveFailed}: ${s.saveError}` : t.header.statusDetail}>
           <span className="status-text">{text}</span>
@@ -73,6 +97,7 @@ export function Header() {
         </span>
       </div>
       <div className="topbar-actions">
+        <ScopeSelect />
         <button className="btn" disabled={s.past.length === 0} onClick={() => s.undo()} title={s.past.length ? t.header.undoTitle(s.past.length) : t.header.nothingToUndo}>
           {t.header.undo}
           {s.past.length > 1 ? ` ${s.past.length}` : ""}

@@ -30,14 +30,23 @@ function Restore() {
   );
 }
 
+/** A skipped project widget folder `<root>/.claude/claude-code-ssp/widgets` → its project root. */
+function projectRootOf(dir: string): string {
+  return dir.replace(/[\\/]\.claude[\\/]claude-code-ssp[\\/]widgets[\\/]?$/, "");
+}
+
 function Doctor() {
   const t = useT();
+  const cwd = useStore((s) => s.projectCwd);
+  const trustProject = useStore((s) => s.trustProject);
   const [r, setR] = useState<DoctorReport | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const load = () => api.doctor().then(setR).catch((e) => setErr(String(e)));
+  const load = () => api.doctor(cwd).then(setR).catch((e) => setErr(String(e)));
   useEffect(() => {
     void load();
-  }, []);
+    // Reload when the previewed project changes: layers and skipped widgets are per project.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cwd]);
   if (err) return <p className="hint">{t.doctor.failed(err)}</p>;
   if (!r) return <p className="hint">{t.doctor.loading}</p>;
   return (
@@ -76,7 +85,23 @@ function Doctor() {
             ✗ {e.file}: {e.message}
           </div>
         ))}
-        {!r.plugins.loaded.length && !r.plugins.errors.length && <div className="hint text-xs">{t.doctor.noPlugins}</div>}
+        {(r.plugins.skipped ?? []).map((sk) => (
+          <div key={sk.dir} className="skipped">
+            <div className="mono text-xs">
+              <span style={{ color: "var(--warn)" }}>
+                ⊘ {t.doctor.skipped}: {sk.dir}
+              </span>{" "}
+              <span className="hint">({sk.reason})</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button className="btn" onClick={() => void trustProject(projectRootOf(sk.dir)).then(load)}>
+                {t.doctor.trust}
+              </button>
+              <span className="hint">{t.doctor.trustHint}</span>
+            </div>
+          </div>
+        ))}
+        {!r.plugins.loaded.length && !r.plugins.errors.length && !(r.plugins.skipped ?? []).length && <div className="hint text-xs">{t.doctor.noPlugins}</div>}
       </div>
       <details className="text-xs">
         <summary className="hint cursor-pointer">{t.doctor.statusLine(r.settings.path)}</summary>
@@ -160,7 +185,7 @@ export function Advanced() {
           <label className="row">
             <span>
               {t.advanced.capture}
-              <span className="hint ml-2">{t.advanced.captureHint("~/.claude/plugins/claude-code-ssp/samples")}</span>
+              <span className="hint ml-2">{t.advanced.captureHint(s.paths?.samples ?? "~/.claude/plugins/claude-code-ssp/samples")}</span>
             </span>
             <input
               type="checkbox"
@@ -178,7 +203,7 @@ export function Advanced() {
               {t.advanced.saveProject}
               <span className="hint ml-2">{project?.path}</span>
             </span>
-            <button className="btn" onClick={() => void s.saveNow("project")}>
+            <button className="btn" onClick={() => void s.saveAsProject()}>
               {project?.exists ? t.advanced.overwriteProject : t.advanced.saveAsProject}
             </button>
           </div>
