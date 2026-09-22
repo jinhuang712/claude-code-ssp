@@ -9,6 +9,9 @@ import { resolveEffortLevel } from "../data/effort.js";
 import { getUsageFromStdin } from "../data/stdin.js";
 import { parseTranscript } from "../data/transcript.js";
 import { lastResponseSpeed } from "./response-speed.js";
+import { countPluginMcpServers } from "./plugin-mcp.js";
+import { getClaudeConfigDir } from "../data/claude-config-dir.js";
+import * as os from "node:os";
 import type { StdinData, TranscriptData } from "../data/types.js";
 import { formatDuration } from "./api.js";
 import type { Ctx, FooterConfig } from "./types.js";
@@ -83,7 +86,8 @@ export async function buildContext(stdin: StdinData, config: FooterConfig, opts:
     transcript,
     claudeMdCount: counts.claudeMdCount,
     rulesCount: counts.rulesCount,
-    mcpCount: counts.mcpCount,
+    // Settings/.mcp.json servers (claude-hud's reader) plus the ones plugins bring (see plugin-mcp.ts).
+    mcpCount: counts.mcpCount + countPluginMcpServers(getClaudeConfigDir(os.homedir()), cwd),
     hooksCount: counts.hooksCount,
     sessionDuration,
     gitStatus,

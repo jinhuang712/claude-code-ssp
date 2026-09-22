@@ -5,7 +5,7 @@ import { labelSchema, stdin, withLabel } from "./_shared.js";
 export const envCounts = defineWidget<{ showClaudeMd: boolean; showRules: boolean; showMcp: boolean; showHooks: boolean; hideZero: boolean }>({
   id: "environment.counts",
   name: "Config counts",
-  description: "CLAUDE.md / rules / MCP servers / hooks in effect for this directory.",
+  description: "CLAUDE.md files, rules, MCP servers and hooks in effect for this directory. MCP includes servers from settings, .mcp.json and plugins; claude.ai connectors aren't visible locally.",
   category: "environment",
   sample: "1 CLAUDE.md | 1 MCPs | 6 hooks",
   schema: {
