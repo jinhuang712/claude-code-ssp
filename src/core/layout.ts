@@ -11,6 +11,9 @@ import type { ColorLevel, Ctx, FooterConfig, LineConfig, RenderOptions, RenderRe
 interface RenderedWidget {
   text: string;
   width: number;
+  /** A zone's widgets one by one, and the styled separator between them — what "wrap" breaks at. */
+  parts?: RenderedWidget[];
+  sep?: RenderedWidget;
 }
 /** Marks rendered widgets whose text is the sample stand-in, so the caller can report them. */
 const filledOut = new WeakMap<RenderedWidget, true>();
@@ -89,7 +92,7 @@ function renderZone(
   const sepStyled = renderSegments([{ text: separator, style: { fg: "muted" } }], ctx.theme, level);
   const text = rendered.map((r) => r.text).join(sepStyled);
   const width = rendered.reduce((w, r) => w + r.width, 0) + visualWidth(separator) * (rendered.length - 1);
-  return { text, width };
+  return { text, width, parts: rendered, sep: { text: sepStyled, width: visualWidth(separator) } };
 }
 
 function pad(n: number): string {
@@ -126,21 +129,60 @@ export function layoutLine(zones: Record<Zone, RenderedWidget>, columns: number,
     }
     return [row];
   }
-  // Overflow.
-  switch (overflow) {
-    case "drop-right":
-      return layoutLine({ left, center, right: { text: "", width: 0 } }, columns, "truncate");
-    case "truncate": {
-      const joined = [left, center, right].filter((z) => z.width > 0).map((z) => z.text).join(" ");
-      return [truncateVisual(joined, columns)];
-    }
-    case "wrap":
-    default: {
-      const first = layoutLine({ left, center, right: { text: "", width: 0 } }, columns, "truncate");
-      const second = right.width <= columns ? pad(columns - right.width) + right.text : truncateVisual(right.text, columns);
-      return [...first, second];
+  // Overflow. The right zone never moves: it keeps the end of the first row, whatever the left side
+  // does. (It used to drop to a row of its own under a long left side, which read as the two sides
+  // pushing each other around.) What gives is the left, together with the center, which has no
+  // room of its own to float in once the line is full.
+  if (overflow === "drop-right") {
+    // Kept for configs that chose it; the panel no longer offers it (it hides the right zone).
+    return layoutLine({ left, center, right: { text: "", width: 0 } }, columns, "truncate");
+  }
+  const rightText = right.width <= columns ? right.text : truncateVisual(right.text, columns);
+  const rightWidth = Math.min(right.width, columns);
+  // Room for the left side on the first row: everything but the right zone and one space before it.
+  const room = right.width > 0 ? Math.max(0, columns - rightWidth - 1) : columns;
+  const withRight = (text: string, width: number) => (right.width > 0 ? text + pad(columns - rightWidth - width) + rightText : text);
+
+  if (overflow === "truncate") {
+    const joined = [left, center].filter((z) => z.width > 0).map((z) => z.text).join(" ");
+    const cut = truncateVisual(joined, room);
+    return [withRight(cut, visualWidth(cut))];
+  }
+
+  // "wrap" (the default): fill the first row's room with whole widgets, then continue on full-width
+  // rows below. Breaks fall between widgets, never inside one; a widget wider than a whole row is
+  // cut to it. When not even the first widget fits beside the right zone, it starts the second row.
+  const flow: Array<{ piece: RenderedWidget; joiner: RenderedWidget }> = [];
+  const space = { text: " ", width: 1 };
+  for (const zone of [left, center]) {
+    if (zone.width === 0) continue;
+    const pieces = zone.parts ?? [zone];
+    pieces.forEach((piece, i) => flow.push({ piece, joiner: i === 0 ? space : (zone.sep ?? space) }));
+  }
+  const rows: Array<{ text: string; width: number }> = [{ text: "", width: 0 }];
+  for (const { piece, joiner } of flow) {
+    for (;;) {
+      const row = rows[rows.length - 1]!;
+      const budget = rows.length === 1 ? room : columns;
+      const add = row.width > 0 ? joiner.width + piece.width : piece.width;
+      if (row.width + add <= budget) {
+        row.text += (row.width > 0 ? joiner.text : "") + piece.text;
+        row.width += add;
+        break;
+      }
+      if (row.width > 0 || rows.length === 1) {
+        rows.push({ text: "", width: 0 });
+        continue;
+      }
+      // An empty continuation row and still too wide: this one widget is wider than the terminal.
+      const cut = truncateVisual(piece.text, columns);
+      row.text = cut;
+      row.width = visualWidth(cut);
+      break;
     }
   }
+  const [first, ...rest] = rows;
+  return [withRight(first!.text, first!.width), ...rest.map((r) => r.text)];
 }
 
 export function render(config: FooterConfig, ctx: Omit<Ctx, "theme">, options: RenderOptions = {}): RenderResult {

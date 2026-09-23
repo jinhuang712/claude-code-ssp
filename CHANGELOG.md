@@ -19,6 +19,10 @@ A simpler configurator: the page is the layout and the style, and everything els
   toggle are gone (a config that already uses the center zone stays editable).
 - Chips show just the widget's name; surfaces are separated by fill rather than borders (80 outlined elements on
   the page before, 5 now).
+- **The right side of a line never moves.** When a line is too long, the left side now continues on the next row
+  (breaking between widgets) or, if you pick it per line, is cut short with `…` — the right side stays at the end
+  of the first row. Before, the right side dropped to a row of its own. "Hide the right side" is no longer
+  offered (configs that use it keep working).
 - **Gradient colours read on light terminals.** The gradient colour mode (context bar, usage) started at pure
   white and stayed pastel up to 70%, so a low bar or percentage all but vanished on a white terminal. Every stop
   is now a mid-tone that clears 3:1 on white, slate and black; on dark terminals the colours are a little less bright.

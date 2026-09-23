@@ -78,14 +78,21 @@ describe("truncateVisual on styled text", () => {
 });
 
 describe("layoutLine truncate policy keeps styles intact", () => {
-  test("styled zones cut to the row width with the colour closed", () => {
+  test("the left zone is cut with its colour closed, and the right zone keeps its place", () => {
     const left = `\x1b[32m${"L".repeat(30)}\x1b[0m`;
     const right = `\x1b[33m${"R".repeat(30)}\x1b[0m`;
     const [row] = layoutLine({ left: z(left), center: z(""), right: z(right) }, 40, "truncate");
     expect(visualWidth(row!)).toBe(40);
-    expect(row!.endsWith("…\x1b[0m")).toBe(true);
+    expect(row!).toContain("…\x1b[0m");
+    expect(row!.endsWith(right)).toBe(true);
   });
 });
+
+/** A zone of several widgets, as renderZone builds it: the joined text plus the pieces "wrap" breaks at. */
+function zoneOf(pieces: string[], sep = " | ") {
+  const parts = pieces.map(z);
+  return { text: pieces.join(sep), width: visualWidth(pieces.join(sep)), parts, sep: z(sep) };
+}
 
 describe("layoutLine", () => {
   test("right zone is anchored to the last column", () => {
@@ -99,11 +106,34 @@ describe("layoutLine", () => {
     expect(visualWidth(row!)).toBe(20);
     expect(row!.indexOf("CC")).toBe(9);
   });
-  test("wrap policy moves right zone to its own right-aligned row", () => {
+  // The right zone never moves: it used to drop to a row of its own under a long left side.
+  test("wrap keeps the right zone at the end of the first row and continues the left below", () => {
+    const rows = layoutLine({ left: zoneOf(["a".repeat(8), "b".repeat(8), "c".repeat(8)]), center: z(""), right: z("R".repeat(10)) }, 30, "wrap");
+    expect(rows).toEqual([`${"a".repeat(8)} | ${"b".repeat(8)}${" ".repeat(1)}${"R".repeat(10)}`, "c".repeat(8)]);
+    expect(visualWidth(rows[0]!)).toBe(30);
+  });
+  test("wrap breaks between widgets, never inside one", () => {
+    const rows = layoutLine({ left: zoneOf(["one", "two", "three", "four"]), center: z(""), right: z("RIGHT") }, 16, "wrap");
+    expect(rows[0]!.endsWith("RIGHT")).toBe(true);
+    for (const r of rows.slice(1)) expect(["one", "two", "three", "four"].some((w) => r.startsWith(w))).toBe(true);
+    expect(rows.join("\n")).not.toContain("|\n");
+  });
+  test("wrap moves a left widget too wide for the first row to the next one", () => {
     const rows = layoutLine({ left: z("x".repeat(15)), center: z(""), right: z("y".repeat(10)) }, 20, "wrap");
-    expect(rows).toHaveLength(2);
-    expect(rows[1]!.endsWith("y".repeat(10))).toBe(true);
+    expect(rows).toEqual([`${" ".repeat(10)}${"y".repeat(10)}`, "x".repeat(15)]);
+  });
+  test("wrap cuts a single widget wider than the whole terminal", () => {
+    const rows = layoutLine({ left: z("x".repeat(40)), center: z(""), right: z("y".repeat(5)) }, 20, "wrap");
+    expect(rows[0]!.endsWith("y".repeat(5))).toBe(true);
     expect(visualWidth(rows[1]!)).toBe(20);
+    expect(rows[1]!.endsWith("…")).toBe(true);
+  });
+  test("under every policy but drop-right, the first row ends with the right zone", () => {
+    for (const policy of ["wrap", "truncate"] as const) {
+      const [first] = layoutLine({ left: zoneOf(["p".repeat(12), "q".repeat(12)]), center: z(""), right: z("RR") }, 20, policy);
+      expect(first!.endsWith("RR")).toBe(true);
+      expect(visualWidth(first!)).toBe(20);
+    }
   });
   test("drop-right policy hides the right zone", () => {
     const rows = layoutLine({ left: z("x".repeat(15)), center: z(""), right: z("y".repeat(10)) }, 20, "drop-right");

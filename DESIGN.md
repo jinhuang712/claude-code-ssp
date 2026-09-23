@@ -46,7 +46,11 @@ Claude Code ≥ 2.1.251 now ships `rate_limits`, `prompt_cache`, `effort`, `cost
 
 * A **line** has three zones. `right` is truly right-aligned to `$COLUMNS`; `center` is centered in the remaining gap.
 * Any widget may go in any zone. There is no adjacency rule and no special "first line".
-* Overflow policy per line: `wrap` (default: right zone drops to its own right-aligned row), `truncate`, `drop-right`.
+* Overflow policy per line. The right zone never moves — it keeps the end of the first row — and the left side
+  (with the center) gives: `wrap` (default) continues it on the rows below, breaking between widgets;
+  `truncate` cuts it short with `…`. `drop-right` (hide the right zone) still renders for old configs but is no
+  longer offered in the panel. Until 0.2.x, `wrap` dropped the *right* zone to a row of its own and `truncate`
+  cut the joined line from the end, which hid the right zone.
 * A widget that renders `null` simply disappears; separators collapse.
 
 ## Widget contract (`src/core/types.ts`)

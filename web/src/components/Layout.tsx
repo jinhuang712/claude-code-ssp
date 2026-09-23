@@ -215,7 +215,8 @@ function LineMenu({ line, index, total }: { line: LineConfig; index: number; tot
             >
               <option value="wrap">{t.layout.overflowWrap}</option>
               <option value="truncate">{t.layout.overflowTruncate}</option>
-              <option value="drop-right">{t.layout.overflowDropRight}</option>
+              {/* Hiding the right side is no longer offered (the right zone stays put); shown only for a config that already chose it. */}
+              {line.overflow === "drop-right" && <option value="drop-right">{t.layout.overflowDropRight}</option>}
             </select>
           </label>
           <label className="linemenu-field">
