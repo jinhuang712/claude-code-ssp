@@ -467,7 +467,7 @@ export const zh: Messages = {
       "2": "2 级",
       "3": "3 级",
       thresholds: "按阈值：绿 → 黄 → 红",
-      gradient: "渐变：0% 白 → 10% 蓝 → 30% 绿 → 50% 黄 → 70% 橙 → 90% 红 → 100% 深红",
+      gradient: "渐变：0% 灰 → 10% 蓝 → 30% 绿 → 50% 黄 → 70% 橙 → 90% 红 → 100% 深红",
     },
     enumsByField: {
       "model.badge.format": { full: "原样", compact: "去掉 (1M context)", short: "再去掉 Claude 前缀" },

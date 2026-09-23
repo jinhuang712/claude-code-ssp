@@ -354,7 +354,7 @@ export const en = {
       "2": "2 levels",
       "3": "3 levels",
       thresholds: "Thresholds: green → yellow → red",
-      gradient: "Gradient: 0% white → 10% blue → 30% green → 50% yellow → 70% orange → 90% red → 100% deep red",
+      gradient: "Gradient: 0% grey → 10% blue → 30% green → 50% yellow → 70% orange → 90% red → 100% deep red",
     } as Record<string, string>,
     /** Per-widget wording where the shared words would hide what an option really does. */
     enumsByField: {

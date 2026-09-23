@@ -35,15 +35,23 @@ export function level(pct: number, warnAt = 70, critAt = 85): "ok" | "warn" | "c
   return "ok";
 }
 
-/** Colour stops for the gradient mode; interpolated linearly in RGB between neighbours. */
+/**
+ * Colour stops for the gradient mode; interpolated linearly in RGB between neighbours.
+ *
+ * The statusline never paints its own background, so one set of stops has to read on light *and*
+ * dark terminals. Every stop is a mid-tone (relative luminance ~0.14–0.30), which keeps each
+ * percentage at ≥ 3:1 against white, Claude's slate (#141413) and pure black —
+ * `tests/gradient.test.ts` checks all 101 values. The old pastel stops (0% was #ffffff) were
+ * 1.0–2.2:1 on white from 0 to 70%, so a low usage bar simply vanished on a light terminal.
+ */
 const GRADIENT: Array<[number, string]> = [
-  [0, "#ffffff"],
-  [10, "#7fc8ff"],
-  [30, "#62c46a"],
-  [50, "#f5e07a"],
-  [70, "#ff9e3d"],
-  [90, "#ef4444"],
-  [100, "#b91c1c"],
+  [0, "#8a8a8a"],
+  [10, "#3d8fe0"],
+  [30, "#2f9e44"],
+  [50, "#a8840a"],
+  [70, "#e2680c"],
+  [90, "#e03131"],
+  [100, "#c92a2a"],
 ];
 
 function hexToRgb(h: string): [number, number, number] {
