@@ -114,8 +114,7 @@ export const en = {
     title: "Layout",
     hint: "Each row is one line of the statusline. Click a widget to edit it; drag it — or press Alt+Arrow keys — to reorder it or move it to another line.",
     zones: { left: "Left", center: "Center", right: "Right" },
-    emptyZone: { left: "What goes on the left?", center: "What goes in the center?", right: "What goes on the right?" },
-    addTo: (line: number, zone: string) => `Add to line ${line}, ${zone.toLowerCase()}`,
+    emptyLine: "Empty line — drag a widget here, or click one below",
     editOptions: "Edit options",
     remove: "Remove",
     sampleTag: "sample",
@@ -182,14 +181,18 @@ export const en = {
     dismiss: "Got it",
   },
 
-  picker: {
-    dialog: "Add to the statusline",
-    search: "Search by name or description",
-    target: (line: number, zone: string) => `Adding to line ${line}, ${zone.toLowerCase()}`,
+  /** The unused widgets under the layout. */
+  tray: {
+    title: "Unused widgets",
+    hint: "Click one to add it to the last line · drag it into any line · drag a widget back here to remove it",
+    dropToRemove: "Let go to remove it from the statusline (Ctrl/⌘+Z undoes)",
+    empty: "Every widget is already in your statusline.",
+    showAll: (n: number) => `Show all ${n}`,
+    showFewer: "Show fewer",
+    repeatable: "any number",
     plugin: "plugin",
-    inUse: "in use",
-    close: "Close",
-    noMatch: "Nothing matches. Try another word or clear the search.",
+    added: (name: string, line: number) => `${name} added to line ${line}. Alt+Arrow keys move it; Enter opens its options.`,
+    untrusted: "This project has its own widgets, but they don't load until you trust the project:",
   },
 
   options: {
@@ -221,7 +224,7 @@ export const en = {
     title: "Diagnostics",
     close: "Close",
     configJson: "Config JSON",
-    pluginsHint: ["Custom widgets: drop a .ts / .js file into ", ", restart the server, and it shows up in the “+” list. See examples/widgets/hello.ts."] as readonly [string, string],
+    pluginsHint: ["Custom widgets: drop a .ts / .js file into ", ", restart the server, and it shows up under Unused widgets. See examples/widgets/hello.ts."] as readonly [string, string],
     refresh: "Refresh",
     loading: "Loading diagnostics…",
     failed: (err: string) => `Couldn't load diagnostics: ${err}`,
@@ -274,7 +277,7 @@ export const en = {
     reset: (id: string) => `Counters reset for session ${id}… — cost, tokens, API calls and lines changed restart from 0 on the next refresh`,
     resetFailed: (e: string) => `Couldn't reset: ${e}`,
     previewFailed: (e: string) => `Preview failed: ${e}`,
-    trusted: (dir: string) => `Trusted ${dir}. Its widgets load in the statusline right away; restart the configurator to see them in the “+” list.`,
+    trusted: (dir: string) => `Trusted ${dir}. Its widgets load in the statusline right away; restart the configurator to see them under Unused widgets.`,
     restored: "Your previous statusline is back. Open a new Claude Code session to see it.",
     uninstalled: "Removed from settings.json. Claude Code shows its default statusline again.",
     uninstallFailed: (e: string) => `Couldn't restore: ${e}`,

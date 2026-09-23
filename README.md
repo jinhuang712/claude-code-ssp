@@ -117,7 +117,7 @@ An option that only matters while another one is set can say so with `"x-require
 showing a control that seems to do nothing.
 
 See `examples/widgets/hello.ts` and `src/widgets/*` for the built-ins; `DESIGN.md` for the architecture.
-Restart the configurator to see a new widget in the “+” list (the statusline picks it up immediately).
+Restart the configurator to see a new widget under *Unused widgets* (the statusline picks it up immediately).
 
 ## Development
 

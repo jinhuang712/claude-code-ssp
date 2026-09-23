@@ -779,6 +779,10 @@ input[type="checkbox"] {
   justify-content: flex-end;
   border-left: 1px solid var(--line);
 }
+/* An empty zone at rest is just space: no divider standing next to nothing (the extra attribute outranks the phone-width divider rule). */
+.zone[data-zone][data-empty="true"] {
+  border-color: transparent;
+}
 .zone[data-over="true"] {
   background: color-mix(in srgb, var(--clay) 10%, transparent);
   box-shadow: inset 0 0 0 1px var(--clay);
@@ -1037,30 +1041,123 @@ input[type="checkbox"] {
   color: var(--fg);
 }
 
-/* The "+" at the end of a zone, and the "Add line" row under the last line: dashed = a slot. */
-.addchip,
+/* The "Add line" row under the last line: dashed = a slot. */
 .addline {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  height: 28px;
+  height: 36px;
   padding: 0 8px;
   border-radius: var(--r-1);
   border: 1px dashed var(--field-line);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   color: var(--muted);
   transition: color 0.1s, border-color 0.1s, background 0.1s;
 }
-.addchip:hover,
 .addline:hover {
   color: var(--fg);
   border-color: var(--clay);
   background: color-mix(in srgb, var(--clay) 7%, transparent);
 }
-.addline {
-  justify-content: center;
-  height: 36px;
+/*
+  While a widget is being dragged, empty zones open up into visible drop slots. At rest they stay
+  collapsed: an empty right zone used to carry a "+" and a sentence on every line.
+*/
+.linelist[data-dragging="true"] .zone[data-empty="true"] {
+  min-width: 120px;
+  min-height: 30px;
+  outline: 1px dashed var(--field-line);
+  outline-offset: -4px;
+}
+
+/*
+  The tray: every unused widget, grouped by category, under the layout card. Items are quieter than
+  placed chips (no border, no shadow) — they are on offer, not in use.
+*/
+.tray {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  padding: var(--sp-3);
+  border-radius: var(--r-2);
+  transition: background 0.12s, box-shadow 0.12s;
+}
+.tray[data-over="true"] {
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  box-shadow: inset 0 0 0 1px var(--danger);
+}
+.tray-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+}
+.tray-head h3 {
+  margin: 0;
   font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--fg);
+}
+.tray-items {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+}
+/* A category keeps its label and items together when the row wraps. */
+.tray-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.tray-cat {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.tray-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: var(--r-1);
+  background: var(--panel);
+  font-size: var(--fs-sm);
+  color: var(--fg-2);
+  cursor: grab;
+  user-select: none;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+.tray-item::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cat, var(--muted));
+}
+.tray-item:hover {
+  background: var(--panel-2);
+  color: var(--fg);
+}
+.tray-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-1);
+  background: color-mix(in srgb, var(--warn) 10%, var(--panel));
+  font-size: var(--fs-sm);
+}
+.tray-notice code {
+  flex: 1 1 200px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* enum options: every value shows what it renders to */
@@ -1184,28 +1281,6 @@ input[type="checkbox"] {
   font-weight: 500;
   line-height: 1.25;
   color: var(--fg);
-}
-/* The picker's head: title row, then the search field under it (beats .sheet-head's centring). */
-.sheet-head.sheet-head-stack {
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--sp-3);
-}
-.search {
-  position: relative;
-  display: block;
-  color: var(--muted);
-}
-.search > .icon {
-  position: absolute;
-  top: 50%;
-  left: 10px;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-.search > .field {
-  padding-left: 32px;
-  min-height: 36px;
 }
 .sheet-foot {
   display: flex;
@@ -1412,52 +1487,6 @@ input[type="checkbox"] {
   flex-direction: column;
   gap: var(--sp-4);
   padding: var(--sp-4);
-}
-.cat-head {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-bottom: 6px;
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--fg-2);
-}
-.cat-count {
-  font-weight: 400;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-/* A widget in the picker: category dot + name, its live output, one line of description. */
-.pick {
-  text-align: left;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-1);
-  background: var(--panel);
-  transition: border-color 0.12s, background 0.12s;
-}
-.pick:hover {
-  border-color: var(--clay);
-  background: color-mix(in srgb, var(--clay) 5%, var(--panel));
-}
-.pick-name {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-weight: 500;
-  color: var(--fg);
-}
-.pick-name::before {
-  content: "";
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--cat, var(--muted));
-}
-.pick .sample {
-  margin-top: 4px;
-  min-width: 0;
-  overflow: hidden;
 }
 /* Separator chips: the separator itself stands out between two neutral words. */
 .sep-sample {

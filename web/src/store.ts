@@ -76,7 +76,6 @@ interface State {
   /** The column count the current preview was rendered for; the terminal only redraws when it matches. */
   previewColumns: number;
   selection: Selection | null;
-  picker: { line: number; zone: Zone } | null;
   toast: string | null;
   saving: boolean;
   /** Last save failure, shown in the header until a save succeeds (a toast alone is too easy to miss). */
@@ -110,9 +109,11 @@ interface State {
   setColumns(n: number): void;
   setColumnsMode(m: "auto" | number): void;
   select(sel: Selection | null): void;
-  openPicker(line: number, zone: Zone): void;
-  closePicker(): void;
-  addWidget(line: number, zone: Zone, widget: string): void;
+  /**
+   * Insert a widget (from the tray) at a position — the end of the zone when `index` is omitted;
+   * with no lines at all, a first line is created. Focus moves to the new chip.
+   */
+  addWidget(line: number, zone: Zone, widget: string, index?: number): void;
   removeAt(sel: Selection): void;
   moveWidget(from: Selection, toLine: number, toZone: Zone, toIndex?: number): void;
   reorder(line: number, zone: Zone, from: number, to: number): void;
@@ -218,7 +219,6 @@ export const useStore = create<State>((set, get) => {
     preview: null,
     previewColumns: 0,
     selection: null,
-    picker: null,
     toast: null,
     saving: false,
     saveError: null,
@@ -320,16 +320,22 @@ export const useStore = create<State>((set, get) => {
       scheduleSave();
     },
 
-    select: (selection) => set({ selection, picker: null }),
-    openPicker: (line, zone) => set({ picker: { line, zone }, selection: null }),
-    closePicker: () => set({ picker: null }),
+    select: (selection) => set({ selection }),
 
-    addWidget(line, zone, widget) {
+    addWidget(line, zone, widget, index) {
+      const lines = get().config!.lines;
+      const l = lines.length === 0 ? 0 : Math.max(0, Math.min(line, lines.length - 1));
+      const len = lines[l]?.[zone]?.length ?? 0;
+      const pos: Selection = { line: l, zone, index: index === undefined ? len : Math.max(0, Math.min(index, len)) };
       get().setConfig((c) => {
-        zoneOf(c.lines[line]!, zone).push({ widget });
+        if (c.lines.length === 0) c.lines.push({ left: [], right: [] });
+        zoneOf(c.lines[pos.line]!, zone).splice(pos.index, 0, { widget });
       });
-      const idx = zoneOf(get().config!.lines[line]!, zone).length - 1;
-      set({ selection: { line, zone, index: idx }, picker: null });
+      // Not selected (that would open its options on every add); focus goes to the new chip so
+      // Alt+Arrow places it and Enter edits it — the tray item it came from may just have vanished.
+      const t = tr();
+      const name = widgetName(t, get().widgets.find((w) => w.id === widget), widget);
+      set({ focusPos: pos, live: t.tray.added(name, pos.line + 1) });
     },
 
     removeAt(sel) {

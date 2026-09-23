@@ -59,7 +59,7 @@ defineWidget({
   defaults: { width: 10 },
   render(ctx, opts, api): Segment[] | string | null,   // pure; ctx is read-only
   numeric?(ctx, opts): number | null,                  // enables generic threshold coloring in the UI
-  sample?: "Context ███░░░░░░░ 32%",                    // shown in the widget picker
+  sample?: "Context ███░░░░░░░ 32%",                    // stands in when the session has no data; sizes preset sketches
 });
 ```
 
@@ -108,7 +108,7 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
 * **Preview** = `POST /api/render { config, sample, columns }` → the **same** render engine; output painted by xterm.js
   on a dark or light terminal ground with a matching ANSI palette, under a quiet mock of Claude Code's prompt
   (context only — the statusline sits below the prompt). WYSIWYG by construction.
-* **Probes**: every option value, boolean outcome and picker entry is rendered against the current sample —
+* **Probes**: every option value and boolean outcome is rendered against the current sample —
   coalesced into one `POST /api/render/batch` per tick (`web/src/probe.ts`) and drawn in colour (`Ansi.tsx`).
 * **Try-on**: hovering/focusing a preset, theme, bar style or separator previews it without saving. The preview's
   height is sticky during try-ons (a shrinking preview moved the hovered chip away and looped), and the
@@ -119,8 +119,11 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   compactions preview as if live.
   Plus **live captures**: `render` persists the last stdin payload per `session_id` to `<data>/samples/` (throttled), so
   you preview against your real session. Live samples are shown exactly as captured — no synthetic values.
-* **Widget picker** renders option forms from each widget's JSON Schema. Drag widgets between zones and lines, or
-  move them with Alt+Arrow keys; drawers are focus-trapped dialogs.
+* **Tray**: every widget not in the layout sits under it, grouped by category (`custom.*` stay after use — they are
+  meant to be placed several times). Click one to append it to the last line (focus moves to the new chip), drag it
+  into any zone, or drag a placed chip back onto the tray to remove it; hovering one tries it on in the preview. The
+  tray replaced a "+" in every zone and a picker drawer. Option forms are rendered from each widget's JSON Schema.
+  Drag widgets between zones and lines, or move them with Alt+Arrow keys; drawers are focus-trapped dialogs.
 * **Install**: the first save auto-applies unless another tool's statusLine is set — then the server answers 409 and
   the panel asks. *⋯ menu → Stop using this statusline* (two steps: it first says what comes back) restores the previous one.
 * **i18n**: typed message objects (`web/src/i18n`), English and 简体中文, browser-detected with a switcher.

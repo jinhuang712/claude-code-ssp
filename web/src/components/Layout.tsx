@@ -21,6 +21,7 @@ import { useT, widgetName } from "../i18n";
 import { effectiveLabel, emptyStateAt, hasCenter, useStore } from "../store";
 import { Icon } from "./Icon";
 import { Popover } from "./Popover";
+import { Tray, TRAY_DROP_ID, TRAY_PREFIX } from "./Tray";
 
 /*
   Drag ids must survive a reorder. Positions do not, so a chip is identified by its widget id plus
@@ -57,13 +58,17 @@ function indexChips(lines: LineConfig[]): { ids: Map<string, Pos>; at: Map<strin
   return { ids, at };
 }
 
-/* Prefer the chip under the pointer, then the zone under the pointer, then whatever is nearest. */
+/*
+  Prefer the chip (or the tray) under the pointer, then the zone under the pointer, then whatever is
+  nearest. The tray is left out of "nearest": dropping on it removes the widget, so letting go of a
+  chip in empty space must never resolve to it just because it happens to be the closest target.
+*/
 const collision: CollisionDetection = (args) => {
   const within = pointerWithin(args);
   const chips = within.filter((c) => !String(c.id).startsWith("zone:"));
   if (chips.length) return chips;
   if (within.length) return within;
-  return closestCenter(args);
+  return closestCenter({ ...args, droppableContainers: args.droppableContainers.filter((c) => c.id !== TRAY_DROP_ID) });
 };
 
 function ChipFace({ widget, ghost }: { widget: string; ghost?: boolean }) {
@@ -146,9 +151,8 @@ function Chip({ id, line, zone, index, item }: { id: string; line: number; zone:
   );
 }
 
-function ZoneBox({ line, zone, items, at, caret }: { line: number; zone: Zone; items: WidgetInstance[]; at: Map<string, string>; caret: number | null }) {
+function ZoneBox({ line, zone, items, at, caret, lineEmpty }: { line: number; zone: Zone; items: WidgetInstance[]; at: Map<string, string>; caret: number | null; lineEmpty: boolean }) {
   const t = useT();
-  const openPicker = useStore((s) => s.openPicker);
   const ids = items.map((_, i) => at.get(`${line}:${zone}:${i}`)!);
   const empty = items.length === 0;
   const { setNodeRef, isOver } = useDroppable({ id: zoneId(line, zone) });
@@ -166,10 +170,8 @@ function ZoneBox({ line, zone, items, at, caret }: { line: number; zone: Zone; i
           </Fragment>
         ))}
         {caret !== null && caret >= items.length && <Caret />}
-        <button className="addchip" onClick={() => openPicker(line, zone)} aria-label={t.layout.addTo(line + 1, t.layout.zones[zone])} title={t.layout.addTo(line + 1, t.layout.zones[zone])}>
-          <Icon name="plus" size={14} />
-          {empty && zone !== "center" && <span>{t.layout.emptyZone[zone]}</span>}
-        </button>
+        {/* A brand-new line says how to fill it; a zone that is merely empty stays quiet (it lights up as a drop target while dragging). */}
+        {lineEmpty && zone === "left" && caret === null && <span className="hint">{t.layout.emptyLine}</span>}
       </div>
     </SortableContext>
   );
@@ -259,18 +261,24 @@ function LineMenu({ line, index, total }: { line: LineConfig; index: number; tot
 
 function Row({ line, index, total, withCenter, at, caret }: { line: LineConfig; index: number; total: number; withCenter: boolean; at: Map<string, string>; caret: Pos | null }) {
   const caretIn = (zone: Zone) => (caret && caret.line === index && caret.zone === zone ? caret.index : null);
+  const lineEmpty = ZONES.every((z) => (line[z]?.length ?? 0) === 0);
   return (
     <div className="linerow">
       <div className="linerow-gutter">
         <LineMenu line={line} index={index} total={total} />
       </div>
       <div className={`linerow-body ${withCenter ? "with-center" : ""}`}>
-        <ZoneBox line={index} zone="left" items={line.left ?? []} at={at} caret={caretIn("left")} />
-        {withCenter && <ZoneBox line={index} zone="center" items={line.center ?? []} at={at} caret={caretIn("center")} />}
-        <ZoneBox line={index} zone="right" items={line.right ?? []} at={at} caret={caretIn("right")} />
+        <ZoneBox line={index} zone="left" items={line.left ?? []} at={at} caret={caretIn("left")} lineEmpty={lineEmpty} />
+        {withCenter && <ZoneBox line={index} zone="center" items={line.center ?? []} at={at} caret={caretIn("center")} lineEmpty={lineEmpty} />}
+        <ZoneBox line={index} zone="right" items={line.right ?? []} at={at} caret={caretIn("right")} lineEmpty={lineEmpty} />
       </div>
     </div>
   );
+}
+
+/** The widget a drag id stands for: a tray item (`tray:git.pr`) or a placed chip (`git.pr#0`). */
+function widgetOfDragId(id: string): string {
+  return id.startsWith(TRAY_PREFIX) ? id.slice(TRAY_PREFIX.length) : id.split("#")[0]!;
 }
 
 export function Layout() {
@@ -278,6 +286,9 @@ export function Layout() {
   const config = useStore((s) => s.config)!;
   const reorder = useStore((s) => s.reorder);
   const moveWidget = useStore((s) => s.moveWidget);
+  const addWidget = useStore((s) => s.addWidget);
+  const removeAt = useStore((s) => s.removeAt);
+  const setTryOn = useStore((s) => s.setTryOn);
   const addLine = useStore((s) => s.addLine);
   const live = useStore((s) => s.live);
   const withCenter = useStore(hasCenter);
@@ -286,24 +297,41 @@ export function Layout() {
   const [caret, setCaret] = useState<Pos | null>(null);
   const { ids, at } = useMemo(() => indexChips(config.lines), [config.lines]);
 
+  /** Where a drop on `overId` (a zone or a chip) lands, or null when it isn't in the layout. */
+  function dropTarget(overId: string): Pos | null {
+    const z = parseZoneId(overId);
+    if (z) return { ...z, index: config.lines[z.line]?.[z.zone]?.length ?? 0 };
+    return ids.get(overId) ?? null;
+  }
   function onDragStart(e: DragStartEvent) {
+    // A tray item was being hovered (try-on) when the drag began: the preview goes back to the real config.
+    setTryOn(null);
     setDragging(String(e.active.id));
   }
   function onDragOver(e: DragOverEvent) {
+    if (!e.over) return setCaret(null);
+    const target = dropTarget(String(e.over.id));
     const a = ids.get(String(e.active.id));
-    if (!a || !e.over) return setCaret(null);
-    const z = parseZoneId(String(e.over.id));
-    const target = z ? { ...z, index: config.lines[z.line]?.[z.zone]?.length ?? 0 } : ids.get(String(e.over.id));
-    // Same zone: the sortable strategy already shows the gap by shifting chips.
-    setCaret(target && !(target.line === a.line && target.zone === a.zone) ? target : null);
+    // Same zone: the sortable strategy already shows the gap by shifting chips. A tray item has no
+    // zone yet, so it always gets the caret.
+    setCaret(target && !(a && target.line === a.line && target.zone === a.zone) ? target : null);
   }
   function onDragEnd(e: DragEndEvent) {
     setDragging(null);
     setCaret(null);
     if (!e.over || e.active.id === e.over.id) return;
-    const a = ids.get(String(e.active.id));
+    const activeId = String(e.active.id);
+    const overId = String(e.over.id);
+    if (activeId.startsWith(TRAY_PREFIX)) {
+      const target = dropTarget(overId);
+      if (target) addWidget(target.line, target.zone, widgetOfDragId(activeId), target.index);
+      return;
+    }
+    const a = ids.get(activeId);
     if (!a) return;
-    const z = parseZoneId(String(e.over.id));
+    // Dragged back onto the tray: out of the statusline (undoable, and the toast says so).
+    if (overId === TRAY_DROP_ID) return removeAt(a);
+    const z = parseZoneId(overId);
     if (z) {
       // Dropped on a zone's empty space: append there (a no-op if it is already last in that zone).
       const len = config.lines[z.line]?.[z.zone]?.length ?? 0;
@@ -312,7 +340,7 @@ export function Layout() {
       } else moveWidget(a, z.line, z.zone, len);
       return;
     }
-    const b = ids.get(String(e.over.id));
+    const b = ids.get(overId);
     if (!b) return;
     if (a.line === b.line && a.zone === b.zone) reorder(a.line, a.zone, a.index, b.index);
     else moveWidget(a, b.line, b.zone, b.index);
@@ -332,15 +360,7 @@ export function Layout() {
       <p className="sr-only" aria-live="polite">
         {live}
       </p>
-      <div className="card layout-card">
-      <div className="linehead">
-        <span />
-        <div className="linehead-zones">
-          <span>{t.layout.zones.left}</span>
-          {withCenter && <span>{t.layout.zones.center}</span>}
-          <span>{t.layout.zones.right}</span>
-        </div>
-      </div>
+      {/* One drag context for the lines and the tray, so widgets travel both ways between them. */}
       <DndContext
         sensors={sensors}
         collisionDetection={collision}
@@ -352,22 +372,33 @@ export function Layout() {
           setCaret(null);
         }}
       >
-        <div className="linelist">
-          {config.lines.map((line, i) => (
-            <Row key={i} line={line} index={i} total={config.lines.length} withCenter={withCenter} at={at} caret={caret} />
-          ))}
+        <div className="card layout-card">
+          <div className="linehead">
+            <span />
+            <div className="linehead-zones">
+              <span>{t.layout.zones.left}</span>
+              {withCenter && <span>{t.layout.zones.center}</span>}
+              <span>{t.layout.zones.right}</span>
+            </div>
+          </div>
+          {/* data-dragging widens empty zones into visible drop slots, only while something is being dragged. */}
+          <div className="linelist" data-dragging={dragging !== null}>
+            {config.lines.map((line, i) => (
+              <Row key={i} line={line} index={i} total={config.lines.length} withCenter={withCenter} at={at} caret={caret} />
+            ))}
+          </div>
+          {/* Sits in the rows' column, as the next row would: adding a line reads as extending the list. */}
+          <div className="linerow">
+            <span />
+            <button className="addline" onClick={addLine}>
+              <Icon name="plus" size={14} />
+              {t.layout.addLine}
+            </button>
+          </div>
         </div>
-        <DragOverlay dropAnimation={null}>{dragging ? <ChipFace widget={dragging.split("#")[0]!} ghost /> : null}</DragOverlay>
+        <Tray />
+        <DragOverlay dropAnimation={null}>{dragging ? <ChipFace widget={widgetOfDragId(dragging)} ghost /> : null}</DragOverlay>
       </DndContext>
-      {/* Sits in the rows' column, as the next row would: adding a line reads as extending the list. */}
-      <div className="linerow">
-        <span />
-        <button className="addline" onClick={addLine}>
-          <Icon name="plus" size={14} />
-          {t.layout.addLine}
-        </button>
-      </div>
-      </div>
     </section>
   );
 }
