@@ -1,6 +1,6 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { api, type WidgetManifest } from "../api";
+import { api, type WidgetInstance, type WidgetManifest } from "../api";
 import { CAT_COLOR } from "../colors";
 import { TRAY_DROP_ID, TRAY_PREFIX } from "../collision";
 import { categoryName, useT, widgetDesc, widgetName } from "../i18n";
@@ -19,6 +19,22 @@ const rank = (cat: string) => {
  * would only repeat the first).
  */
 const REPEATABLE = (id: string) => id.startsWith("custom.");
+
+/**
+ * Widgets that a placed widget already shows as one of its parts, while the named option is on:
+ * offering them would only put the same value on the line twice. Turn the part off (e.g. the model
+ * badge's "Show effort level") and the stand-alone widget is back in the tray.
+ */
+const COVERED: Array<{ widget: string; by: string; option: string }> = [{ widget: "model.effort", by: "model.badge", option: "showEffort" }];
+
+/** Is `id` already shown by some placed widget (see COVERED)? */
+function coveredBy(id: string, placed: WidgetInstance[], widgets: WidgetManifest[]): boolean {
+  return COVERED.some((c) => {
+    if (c.widget !== id) return false;
+    const def = widgets.find((w) => w.id === c.by)?.defaults[c.option];
+    return placed.some((p) => p.widget === c.by && (p.options?.[c.option] ?? def) === true);
+  });
+}
 
 /** How many items a phone shows before "Show all": about three rows at 390px. */
 const COLLAPSED_COUNT = 8;
@@ -152,12 +168,16 @@ export function Tray() {
   const widgets = useStore((s) => s.widgets);
   const config = useStore((s) => s.config!);
   const { setNodeRef, isOver, active } = useDroppable({ id: TRAY_DROP_ID });
-  const inUse = useMemo(() => new Set(config.lines.flatMap((l) => [...(l.left ?? []), ...(l.center ?? []), ...(l.right ?? [])].map((w) => w.widget))), [config.lines]);
+  const placed = useMemo(() => config.lines.flatMap((l) => [...(l.left ?? []), ...(l.center ?? []), ...(l.right ?? [])]), [config.lines]);
   const groups = useMemo(() => {
+    const inUse = new Set(placed.map((w) => w.widget));
     const map = new Map<string, WidgetManifest[]>();
-    for (const w of widgets) if (!inUse.has(w.id) || REPEATABLE(w.id)) map.set(w.category, [...(map.get(w.category) ?? []), w]);
+    for (const w of widgets) {
+      const offered = REPEATABLE(w.id) || (!inUse.has(w.id) && !coveredBy(w.id, placed, widgets));
+      if (offered) map.set(w.category, [...(map.get(w.category) ?? []), w]);
+    }
     return [...map.entries()].sort(([a], [b]) => rank(a) - rank(b));
-  }, [widgets, inUse]);
+  }, [widgets, placed]);
   const count = groups.reduce((n, [, ws]) => n + ws.length, 0);
   // Only a chip from the layout can be dropped here (a tray item dropped back on the tray is a no-op).
   const removing = isOver && active !== null && !String(active.id).startsWith(TRAY_PREFIX);
