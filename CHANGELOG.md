@@ -2,7 +2,7 @@
 
 Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace installs update when it changes.
 
-## Unreleased
+## 0.3.0 — 2026-09-23
 
 A simpler configurator: the page is the layout and the style, and everything else is one click away.
 
