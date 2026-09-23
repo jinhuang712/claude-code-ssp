@@ -248,7 +248,7 @@ export const zh: Messages = {
     cancel: "取消",
   },
 
-  footer: {
+  prefs: {
     appearance: "外观",
     system: "跟随系统",
     light: "浅色",

@@ -904,6 +904,26 @@ input[type="checkbox"] {
 .menu-danger {
   color: var(--danger);
 }
+/* Viewer preferences at the bottom of the menu, set apart by space and a hairline. */
+.menu-prefs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  padding: var(--sp-3) 10px var(--sp-2);
+  border-top: 1px solid var(--line);
+}
+.menu-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--fg-2);
+}
+.menu-link {
+  color: var(--fg-2);
+}
 /* "Stop using": the second step, in place of the item, says what happens before anything does. */
 .menu-confirm {
   display: flex;
@@ -1562,32 +1582,6 @@ input[type="checkbox"] {
   white-space: nowrap;
   font-size: var(--fs-xs);
   color: var(--fg-2);
-}
-
-/* ---- footer: viewer preferences ---- */
-.footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 24px;
-  padding: var(--sp-4) 0 var(--sp-6);
-  border-top: 1px solid var(--line);
-  font-size: var(--fs-xs);
-  color: var(--muted);
-}
-.footer-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.footer-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--muted);
-}
-.footer-link:hover {
-  color: var(--fg);
 }
 
 /*

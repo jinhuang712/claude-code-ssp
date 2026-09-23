@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import type { FooterConfig, LineConfig } from "./api";
-import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { Layout } from "./components/Layout";
 import { Options } from "./components/Options";
@@ -404,8 +403,8 @@ export default function App() {
     );
   }
 
-  // The masthead spans the window (its bottom rule reaches both edges) while its content, the page
-  // and the footer share one centred column (.wrap).
+  // The masthead spans the window (its bottom rule reaches both edges) while its content and the
+  // page share one centred column (.wrap).
   return (
     <>
       <div className="masthead" ref={mast}>
@@ -420,9 +419,6 @@ export default function App() {
         <Layout />
         <Style />
       </main>
-      <div className="wrap">
-        <Footer />
-      </div>
       <Picker />
       <Options />
       {toast && (

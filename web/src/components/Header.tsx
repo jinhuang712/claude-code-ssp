@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { useT, type Messages } from "../i18n";
+import { useId, useState } from "react";
+import { LANGS, useLang, useT, type Lang, type Messages } from "../i18n";
 import { isDirty, useStore } from "../store";
 import { describeStatusLine } from "../statusline";
+import { useTheme, type ThemePref } from "../theme";
 import { Diagnostics } from "./Diagnostics";
 import { Icon } from "./Icon";
 import { Popover } from "./Popover";
@@ -151,6 +152,56 @@ function HeaderMenu({ close, openDiagnostics }: { close: () => void; openDiagnos
         {t.doctor.title}
       </button>
       {s.installed === true && <RestoreItem close={close} />}
+      <ViewerPrefs />
+      <a className="menu-item menu-link" href="https://github.com/jinhuang712/claude-code-ssp" target="_blank" rel="noreferrer">
+        <span className="inline-flex items-center gap-1.5">
+          {t.prefs.source}
+          <Icon name="external" size={13} />
+        </span>
+      </a>
+    </div>
+  );
+}
+
+const APPEARANCE: ThemePref[] = ["system", "light", "dark"];
+
+/**
+ * Viewer preferences (language, panel appearance): per browser, never written to the config. They
+ * used to fill a footer of their own; language is auto-detected and appearance follows the system,
+ * so most people never touch either — the menu is enough.
+ */
+function ViewerPrefs() {
+  const t = useT();
+  const lang = useLang((s) => s.lang);
+  const setLang = useLang((s) => s.setLang);
+  const pref = useTheme((s) => s.pref);
+  const setPref = useTheme((s) => s.setPref);
+  const langId = useId();
+  const appearanceId = useId();
+  return (
+    <div className="menu-prefs">
+      <div className="menu-field">
+        <label htmlFor={langId}>{t.header.language}</label>
+        {/* Each language is named in itself so it can be found by someone who can't read the current one. */}
+        <select id={langId} className="field field-sm !w-auto" value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+          {(Object.keys(LANGS) as Lang[]).map((l) => (
+            <option key={l} value={l}>
+              {LANGS[l].langName}
+            </option>
+          ))}
+        </select>
+      </div>
+      {/* Three options, all visible: a segmented control (toggle buttons in a named group). */}
+      <div className="menu-field" role="group" aria-labelledby={appearanceId}>
+        <span id={appearanceId}>{t.prefs.appearance}</span>
+        <span className="seg">
+          {APPEARANCE.map((p) => (
+            <button key={p} type="button" aria-pressed={pref === p} onClick={() => setPref(p)}>
+              {t.prefs[p]}
+            </button>
+          ))}
+        </span>
+      </div>
     </div>
   );
 }

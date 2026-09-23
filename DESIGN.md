@@ -102,7 +102,8 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   terminal, and the ✻ mark. Every text token is checked for WCAG AA on every surface; icons are inline SVGs
   (`components/Icon.tsx`). The page reads Presets → Layout → Style. Rarely used things stay off the page:
   render settings (width, terminal ground, right margin, colour depth, snapshots) sit behind the preview's
-  sliders button, and repairs, project config, diagnostics and the way out behind the header's ⋯ menu.
+  sliders button; repairs, project config, diagnostics, the way out and the viewer's language/appearance
+  behind the header's ⋯ menu. There is no footer.
 
 * **Preview** = `POST /api/render { config, sample, columns }` → the **same** render engine; output painted by xterm.js
   on a dark or light terminal ground with a matching ANSI palette, under a quiet mock of Claude Code's prompt

@@ -256,7 +256,8 @@ export const en = {
     cancel: "Cancel",
   },
 
-  footer: {
+  /** Viewer preferences in the header menu (per browser, never saved to the config). */
+  prefs: {
     appearance: "Appearance",
     system: "System",
     light: "Light",
