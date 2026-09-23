@@ -250,6 +250,8 @@ function Row({ line, index, total, withCenter, at, caret }: { line: LineConfig; 
   const lineEmpty = ZONES.every((z) => (line[z]?.length ?? 0) === 0);
   // The open widget's options unfold under its own line, so what is being edited stays next to it.
   const open = useStore((s) => s.selection?.line === index && widgetAt(s, s.selection) !== null);
+  const removeLine = useStore((s) => s.removeLine);
+  const t = useT();
   return (
     <div className="linerow" data-open={open}>
       <div className="linerow-gutter">
@@ -259,6 +261,16 @@ function Row({ line, index, total, withCenter, at, caret }: { line: LineConfig; 
         <ZoneBox line={index} zone="left" items={line.left ?? []} at={at} caret={caretIn("left")} lineEmpty={lineEmpty} />
         {withCenter && <ZoneBox line={index} zone="center" items={line.center ?? []} at={at} caret={caretIn("center")} lineEmpty={lineEmpty} />}
         <ZoneBox line={index} zone="right" items={line.right ?? []} at={at} caret={caretIn("right")} lineEmpty={lineEmpty} />
+        {/*
+          An empty line says how to fill it — and how to get rid of it, right there. Deleting it was
+          only possible from the menu behind the line number, which nobody found.
+        */}
+        {lineEmpty && (
+          <button className="btn btn-ghost btn-sm line-remove" onClick={() => removeLine(index)}>
+            <Icon name="x" size={12} />
+            {t.layout.deleteLine}
+          </button>
+        )}
       </div>
       {open && <OptionsPanel />}
     </div>

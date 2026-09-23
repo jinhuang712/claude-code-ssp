@@ -758,6 +758,12 @@ input[type="checkbox"] {
 }
 
 /* A line: a recessed well in the card, chips raised on it. */
+/* "Delete line" on an empty line: pushed to the row's right edge, where the right zone would be. */
+.line-remove {
+  align-self: center;
+  margin: 0 8px 0 auto;
+  color: var(--muted);
+}
 .linerow-body {
   display: flex;
   background: var(--row);
