@@ -29,6 +29,10 @@ export const zh: Messages = {
     nothingToUndo: "没有可撤销的改动",
     resetCounters: "重置计数",
     resetCountersTitle: "费用 / Tokens / API 次数 / 改动行数从现在起重新累计，只影响当前会话",
+    resetCountersHint: "费用 · tokens · 调用",
+    more: "更多操作",
+    saveAsProject: "另存为项目配置",
+    overwriteProject: "覆盖项目配置",
     apply: "应用到 Claude Code",
     applyTitle: "把状态栏接到 Claude Code（只需一次，之后每次改动自动生效）",
     reapply: "重新应用",
@@ -207,21 +211,11 @@ export const zh: Messages = {
     removeWidget: "从状态栏移除",
   },
 
-  advanced: {
-    title: "高级设置",
-    hint: "项目级配置、恢复",
-    separator: "项目之间的分隔符",
-    saveProject: "保存到当前项目",
-    overwriteProject: "覆盖项目配置",
-    saveAsProject: "另存为项目配置",
+  doctor: {
+    title: "诊断",
+    close: "关闭",
     configJson: "配置 JSON",
     pluginsHint: ["自定义 widget：把一个 .ts / .js 文件放进 ", "，重启服务后会出现在“＋”列表里。示例见仓库 examples/widgets/hello.ts。"],
-  },
-
-  doctor: {
-    section: "诊断",
-    sectionHint: "每项设置来自哪里、自定义 widget、原始输入",
-    title: "诊断",
     refresh: "刷新",
     loading: "诊断加载中…",
     failed: (err) => `诊断加载失败：${err}`,
@@ -240,7 +234,7 @@ export const zh: Messages = {
 
   consent: {
     title: "Claude Code 已经在用别的状态栏",
-    body: "应用后会替换它。原来的会保留下来，随时可以在「高级设置」里换回去。",
+    body: "应用后会替换它。原来的会保留下来，随时可以在右上角「⋯」菜单里换回去。",
     replace: "替换",
     notNow: "先不",
   },
@@ -251,6 +245,7 @@ export const zh: Messages = {
     none: "从 settings.json 移除（之前没有状态栏）。",
     restoreButton: "换回原来的",
     removeButton: "移除",
+    cancel: "取消",
   },
 
   footer: {

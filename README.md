@@ -31,7 +31,7 @@ Then, inside Claude Code:
 
 Your first edit in the panel applies the statusline to `~/.claude/settings.json` (a backup is kept).
 **If you already use another statusline** (claude-hud, a script…), the panel asks before replacing it, and
-*Advanced settings → Stop using this statusline* puts it back at any time. Every later edit saves
+*⋯ menu → Stop using this statusline* puts it back at any time. Every later edit saves
 automatically and shows on the next refresh.
 
 From a terminal, using a local checkout:
@@ -94,7 +94,7 @@ Colors are theme tokens (`fg muted accent ok warn crit model project git usage c
   address — other web pages can't read your sessions or change your settings, and DNS rebinding is refused.
   Writes must be JSON; there is no CORS.
 * **Project widgets are code.** `<project>/.claude/claude-code-ssp/widgets/*` runs on every statusline refresh, so it
-  only loads for projects listed in `plugins.trustedProjects` in your *user* config (the panel's *Diagnostics* has a
+  only loads for projects listed in `plugins.trustedProjects` in your *user* config (*⋯ menu → Diagnostics* has a
   *Trust this project* button). A project's own config can't trust itself or add plugin folders.
 * The preview only renders captured samples and built-in fixtures, never paths a request supplies.
 

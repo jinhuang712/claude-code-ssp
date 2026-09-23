@@ -1,41 +1,15 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import { api, type DoctorReport } from "../api";
 import { useT } from "../i18n";
-import { describeStatusLine } from "../statusline";
 import { useStore } from "../store";
-import { Icon } from "./Icon";
-
-/** The way out: put back whatever this configurator replaced (or remove it when there was nothing). */
-function Restore() {
-  const t = useT();
-  const installed = useStore((s) => s.installed);
-  const plan = useStore((s) => s.installPlan);
-  const uninstall = useStore((s) => s.uninstall);
-  if (installed !== true) return null;
-  const prev = plan?.savedPrevious ? describeStatusLine(plan.savedPrevious) : null;
-  return (
-    <div className="row row-top">
-      <span className="min-w-0">
-        {t.restore.title}
-        <span className="hint block">{prev ? t.restore.previous : t.restore.none}</span>
-        {prev && (
-          <code className="mono banner-code" title={prev.full}>
-            {prev.short}
-          </code>
-        )}
-      </span>
-      <button className="btn btn-danger" onClick={() => void uninstall()}>
-        {prev ? t.restore.restoreButton : t.restore.removeButton}
-      </button>
-    </div>
-  );
-}
+import { Drawer } from "./Drawer";
 
 /** A skipped project widget folder `<root>/.claude/claude-code-ssp/widgets` → its project root. */
 function projectRootOf(dir: string): string {
   return dir.replace(/[\\/]\.claude[\\/]claude-code-ssp[\\/]widgets[\\/]?$/, "");
 }
 
+/** Where every setting came from, which custom widgets loaded (or were refused), and raw inputs. */
 function DoctorReportView() {
   const t = useT();
   const cwd = useStore((s) => s.projectCwd);
@@ -122,86 +96,37 @@ function DoctorReportView() {
   );
 }
 
-/** A collapsible page section whose open state is remembered per browser. */
-function Disclosure({ storageKey, title, hint, children }: { storageKey: string; title: string; hint: string; children: React.ReactNode }) {
-  const id = useId();
-  const [open, setOpen] = useState(() => {
-    try {
-      return localStorage.getItem(storageKey) === "1";
-    } catch {
-      return false;
-    }
-  });
-  const toggle = () => {
-    setOpen(!open);
-    try {
-      localStorage.setItem(storageKey, open ? "0" : "1");
-    } catch {
-      /* not remembered */
-    }
-  };
-  return (
-    <section className="section disclosure-section">
-      <div className="disclosure-card" data-open={open}>
-        <h2 className="disclosure-h">
-          <button className="disclosure" aria-expanded={open} aria-controls={id} onClick={toggle}>
-            <Icon name="chevron" className="disclosure-chevron" />
-            <span className="disclosure-title">{title}</span>
-            <span className="hint">{hint}</span>
-          </button>
-        </h2>
-        {open && (
-          <div id={id} className="panel">
-            {children}
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-/** Settings most people never need: project files and the way out. (Render settings live in the preview's popover.) */
-export function Advanced() {
-  const t = useT();
-  const s = useStore();
-  const project = s.layers.find((l) => l.name === "project");
-  return (
-    <Disclosure storageKey="ssp.advanced" title={t.advanced.title} hint={t.advanced.hint}>
-      <div className="row">
-        <span className="min-w-0">
-          {t.advanced.saveProject}
-          <span className="hint block truncate" title={project?.path ?? undefined}>
-            {project?.path}
-          </span>
-        </span>
-        <button className="btn" onClick={() => void s.saveAsProject()}>
-          {project?.exists ? t.advanced.overwriteProject : t.advanced.saveAsProject}
-        </button>
-      </div>
-      <Restore />
-    </Disclosure>
-  );
-}
-
-/** Where every setting came from, which custom widgets loaded (or were refused), and raw inputs. */
-export function Diagnostics() {
+/**
+ * Diagnostics as a dialog opened from the header menu. It used to be a page section, but it is for
+ * debugging (config layers, plugin loading, raw stdin), not for shaping the statusline — the page
+ * now only holds what people edit.
+ */
+export function Diagnostics({ onClose }: { onClose: () => void }) {
   const t = useT();
   const c = useStore((s) => s.config!);
-  const [pluginsA, pluginsB] = t.advanced.pluginsHint;
+  const [pluginsA, pluginsB] = t.doctor.pluginsHint;
   return (
-    <Disclosure storageKey="ssp.diagnostics" title={t.doctor.section} hint={t.doctor.sectionHint}>
-      <DoctorReportView />
-      <details className="text-xs">
-        <summary className="hint cursor-pointer">{t.advanced.configJson}</summary>
-        <pre className="mono mt-1 max-h-64 overflow-auto p-2 text-xs" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
-          {JSON.stringify(c, null, 2)}
-        </pre>
-      </details>
-      <p className="hint">
-        {pluginsA}
-        <code className="mono">~/.config/claude-code-ssp/widgets/</code>
-        {pluginsB}
-      </p>
-    </Disclosure>
+    <Drawer label={t.doctor.title} onClose={onClose}>
+      <div className="sheet-head">
+        <h3 className="sheet-title">{t.doctor.title}</h3>
+        <button className="btn ml-auto" onClick={onClose}>
+          {t.doctor.close}
+        </button>
+      </div>
+      <div className="sheet-body">
+        <DoctorReportView />
+        <details className="text-xs">
+          <summary className="hint cursor-pointer">{t.doctor.configJson}</summary>
+          <pre className="mono mt-1 max-h-64 overflow-auto p-2 text-xs" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
+            {JSON.stringify(c, null, 2)}
+          </pre>
+        </details>
+        <p className="hint">
+          {pluginsA}
+          <code className="mono">~/.config/claude-code-ssp/widgets/</code>
+          {pluginsB}
+        </p>
+      </div>
+    </Drawer>
   );
 }

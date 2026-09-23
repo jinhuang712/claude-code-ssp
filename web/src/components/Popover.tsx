@@ -38,6 +38,14 @@ export function Popover({
 
   useEffect(() => {
     if (!open) return;
+    // Keep the panel on screen: `align` picks the edge, but on a phone the trigger can sit anywhere
+    // once toolbars wrap, so nudge the panel back inside an 8px margin if it still hangs over.
+    const el = panel.current;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      const shift = r.left < 8 ? 8 - r.left : r.right > window.innerWidth - 8 ? window.innerWidth - 8 - r.right : 0;
+      if (shift) el.style.transform = `translateX(${Math.round(shift)}px)`;
+    }
     panel.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
     const onDown = (e: PointerEvent) => {
       if (!wrap.current?.contains(e.target as Node)) setOpen(false);

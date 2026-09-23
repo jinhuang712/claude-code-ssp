@@ -34,6 +34,10 @@ export const en = {
     nothingToUndo: "Nothing to undo",
     resetCounters: "Reset counters",
     resetCountersTitle: "Restart cost, tokens, API calls and lines changed from zero. Only affects the current session.",
+    resetCountersHint: "cost · tokens · calls",
+    more: "More actions",
+    saveAsProject: "Save as project config",
+    overwriteProject: "Overwrite project config",
     apply: "Apply to Claude Code",
     applyTitle: "Point Claude Code's statusline at this configurator (once — later edits apply automatically)",
     reapply: "Re-apply",
@@ -215,21 +219,11 @@ export const en = {
     removeWidget: "Remove from statusline",
   },
 
-  advanced: {
-    title: "Advanced settings",
-    hint: "Project config, restore",
-    separator: "Separator between widgets",
-    saveProject: "Save to this project",
-    overwriteProject: "Overwrite project config",
-    saveAsProject: "Save as project config",
+  doctor: {
+    title: "Diagnostics",
+    close: "Close",
     configJson: "Config JSON",
     pluginsHint: ["Custom widgets: drop a .ts / .js file into ", ", restart the server, and it shows up in the “+” list. See examples/widgets/hello.ts."] as readonly [string, string],
-  },
-
-  doctor: {
-    section: "Diagnostics",
-    sectionHint: "Where each setting comes from, custom widgets, raw input",
-    title: "Diagnostics",
     refresh: "Refresh",
     loading: "Loading diagnostics…",
     failed: (err: string) => `Couldn't load diagnostics: ${err}`,
@@ -248,7 +242,7 @@ export const en = {
 
   consent: {
     title: "Claude Code already has a statusline",
-    body: "Applying this one replaces it. The current one is kept and can be put back from Advanced settings.",
+    body: "Applying this one replaces it. The current one is kept and can be put back any time from the ⋯ menu.",
     replace: "Replace it",
     notNow: "Not now",
   },
@@ -259,6 +253,7 @@ export const en = {
     none: "Removes it from settings.json (there was no statusline before).",
     restoreButton: "Restore previous",
     removeButton: "Remove",
+    cancel: "Cancel",
   },
 
   footer: {

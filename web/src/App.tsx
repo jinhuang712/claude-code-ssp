@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import type { FooterConfig, LineConfig } from "./api";
-import { Advanced, Diagnostics } from "./components/Advanced";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { Layout } from "./components/Layout";
@@ -420,8 +419,6 @@ export default function App() {
         <Presets />
         <Layout />
         <Style />
-        <Advanced />
-        <Diagnostics />
       </main>
       <div className="wrap">
         <Footer />

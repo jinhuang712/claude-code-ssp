@@ -100,7 +100,9 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   ivory/slate neutrals, one fixed clay accent (`--clay`, not the edited theme's colour, so focus rings and the
   primary button keep their contrast), serif titles over a sans body, mono for everything that mirrors the
   terminal, and the ✻ mark. Every text token is checked for WCAG AA on every surface; icons are inline SVGs
-  (`components/Icon.tsx`). The page reads Presets → Layout → Style, then Advanced/Diagnostics.
+  (`components/Icon.tsx`). The page reads Presets → Layout → Style. Rarely used things stay off the page:
+  render settings (width, terminal ground, right margin, colour depth, snapshots) sit behind the preview's
+  sliders button, and repairs, project config, diagnostics and the way out behind the header's ⋯ menu.
 
 * **Preview** = `POST /api/render { config, sample, columns }` → the **same** render engine; output painted by xterm.js
   on a dark or light terminal ground with a matching ANSI palette, under a quiet mock of Claude Code's prompt
@@ -119,7 +121,7 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
 * **Widget picker** renders option forms from each widget's JSON Schema. Drag widgets between zones and lines, or
   move them with Alt+Arrow keys; drawers are focus-trapped dialogs.
 * **Install**: the first save auto-applies unless another tool's statusLine is set — then the server answers 409 and
-  the panel asks. *Advanced settings → Stop using this statusline* restores the previous one.
+  the panel asks. *⋯ menu → Stop using this statusline* (two steps: it first says what comes back) restores the previous one.
 * **i18n**: typed message objects (`web/src/i18n`), English and 简体中文, browser-detected with a switcher.
 * **Security**: see `src/server/guard.ts` — own Host/Origin only, no CORS, JSON-only writes, 1 MB cap.
 * **Shipping**: `web/dist` is committed (marketplace installs run it as-is), stamped with a hash of its sources;

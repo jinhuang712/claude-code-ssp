@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { useT, type Messages } from "../i18n";
 import { isDirty, useStore } from "../store";
 import { describeStatusLine } from "../statusline";
+import { Diagnostics } from "./Diagnostics";
 import { Icon } from "./Icon";
+import { Popover } from "./Popover";
 
 /**
  * Asked before this configurator replaces another tool's statusLine. Nothing is overwritten until
- * "Replace it" — the old entry is parked and can be restored from Advanced settings.
+ * "Replace it" — the old entry is parked and can be restored from the header's ⋯ menu.
  */
 function ConsentBanner() {
   const t = useT();
@@ -73,9 +76,89 @@ function ScopeSelect() {
   );
 }
 
+/**
+ * "Stop using this statusline", in two steps: the first click says what will happen (which command
+ * comes back, or that ours is simply removed) and only the second one acts. A menu item is too easy
+ * to hit by accident for something that changes settings.json.
+ */
+function RestoreItem({ close }: { close: () => void }) {
+  const t = useT();
+  const plan = useStore((s) => s.installPlan);
+  const uninstall = useStore((s) => s.uninstall);
+  const [confirming, setConfirming] = useState(false);
+  const prev = plan?.savedPrevious ? describeStatusLine(plan.savedPrevious) : null;
+  if (!confirming) {
+    return (
+      <button className="menu-item menu-danger" onClick={() => setConfirming(true)}>
+        {t.restore.title}
+      </button>
+    );
+  }
+  return (
+    <div className="menu-confirm" role="group" aria-label={t.restore.title}>
+      <span className="hint">{prev ? t.restore.previous : t.restore.none}</span>
+      {prev && (
+        <code className="mono banner-code" title={prev.full}>
+          {prev.short}
+        </code>
+      )}
+      <div className="flex gap-2">
+        <button
+          className="btn btn-danger"
+          autoFocus
+          onClick={() => {
+            close();
+            void uninstall();
+          }}
+        >
+          {prev ? t.restore.restoreButton : t.restore.removeButton}
+        </button>
+        <button className="btn btn-ghost" onClick={() => setConfirming(false)}>
+          {t.restore.cancel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** The header's ⋯ menu: actions that matter rarely (repairs, the way out, debugging), off the main surface. */
+function HeaderMenu({ close, openDiagnostics }: { close: () => void; openDiagnostics: () => void }) {
+  const t = useT();
+  const s = useStore();
+  const project = s.layers.find((l) => l.name === "project");
+  // Each action closes the menu first, so focus returns to ⋯ before a toast or dialog appears.
+  const run = (fn: () => void) => () => {
+    close();
+    fn();
+  };
+  return (
+    <div className="menu">
+      {s.installed === true && (
+        <button className="menu-item" onClick={run(() => void s.install())} title={t.header.reapplyTitle}>
+          {t.header.reapply}
+        </button>
+      )}
+      <button className="menu-item" onClick={run(() => void s.resetCounters())} title={t.header.resetCountersTitle}>
+        {t.header.resetCounters}
+        <span className="hint">{t.header.resetCountersHint}</span>
+      </button>
+      <button className="menu-item" onClick={run(() => void s.saveAsProject())} title={project?.path ?? undefined}>
+        {project?.exists ? t.header.overwriteProject : t.header.saveAsProject}
+        {/* The file name is the same in every language (it is a path), so it isn't a locale string. */}
+        <span className="hint mono">.claude/claude-code-ssp.json</span>
+      </button>
+      <button className="menu-item" onClick={run(openDiagnostics)}>
+        {t.doctor.title}
+      </button>
+      {s.installed === true && <RestoreItem close={close} />}
+    </div>
+  );
+}
+
 export function Header() {
   const t = useT();
   const s = useStore();
+  const [diagnostics, setDiagnostics] = useState(false);
   const { state, text } = statusOf(s, t);
   return (
     <>
@@ -108,16 +191,19 @@ export function Header() {
           {t.header.undo}
           {s.past.length > 1 && <span className="count">{s.past.length}</span>}
         </button>
-        <button className="btn btn-ghost" onClick={() => void s.resetCounters()} title={t.header.resetCountersTitle}>
-          <Icon name="reset" />
-          {t.header.resetCounters}
-        </button>
-        <button className={s.installed === true ? "btn" : "btn btn-primary"} onClick={() => void s.install()} title={s.installed === true ? t.header.reapplyTitle : t.header.applyTitle}>
-          {s.installed === true ? t.header.reapply : t.header.apply}
-        </button>
+        {/* Applying is the one step a first-time user must take, so it stays visible until done; afterwards "Re-apply" is a repair tool and lives in the menu. */}
+        {s.installed !== true && (
+          <button className="btn btn-primary" onClick={() => void s.install()} title={t.header.applyTitle}>
+            {t.header.apply}
+          </button>
+        )}
+        <Popover label={t.header.more} buttonClassName="btn btn-ghost btn-icon" buttonContent={<Icon name="more" />} align="end">
+          {(close) => <HeaderMenu close={close} openDiagnostics={() => setDiagnostics(true)} />}
+        </Popover>
       </div>
     </header>
     <ConsentBanner />
+    {diagnostics && <Diagnostics onClose={() => setDiagnostics(false)} />}
     </>
   );
 }
