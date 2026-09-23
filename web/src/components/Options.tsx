@@ -32,24 +32,6 @@ function unmetRequirement(t: ReturnType<typeof useT>, widgetId: string, schema: 
   return null;
 }
 
-/**
- * Hover/focus a value to see it in the main preview before choosing it — the same try-on as themes
- * and presets. It replaces the old per-value sample renders: the preview above already shows the
- * whole statusline, so one picture is enough and the panel stays short.
- */
-function useTryValue(sel: Selection) {
-  const setTryOn = useStore((s) => s.setTryOn);
-  return (mutate: (w: WidgetInstance) => void, label: string) => {
-    const start = () => {
-      const lines = structuredClone(useStore.getState().config!.lines);
-      const w = lines[sel.line]?.[sel.zone]?.[sel.index];
-      if (!w) return;
-      mutate(w);
-      setTryOn({ patch: { lines }, label });
-    };
-    return { onMouseEnter: start, onFocus: start, onMouseLeave: () => setTryOn(null), onBlur: () => setTryOn(null) };
-  };
-}
 
 /** Theme tokens offered as colors, in display order; their labels live in `options.colors`. */
 const TOKENS = ["", "fg", "muted", "accent", "ok", "warn", "crit"];
@@ -126,11 +108,14 @@ function current(ctx: FieldCtx, name: string): unknown {
   return ctx.defaults[name] !== undefined ? ctx.defaults[name] : ctx.props[name]?.default;
 }
 
-/** An enum as a row of choices; hovering one tries it on in the preview. */
+/**
+ * An enum as a row of choices. Hovering one does nothing to the preview on purpose: a statusline
+ * that changed under the pointer while reading the options was more distracting than useful, and a
+ * click is instant and undoable anyway.
+ */
 function EnumField({ ctx, name }: { ctx: FieldCtx; name: string }) {
   const t = useT();
   const titleId = useId();
-  const tryValue = useTryValue(ctx.sel);
   const schema = ctx.props[name]!;
   const title = fieldTitle(t, name, schema);
   const hint = t.widgets.fieldHints[name];
@@ -155,7 +140,6 @@ function EnumField({ ctx, name }: { ctx: FieldCtx; name: string }) {
               aria-checked={cur === k}
               className="pill"
               title={short !== label ? label : undefined}
-              {...tryValue((w) => void (w.options = { ...(w.options ?? {}), [name]: v }), `${title}: ${short}`)}
               onClick={() => ctx.setOption(name, v)}
             >
               {short}
@@ -171,7 +155,6 @@ function EnumField({ ctx, name }: { ctx: FieldCtx; name: string }) {
 function TogglesField({ ctx, names }: { ctx: FieldCtx; names: string[] }) {
   const t = useT();
   const titleId = useId();
-  const tryValue = useTryValue(ctx.sel);
   return (
     <div className="opt-field opt-full">
       <span className="opt-title" id={titleId}>
@@ -190,7 +173,6 @@ function TogglesField({ ctx, names }: { ctx: FieldCtx; names: string[] }) {
               className="pill"
               data-inactive={needs !== null}
               title={needs ?? undefined}
-              {...tryValue((w) => void (w.options = { ...(w.options ?? {}), [name]: !on }), `${title}: ${on ? t.options.off : t.options.on}`)}
               onClick={() => ctx.setOption(name, !on)}
             >
               {title}

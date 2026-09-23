@@ -113,9 +113,9 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
 * **Preview** = `POST /api/render { config, sample, columns }` → the **same** render engine; output painted by xterm.js
   on a dark or light terminal ground with a matching ANSI palette, under a quiet mock of Claude Code's prompt
   (context only — the statusline sits below the prompt). WYSIWYG by construction.
-* **Probes**: every option value and boolean outcome is rendered against the current sample —
+* **Probes**: an open options panel's one line of current output is rendered against the current sample —
   coalesced into one `POST /api/render/batch` per tick (`web/src/probe.ts`) and drawn in colour (`Ansi.tsx`).
-* **Try-on**: hovering/focusing a template, theme, bar style, separator, tray widget or option value previews it
+* **Try-on**: hovering/focusing a template, theme, bar style, separator or tray widget previews it
   without saving (templates only on keyboard focus: opening their menu focuses the first one). The preview's
   height is sticky during try-ons (a shrinking preview moved the hovered chip away and looped), and the
   "Previewing: …" label lives inside the prompt row for the same reason.
@@ -133,8 +133,9 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
 * **Options open in place**: clicking a chip unfolds its options under its own line (the line and the panel read as
   one card) — it replaced a side drawer that dimmed the page. The form is generated from the widget's JSON Schema
   by kind: enums as a row of choices, every boolean in one group of toggles, `warnAt` + `critAt` as one threshold
-  band, colour as swatches, bold and the raw JSON under "More". Hovering a value tries it on in the main preview
-  instead of rendering a sample per value; the panel keeps one line of what the widget prints now.
+  band, colour as swatches, bold and the raw JSON under "More". Hovering a value leaves the preview alone (a
+  statusline changing under the pointer while reading was distracting); a click applies and is undoable, and
+  the panel keeps one line of what the widget prints now.
 * **Install**: the first save auto-applies unless another tool's statusLine is set — then the server answers 409 and
   the panel asks. *⋯ menu → Stop using this statusline* (two steps: it first says what comes back) restores the previous one.
 * **i18n**: typed message objects (`web/src/i18n`), English and 简体中文, browser-detected with a switcher.

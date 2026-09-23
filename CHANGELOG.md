@@ -9,8 +9,8 @@ A simpler configurator: the page is the layout and the style, and everything els
 - **Widgets are added from a tray** of unused ones under the layout, grouped by category: click to append to the
   last line, drag to put one anywhere, drag a chip back onto the tray (or press Delete) to remove it. It replaces
   the "+" in every zone and the picker drawer.
-- **Options open in place**, under the widget's own line, instead of in a side drawer. Values are a row of choices
-  you can hover to try on in the preview; booleans are one group of toggles; warn/crit thresholds are one band.
+- **Options open in place**, under the widget's own line, instead of in a side drawer. Values are a row of choices;
+  booleans are one group of toggles; warn/crit thresholds are one band.
 - **Presets** are a "Start from a template" menu next to the Layout title; **Style** is three summaries (theme,
   bar, separator) that open their choices in place.
 - **Off the page:** render settings (width, terminal ground, right margin, colour mode, snapshots) sit behind the
