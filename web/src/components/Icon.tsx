@@ -20,13 +20,16 @@ const PATHS = {
 
 export type IconName = keyof typeof PATHS;
 
-/** A 16px (by default) stroke icon that inherits the text colour. */
+/**
+ * A 16px (by default, at a 16px root) stroke icon that inherits the text colour. Sized in rem so it
+ * scales with the page's type (index.css).
+ */
 export function Icon({ name, size = 16, className }: { name: IconName; size?: number; className?: string }) {
+  const edge = `${size / 16}rem`;
   return (
     <svg
       className={`icon ${className ?? ""}`}
-      width={size}
-      height={size}
+      style={{ width: edge, height: edge }}
       viewBox="0 0 16 16"
       fill="none"
       stroke="currentColor"

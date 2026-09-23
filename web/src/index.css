@@ -19,6 +19,11 @@
   Type scale is five steps (12 / 13 / 14 / 16 / 20); 20 is for serif titles only. 12px is the
   floor: hints are read, not decoration, and CJK glyphs smaller than that lose strokes.
 
+  Sizes are rem, so the whole page scales with the root font size (and with the viewer's own
+  browser font setting). Pixel numbers in comments are at a 16px root. Borders, outlines and shadows
+  stay in px: edges and rings should stay crisp, not grow. Media queries are rem too, but a media
+  query's rem is the browser's initial font size, not the root's.
+
   Contrast (WCAG 2.2, checked for every text token × bg / bg-deep / panel / panel-2):
   - --muted ≥ 4.7:1 and --accent ≥ 4.3:1 (large-ish UI text) in both schemes;
   - --on-clay on --clay is 5.9:1; --field-line clears the 3:1 non-text minimum for input edges.
@@ -30,20 +35,20 @@
   --font-serif: ui-serif, "Iowan Old Style", Charter, Georgia, "Songti SC", serif;
   --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
   font-family: var(--font-sans);
-  --fs-xs: 12px;
-  --fs-sm: 13px;
-  --fs-md: 14px;
-  --fs-lg: 16px;
-  --fs-xl: 20px;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.875rem;
+  --fs-lg: 1rem;
+  --fs-xl: 1.25rem;
 
   /* 4px grid. */
-  --sp-1: 4px;
-  --sp-2: 8px;
-  --sp-3: 12px;
-  --sp-4: 16px;
-  --sp-5: 24px;
-  --sp-6: 32px;
-  --sp-7: 48px;
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
 
   --bg: #1f1e1c;
   --bg-deep: #181715;
@@ -72,9 +77,9 @@
   */
   --term-dark: #262523;
   --term-light: #f0eee6;
-  --r-1: 6px;
-  --r-2: 10px;
-  --r-3: 14px;
+  --r-1: 0.375rem;
+  --r-2: 0.625rem;
+  --r-3: 0.875rem;
   /*
     Editor surfaces, separated by fill instead of borders: page < row (a layout line, the tray, a
     style summary) < chip (a widget, a choice). They alias existing tokens because the order flips
@@ -160,8 +165,8 @@ button:disabled {
 /* ---- page frame: one centred column shared by the masthead, the page and the footer ---- */
 .wrap {
   margin: 0 auto;
-  max-width: 1080px;
-  padding: 0 32px;
+  max-width: 67.5rem;
+  padding: 0 2rem;
 }
 .page {
   padding-bottom: var(--sp-7);
@@ -172,7 +177,7 @@ button:disabled {
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 14px 0 16px;
+  padding: 0.875rem 0 1rem;
   background: var(--bg);
   border-bottom: 1px solid var(--line);
 }
@@ -189,26 +194,26 @@ button:disabled {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px 16px;
-  margin-bottom: 14px;
+  gap: 0.625rem 1rem;
+  margin-bottom: 0.875rem;
 }
 .topbar-id {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
+  gap: 0.5rem 0.75rem;
   min-width: 0;
-  flex: 1 1 320px;
+  flex: 1 1 20rem;
 }
 .brand-mark {
   color: var(--clay);
-  font-size: 22px;
+  font-size: 1.375rem;
   line-height: 1;
   /* The glyph sits high in most fonts; nudge it onto the title's x-height. */
   transform: translateY(1px);
 }
 .topbar h1 {
-  margin: 0 0 0 -4px;
+  margin: 0 0 0 -0.25rem;
   font-size: var(--fs-xl);
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -219,17 +224,17 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
   margin-left: auto;
 }
 /* Save state as a pill: a coloured dot + one short sentence. */
 .status {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 0.4375rem;
   min-width: 0;
   max-width: 100%;
-  padding: 3px 10px 3px 9px;
+  padding: 0.1875rem 0.625rem 0.1875rem 0.5625rem;
   border-radius: 999px;
   background: var(--row);
   font-size: var(--fs-xs);
@@ -243,8 +248,8 @@ button:disabled {
 .status::before {
   content: "";
   flex: none;
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: 50%;
   background: var(--muted);
 }
@@ -300,13 +305,13 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  min-height: 32px;
+  gap: 0.375rem;
+  min-height: 2rem;
   white-space: nowrap;
   border: 1px solid var(--line-strong);
   background: var(--panel);
   border-radius: var(--r-1);
-  padding: 0 12px;
+  padding: 0 0.75rem;
   font-size: var(--fs-sm);
   font-weight: 500;
   line-height: 1.3;
@@ -335,7 +340,7 @@ button:disabled {
   background: var(--clay);
   color: var(--on-clay);
   font-weight: 600;
-  padding: 0 14px;
+  padding: 0 0.875rem;
 }
 .btn-primary:hover:not(:disabled) {
   border-color: transparent;
@@ -346,18 +351,18 @@ button:disabled {
   color: var(--danger);
 }
 .btn-icon {
-  width: 32px;
+  width: 2rem;
   padding: 0;
   font-size: var(--fs-lg);
 }
 
 .field {
   width: 100%;
-  min-height: 32px;
+  min-height: 2rem;
   border: 1px solid var(--field-line);
   background: var(--bg-deep);
   border-radius: var(--r-1);
-  padding: 4px 10px;
+  padding: 0.25rem 0.625rem;
   font-size: var(--fs-sm);
   color: var(--fg);
   outline: none;
@@ -375,12 +380,12 @@ button:disabled {
 }
 /* Compact variant for toolbars (preview bar, footer): same edge, less height. */
 .field-sm {
-  min-height: 28px;
-  padding: 2px 8px;
+  min-height: 1.75rem;
+  padding: 2px 0.5rem;
 }
 input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
   accent-color: var(--clay);
 }
 
@@ -395,9 +400,9 @@ input[type="checkbox"] {
   font-size: var(--fs-xs);
 }
 .seg > button {
-  min-height: 24px;
-  padding: 0 10px;
-  border-radius: 4px;
+  min-height: 1.5rem;
+  padding: 0 0.625rem;
+  border-radius: 0.25rem;
   color: var(--muted);
 }
 .seg > button:hover {
@@ -421,9 +426,9 @@ input[type="checkbox"] {
 .choice {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 36px;
-  padding: 0 12px;
+  gap: 0.625rem;
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
   border: 1px solid transparent;
   border-radius: var(--r-1);
   background: var(--chip);
@@ -458,9 +463,9 @@ input[type="checkbox"] {
 .style-pick {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 40px;
-  padding: 0 12px;
+  gap: 0.625rem;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
   border: 1px solid transparent;
   border-radius: var(--r-1);
   background: var(--row);
@@ -506,9 +511,9 @@ input[type="checkbox"] {
 .strip {
   display: inline-flex;
   gap: 2px;
-  height: 18px;
-  padding: 5px 6px;
-  border-radius: 4px;
+  height: 1.125rem;
+  padding: 0.3125rem 0.375rem;
+  border-radius: 0.25rem;
   background: var(--term-dark);
   box-shadow: inset 0 0 0 1px var(--line);
 }
@@ -522,13 +527,13 @@ input[type="checkbox"] {
 }
 /* The custom separator slot is its text field: no second box around it. */
 .choice-custom {
-  gap: 8px;
+  gap: 0.5rem;
   padding: 0;
   border: 0;
   background: none;
 }
 .choice-custom .field {
-  min-height: 36px;
+  min-height: 2.25rem;
 }
 .choice-custom[data-active="true"] {
   background: none;
@@ -549,7 +554,7 @@ input[type="checkbox"] {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 1rem;
   font-size: var(--fs-sm);
 }
 .row > span:first-child {
@@ -570,7 +575,7 @@ input[type="checkbox"] {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  min-height: 32px;
+  min-height: 2rem;
   font-size: var(--fs-xs);
   color: var(--muted);
 }
@@ -641,19 +646,19 @@ input[type="checkbox"] {
 .layout-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.375rem;
 }
 .linelist {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.375rem;
 }
 /* minmax(0, 1fr), not 1fr: an unbreakable line in an open options panel (a long path) must scroll, not widen the page. */
 .linerow {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-columns: 1.75rem minmax(0, 1fr);
   align-items: center;
-  column-gap: 8px;
+  column-gap: 0.5rem;
 }
 .linerow-gutter {
   display: flex;
@@ -663,8 +668,8 @@ input[type="checkbox"] {
 }
 /* The line number doubles as the line's menu button. */
 .linerow-num {
-  width: 28px;
-  height: 28px;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: var(--r-1);
   border: 1px solid transparent;
   font-size: var(--fs-xs);
@@ -682,14 +687,14 @@ input[type="checkbox"] {
 /* "Delete line" on an empty line: pushed to the row's right edge, where the right zone would be. */
 .line-remove {
   align-self: center;
-  margin: 0 8px 0 auto;
+  margin: 0 0.5rem 0 auto;
   color: var(--muted);
 }
 .linerow-body {
   display: flex;
   background: var(--row);
   border-radius: var(--r-2);
-  min-height: 46px;
+  min-height: 2.875rem;
   min-width: 0;
 }
 
@@ -697,8 +702,8 @@ input[type="checkbox"] {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
+  gap: 0.375rem;
+  padding: 0.5rem 0.625rem;
   min-width: 0;
   border-radius: var(--r-1);
 }
@@ -708,7 +713,7 @@ input[type="checkbox"] {
 /* No divider between zones: the right zone is pushed to the edge, as on the real line, and that gap says enough. */
 .zone[data-zone="center"] {
   flex: 0 1 auto;
-  min-width: 96px;
+  min-width: 6rem;
   justify-content: center;
 }
 .zone[data-zone="right"] {
@@ -731,7 +736,7 @@ input[type="checkbox"] {
 .drop-caret {
   display: block;
   width: 2px;
-  height: 22px;
+  height: 1.375rem;
   margin: 0 -1px;
   border-radius: 1px;
   background: var(--clay);
@@ -744,11 +749,11 @@ input[type="checkbox"] {
 }
 .popover {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 0.25rem);
   left: 0;
   z-index: 15;
-  min-width: 300px;
-  padding: 12px;
+  min-width: 18.75rem;
+  padding: 0.75rem;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-2);
   background: var(--panel);
@@ -762,7 +767,7 @@ input[type="checkbox"] {
 .linemenu {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.625rem;
   font-size: var(--fs-sm);
 }
 /* Preview settings: one labelled control per row, the explanation under its label. */
@@ -775,7 +780,7 @@ input[type="checkbox"] {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
-  width: min(360px, calc(100vw - 64px));
+  width: min(22.5rem, calc(100vw - 4rem));
   font-size: var(--fs-sm);
   color: var(--fg);
 }
@@ -809,8 +814,8 @@ input[type="checkbox"] {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  width: min(300px, calc(100vw - 64px));
-  margin: -6px;
+  width: min(18.75rem, calc(100vw - 4rem));
+  margin: -0.375rem;
 }
 /* A hint goes under its label: beside it, a file path squeezed "Save as project config" onto three lines. */
 .menu-item {
@@ -818,8 +823,8 @@ input[type="checkbox"] {
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  min-height: 36px;
-  padding: 6px 10px;
+  min-height: 2.25rem;
+  padding: 0.375rem 0.625rem;
   border-radius: var(--r-1);
   font-size: var(--fs-sm);
   text-align: left;
@@ -837,7 +842,7 @@ input[type="checkbox"] {
   flex-direction: column;
   gap: var(--sp-2);
   margin-top: var(--sp-2);
-  padding: var(--sp-3) 10px var(--sp-2);
+  padding: var(--sp-3) 0.625rem var(--sp-2);
   border-top: 1px solid var(--line);
 }
 .menu-field {
@@ -856,17 +861,17 @@ input[type="checkbox"] {
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
-  padding: var(--sp-2) 10px;
+  padding: var(--sp-2) 0.625rem;
 }
 .linemenu-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0.375rem;
 }
 .linemenu-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.25rem;
   color: var(--fg-2);
 }
 
@@ -875,8 +880,8 @@ input[type="checkbox"] {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  height: 28px;
-  padding: 0 9px;
+  height: 1.75rem;
+  padding: 0 0.5625rem;
   border-radius: var(--r-1);
   /* A filled tile on its row, no outline: the fill step (row → chip) does the separating. */
   border: 1px solid transparent;
@@ -904,7 +909,7 @@ input[type="checkbox"] {
 .chip-name {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
   min-width: 0;
   height: 100%;
   padding: 0;
@@ -922,8 +927,8 @@ input[type="checkbox"] {
 .chip-name::before {
   content: "";
   flex: none;
-  width: 7px;
-  height: 7px;
+  width: 0.4375rem;
+  height: 0.4375rem;
   border-radius: 50%;
   background: var(--cat, var(--muted));
 }
@@ -937,10 +942,10 @@ input[type="checkbox"] {
   color: var(--fg-2);
 }
 .chip-empty {
-  padding: 0 4px;
+  padding: 0 0.25rem;
   border-radius: 2px;
   font-size: var(--fs-xs);
-  line-height: 15px;
+  line-height: 0.9375rem;
   background: var(--panel-2);
   color: var(--muted);
 }
@@ -950,9 +955,9 @@ input[type="checkbox"] {
   display: inline-flex;
   align-items: center;
   justify-self: start;
-  gap: 6px;
-  height: 32px;
-  padding: 0 10px;
+  gap: 0.375rem;
+  height: 2rem;
+  padding: 0 0.625rem;
   border-radius: var(--r-1);
   font-size: var(--fs-sm);
   color: var(--muted);
@@ -967,8 +972,8 @@ input[type="checkbox"] {
   collapsed: an empty right zone used to carry a "+" and a sentence on every line.
 */
 .linelist[data-dragging="true"] .zone[data-empty="true"] {
-  min-width: 120px;
-  min-height: 30px;
+  min-width: 7.5rem;
+  min-height: 1.875rem;
   outline: 1px dashed var(--field-line);
   outline-offset: -4px;
 }
@@ -994,7 +999,7 @@ input[type="checkbox"] {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 2px 10px;
+  gap: 2px 0.625rem;
 }
 .tray-head h3 {
   margin: 0;
@@ -1010,25 +1015,25 @@ input[type="checkbox"] {
 }
 .tray-group {
   display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
+  grid-template-columns: 7rem minmax(0, 1fr);
   align-items: start;
   gap: var(--sp-3);
 }
 .tray-cat {
-  padding-top: 6px;
+  padding-top: 0.375rem;
   font-size: var(--fs-xs);
   color: var(--muted);
 }
 .tray-group-items {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0.375rem;
 }
 /* On a phone the name goes above its widgets: a 112px column would leave the chips no room. */
-@media (max-width: 720px) {
+@media (max-width: 45rem) {
   .tray-group {
     grid-template-columns: minmax(0, 1fr);
-    gap: 4px;
+    gap: 0.25rem;
   }
   .tray-cat {
     padding-top: 0;
@@ -1037,9 +1042,9 @@ input[type="checkbox"] {
 .tray-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 9px;
+  gap: 0.375rem;
+  height: 1.75rem;
+  padding: 0 0.5625rem;
   border-radius: var(--r-1);
   background: var(--row);
   font-size: var(--fs-sm);
@@ -1052,8 +1057,8 @@ input[type="checkbox"] {
 .tray-item::before {
   content: "";
   flex: none;
-  width: 7px;
-  height: 7px;
+  width: 0.4375rem;
+  height: 0.4375rem;
   border-radius: 50%;
   background: var(--cat, var(--muted));
 }
@@ -1070,9 +1075,9 @@ input[type="checkbox"] {
   z-index: 25;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-width: min(320px, calc(100vw - 16px));
-  padding: 10px 12px;
+  gap: 0.375rem;
+  max-width: min(20rem, calc(100vw - 1rem));
+  padding: 0.625rem 0.75rem;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-2);
   background: var(--panel);
@@ -1086,7 +1091,7 @@ input[type="checkbox"] {
 .tray-tip-sample {
   align-self: flex-start;
   max-width: 100%;
-  padding: 2px 6px;
+  padding: 2px 0.375rem;
   border-radius: var(--r-1);
   background: var(--chip);
   color: var(--fg);
@@ -1098,14 +1103,14 @@ input[type="checkbox"] {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 12px;
+  gap: 0.375rem 0.75rem;
   padding: var(--sp-2) var(--sp-3);
   border-radius: var(--r-1);
   background: color-mix(in srgb, var(--warn) 10%, var(--panel));
   font-size: var(--fs-sm);
 }
 .tray-notice code {
-  flex: 1 1 200px;
+  flex: 1 1 12.5rem;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -1140,9 +1145,9 @@ input[type="checkbox"] {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 2px 10px;
+  gap: 2px 0.625rem;
   min-width: 0;
-  flex: 1 1 320px;
+  flex: 1 1 20rem;
 }
 .opt-name {
   margin: 0;
@@ -1164,14 +1169,14 @@ input[type="checkbox"] {
 /* Short controls flow into columns; wide ones (thresholds, toggles) take a full row. */
 .opt-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(13.75rem, 1fr));
   gap: var(--sp-4) var(--sp-5);
   align-items: start;
 }
 .opt-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.375rem;
   min-width: 0;
 }
 .opt-full {
@@ -1188,11 +1193,11 @@ input[type="checkbox"] {
 .pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 0.25rem;
 }
 .pill {
-  min-height: 28px;
-  padding: 0 10px;
+  min-height: 1.75rem;
+  padding: 0 0.625rem;
   border: 1px solid transparent;
   border-radius: var(--r-1);
   background: var(--chip);
@@ -1222,8 +1227,8 @@ input[type="checkbox"] {
 }
 .threshold-band {
   display: flex;
-  flex: 1 1 200px;
-  height: 8px;
+  flex: 1 1 12.5rem;
+  height: 0.5rem;
   overflow: hidden;
   border-radius: var(--r-1);
 }
@@ -1234,7 +1239,7 @@ input[type="checkbox"] {
 .threshold-num {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
 }
 /* One of the two numbers has no effect in the current colour mode (the reason is written under the field). */
 .threshold-num[data-inactive="true"] {
@@ -1242,8 +1247,8 @@ input[type="checkbox"] {
 }
 /* A compact button for inline actions inside a field (Hide / Show). */
 .btn-sm {
-  min-height: 28px;
-  padding: 0 8px;
+  min-height: 1.75rem;
+  padding: 0 0.5rem;
   font-size: var(--fs-xs);
 }
 
@@ -1257,7 +1262,7 @@ input[type="checkbox"] {
   --term-fg: #e8e6dc;
   display: inline-block;
   max-width: 100%;
-  padding: 1px 6px;
+  padding: 1px 0.375rem;
   border-radius: var(--r-1);
   background: var(--term-bg);
   color: var(--term-fg);
@@ -1294,7 +1299,7 @@ input[type="checkbox"] {
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(520px, 100vw);
+  width: min(32.5rem, 100vw);
   max-width: 100%;
   display: flex;
   flex-direction: column;
@@ -1332,13 +1337,13 @@ input[type="checkbox"] {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
 }
 .swatch {
   display: inline-grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: 50%;
   border: 1px solid var(--line-strong);
   background: var(--sw, transparent);
@@ -1365,8 +1370,8 @@ input[type="checkbox"] {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 10px;
-  padding: 10px 10px 12px;
+  gap: 0.625rem;
+  padding: 0.625rem 0.625rem 0.75rem;
   border: 1px solid transparent;
   border-radius: var(--r-2);
   background: var(--row);
@@ -1390,7 +1395,7 @@ input[type="checkbox"] {
 .mode-name {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 0.5rem;
   font-weight: 600;
   color: var(--fg);
 }
@@ -1401,14 +1406,14 @@ input[type="checkbox"] {
 }
 /* Custom before anything was built: the sketch's frame, empty. */
 .sketch-blank {
-  min-height: 52px;
+  min-height: 3.25rem;
 }
 /* The editor's how-to line, between the mode cards and the lines. */
 .layout-hint {
   margin: var(--sp-4) 0 var(--sp-2);
   font-size: var(--fs-sm);
 }
-@media (max-width: 720px) {
+@media (max-width: 45rem) {
   .modes {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1416,20 +1421,20 @@ input[type="checkbox"] {
 .sketch {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 10px 12px;
+  gap: 0.3125rem;
+  padding: 0.625rem 0.75rem;
   border-radius: var(--r-1);
   background: var(--sunken);
 }
 .sk-line {
   display: flex;
-  gap: 12px;
-  height: 6px;
+  gap: 0.75rem;
+  height: 0.375rem;
 }
 .sk-zone {
   display: flex;
   flex: 1 1 0;
-  gap: 3px;
+  gap: 0.1875rem;
   min-width: 0;
 }
 .sk-zone:last-child {
@@ -1438,9 +1443,9 @@ input[type="checkbox"] {
 .sk-zone > i {
   display: block;
   flex: 0 1 auto;
-  min-width: 4px;
+  min-width: 0.25rem;
   height: 100%;
-  border-radius: 3px;
+  border-radius: 0.1875rem;
   opacity: 0.9;
 }
 
@@ -1448,8 +1453,8 @@ input[type="checkbox"] {
 .sheet-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 16px;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
   border-bottom: 1px solid var(--line);
 }
 .sheet-body {
@@ -1477,10 +1482,10 @@ input[type="checkbox"] {
 .welcome .h2 {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.625rem;
 }
 .welcome ol {
-  margin: 12px 0 18px;
+  margin: 0.75rem 0 1.125rem;
   padding: 0;
   list-style: none;
   counter-reset: step;
@@ -1488,7 +1493,7 @@ input[type="checkbox"] {
 }
 .welcome li {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-columns: 1.375rem minmax(0, 1fr);
   counter-increment: step;
 }
 .welcome li::before {
@@ -1497,7 +1502,7 @@ input[type="checkbox"] {
   color: var(--accent);
 }
 .welcome li + li {
-  margin-top: 6px;
+  margin-top: 0.375rem;
 }
 .tag-warn {
   background: color-mix(in srgb, var(--warn) 18%, var(--panel));
@@ -1506,21 +1511,21 @@ input[type="checkbox"] {
 .scope {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
   font-size: var(--fs-xs);
   color: var(--muted);
 }
 .skipped {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
 }
 .tag {
-  padding: 0 6px;
-  border-radius: 4px;
+  padding: 0 0.375rem;
+  border-radius: 0.25rem;
   font-size: var(--fs-xs);
-  line-height: 18px;
+  line-height: 1.125rem;
   background: var(--panel-2);
   color: var(--fg-2);
 }
@@ -1528,16 +1533,16 @@ input[type="checkbox"] {
 /* Inverted (fg on bg): a transient message has to stand apart from every surface it floats over. */
 .toast {
   position: fixed;
-  bottom: 24px;
+  bottom: 1.5rem;
   left: 50%;
   z-index: 30;
   width: max-content;
-  max-width: min(640px, calc(100vw - 32px));
+  max-width: min(40rem, calc(100vw - 2rem));
   transform: translateX(-50%);
   background: var(--fg);
   color: var(--bg);
   border-radius: var(--r-2);
-  padding: 10px 16px;
+  padding: 0.625rem 1rem;
   font-size: var(--fs-sm);
   box-shadow: 0 12px 32px var(--shadow);
 }
@@ -1548,20 +1553,20 @@ input[type="checkbox"] {
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px 16px;
-  margin-bottom: 14px;
-  padding: 12px 16px;
+  gap: 0.625rem 1rem;
+  margin-bottom: 0.875rem;
+  padding: 0.75rem 1rem;
   border: 1px solid color-mix(in srgb, var(--warn) 55%, var(--line-strong));
   border-radius: var(--r-2);
   background: color-mix(in srgb, var(--warn) 8%, var(--panel));
   font-size: var(--fs-sm);
 }
 .banner p {
-  margin: 2px 0 6px;
+  margin: 2px 0 0.375rem;
 }
 .banner-actions {
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
 }
 .banner-code {
   display: block;
@@ -1577,7 +1582,7 @@ input[type="checkbox"] {
   A sticky preview is the point of the layout on a desktop, but on a phone or a short window it
   would eat half the screen. There it scrolls away, and drawers take the whole viewport.
 */
-@media (max-width: 560px), (max-height: 640px) {
+@media (max-width: 35rem), (max-height: 40rem) {
   .masthead {
     position: static;
   }
@@ -1586,9 +1591,9 @@ input[type="checkbox"] {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 45rem) {
   .wrap {
-    padding: 0 16px;
+    padding: 0 1rem;
   }
   /* The three style summaries stack full-width, chevron at the right edge. */
   .style-pick {
@@ -1598,7 +1603,7 @@ input[type="checkbox"] {
     margin-left: auto;
   }
   .masthead {
-    padding: 12px 0;
+    padding: 0.75rem 0;
   }
   .linerow-body {
     flex-direction: column;
