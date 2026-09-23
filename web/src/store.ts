@@ -109,6 +109,8 @@ interface State {
   setColumns(n: number): void;
   setColumnsMode(m: "auto" | number): void;
   select(sel: Selection | null): void;
+  /** Close the open options panel and give focus back to the chip it belongs to. */
+  closeOptions(): void;
   /**
    * Insert a widget (from the tray) at a position — the end of the zone when `index` is omitted;
    * with no lines at all, a first line is created. Focus moves to the new chip.
@@ -321,6 +323,7 @@ export const useStore = create<State>((set, get) => {
     },
 
     select: (selection) => set({ selection }),
+    closeOptions: () => set((st) => ({ selection: null, focusPos: st.selection })),
 
     addWidget(line, zone, widget, index) {
       const lines = get().config!.lines;

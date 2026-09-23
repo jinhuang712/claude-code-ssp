@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import type { FooterConfig, LineConfig } from "./api";
 import { Header } from "./components/Header";
 import { Layout } from "./components/Layout";
-import { Options } from "./components/Options";
 import { Preview } from "./components/Preview";
 import { TextField } from "./components/TextField";
 import { CAT_COLOR, uiColor } from "./colors";
@@ -418,7 +417,6 @@ export default function App() {
         <Layout />
         <Style />
       </main>
-      <Options />
       {toast && (
         <div className="toast" role="status">
           {toast}

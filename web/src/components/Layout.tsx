@@ -18,8 +18,9 @@ import { CSS } from "@dnd-kit/utilities";
 import type { LineConfig, WidgetInstance, Zone } from "../api";
 import { CAT_COLOR } from "../colors";
 import { useT, widgetName } from "../i18n";
-import { emptyStateAt, hasCenter, useStore } from "../store";
+import { emptyStateAt, hasCenter, useStore, widgetAt } from "../store";
 import { Icon } from "./Icon";
+import { OptionsPanel } from "./Options";
 import { Popover } from "./Popover";
 import { Tray, TRAY_DROP_ID, TRAY_PREFIX } from "./Tray";
 
@@ -119,7 +120,9 @@ function Chip({ id, line, zone, index, item }: { id: string; line: number; zone:
       <button
         ref={nameBtn}
         className="chip-name"
-        onClick={() => s.select({ line, zone, index })}
+        // A second click on the open chip closes its options again.
+        onClick={() => (selected ? s.closeOptions() : s.select({ line, zone, index }))}
+        aria-expanded={selected}
         onKeyDown={(e) => {
           // Delete / Backspace removes (undoable; the toast says so) — the keyboard twin of dragging a chip to the tray.
           if (e.key === "Delete" || e.key === "Backspace") {
@@ -259,8 +262,10 @@ function LineMenu({ line, index, total }: { line: LineConfig; index: number; tot
 function Row({ line, index, total, withCenter, at, caret }: { line: LineConfig; index: number; total: number; withCenter: boolean; at: Map<string, string>; caret: Pos | null }) {
   const caretIn = (zone: Zone) => (caret && caret.line === index && caret.zone === zone ? caret.index : null);
   const lineEmpty = ZONES.every((z) => (line[z]?.length ?? 0) === 0);
+  // The open widget's options unfold under its own line, so what is being edited stays next to it.
+  const open = useStore((s) => s.selection?.line === index && widgetAt(s, s.selection) !== null);
   return (
-    <div className="linerow">
+    <div className="linerow" data-open={open}>
       <div className="linerow-gutter">
         <LineMenu line={line} index={index} total={total} />
       </div>
@@ -269,6 +274,7 @@ function Row({ line, index, total, withCenter, at, caret }: { line: LineConfig; 
         {withCenter && <ZoneBox line={index} zone="center" items={line.center ?? []} at={at} caret={caretIn("center")} lineEmpty={lineEmpty} />}
         <ZoneBox line={index} zone="right" items={line.right ?? []} at={at} caret={caretIn("right")} lineEmpty={lineEmpty} />
       </div>
+      {open && <OptionsPanel />}
     </div>
   );
 }

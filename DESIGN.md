@@ -122,8 +122,13 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
 * **Tray**: every widget not in the layout sits under it, grouped by category (`custom.*` stay after use — they are
   meant to be placed several times). Click one to append it to the last line (focus moves to the new chip), drag it
   into any zone, or drag a placed chip back onto the tray to remove it; hovering one tries it on in the preview. The
-  tray replaced a "+" in every zone and a picker drawer. Option forms are rendered from each widget's JSON Schema.
-  Drag widgets between zones and lines, or move them with Alt+Arrow keys; drawers are focus-trapped dialogs.
+  tray replaced a "+" in every zone and a picker drawer. Drag widgets between zones and lines, or move them with
+  Alt+Arrow keys; Delete removes a focused chip.
+* **Options open in place**: clicking a chip unfolds its options under its own line (the line and the panel read as
+  one card) — it replaced a side drawer that dimmed the page. The form is generated from the widget's JSON Schema
+  by kind: enums as a row of choices, every boolean in one group of toggles, `warnAt` + `critAt` as one threshold
+  band, colour as swatches, bold and the raw JSON under "More". Hovering a value tries it on in the main preview
+  instead of rendering a sample per value; the panel keeps one line of what the widget prints now.
 * **Install**: the first save auto-applies unless another tool's statusLine is set — then the server answers 409 and
   the panel asks. *⋯ menu → Stop using this statusline* (two steps: it first says what comes back) restores the previous one.
 * **i18n**: typed message objects (`web/src/i18n`), English and 简体中文, browser-detected with a switcher.

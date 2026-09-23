@@ -1,7 +1,8 @@
 /**
- * "Probes" are one-widget renders: the options drawer previews every value of every option, and the
- * picker previews every widget, against the current session. Rendered one request each, opening a
- * busy widget cost 20+ requests and every click another 20.
+ * "Probes" are one-widget renders against the current session — today the one-line "what it prints
+ * now" in an open options panel. They used to preview every value of every option and every widget
+ * in the picker; rendered one request each, opening a busy widget cost 20+ requests and every click
+ * another 20, which is why they are batched.
  *
  * `probe()` instead queues the render and flushes everything queued in the same tick as one
  * POST /api/render/batch (chunked to the server's 100-config cap). A short-lived cache answers

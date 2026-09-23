@@ -3,7 +3,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
- * Side drawer (modal dialog) used by the widget picker and the options panel. It opens below the
+ * Side drawer (modal dialog), used by Diagnostics (widget options open in place instead). It opens below the
  * sticky preview so every change stays visible while it is made.
  *
  * Keyboard contract (WAI-ARIA dialog): focus moves inside on open (to an `autoFocus` element if the
