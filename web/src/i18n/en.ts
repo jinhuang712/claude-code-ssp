@@ -209,7 +209,6 @@ export const en = {
     critAt: "Red at %",
     // Under the gradient colour mode the critical threshold no longer turns the value red, only bold.
     critBold: "Bold at %",
-    more: "More: bold, JSON",
     // "Text color", not "Color": several widgets also have a colour *mode* option right next to it.
     color: "Text color",
     colors: { "": "Default", fg: "Text", muted: "Muted", accent: "Accent", ok: "Green", warn: "Yellow", crit: "Red" } as Record<string, string>,

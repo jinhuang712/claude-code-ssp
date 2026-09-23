@@ -151,8 +151,11 @@ function EnumField({ ctx, name }: { ctx: FieldCtx; name: string }) {
   );
 }
 
-/** Every on/off option of the widget as one group of toggle buttons, instead of a checkbox row each. */
-function TogglesField({ ctx, names }: { ctx: FieldCtx; names: string[] }) {
+/**
+ * Every on/off option of the widget — plus Bold, which is a style rather than an option but reads
+ * the same — as one group of toggle buttons, instead of a checkbox row each.
+ */
+function TogglesField({ ctx, names, bold, setBold }: { ctx: FieldCtx; names: string[]; bold: boolean; setBold: (b: boolean) => void }) {
   const t = useT();
   const titleId = useId();
   return (
@@ -179,6 +182,9 @@ function TogglesField({ ctx, names }: { ctx: FieldCtx; names: string[] }) {
             </button>
           );
         })}
+        <button type="button" aria-pressed={bold} className="pill" onClick={() => setBold(!bold)}>
+          {t.options.bold}
+        </button>
       </div>
     </div>
   );
@@ -410,23 +416,9 @@ export function OptionsPanel() {
         ))}
         <ColorField style={style} setStyle={setStyle} />
         {isThreshold && <ThresholdField ctx={ctx} />}
-        {toggles.length > 0 && <TogglesField ctx={ctx} names={toggles} />}
+        {/* Bold sits with the widget's own switches: one toggle among the others, not behind a "More" fold. */}
+        <TogglesField ctx={ctx} names={toggles} bold={!!style.bold} setBold={(b) => setStyle({ bold: b })} />
       </div>
-      <details className="opt-more">
-        <summary>
-          <Icon name="chevron" size={12} className="opt-more-chevron" />
-          {t.options.more}
-        </summary>
-        <div className="opt-more-body">
-          <label className="inline-flex items-center gap-2">
-            <input type="checkbox" checked={!!style.bold} onChange={(e) => setStyle({ bold: e.target.checked })} />
-            {t.options.bold}
-          </label>
-          <pre className="mono max-h-40 overflow-auto p-2 text-xs" style={{ background: "var(--bg-deep)", borderRadius: "var(--r-1)" }}>
-            {JSON.stringify(w, null, 2)}
-          </pre>
-        </div>
-      </details>
     </div>
   );
 }

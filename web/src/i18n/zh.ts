@@ -199,7 +199,6 @@ export const zh: Messages = {
     warnAt: "黄色 %",
     critAt: "红色 %",
     critBold: "加粗 %",
-    more: "更多：加粗、JSON",
     color: "文字颜色",
     colors: { "": "默认", fg: "正文", muted: "弱化", accent: "强调", ok: "绿", warn: "黄", crit: "红" },
     custom: "自定义",

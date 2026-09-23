@@ -1265,30 +1265,6 @@ input[type="checkbox"] {
 .threshold-num[data-inactive="true"] {
   opacity: 0.5;
 }
-.opt-more summary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--fs-xs);
-  color: var(--muted);
-  cursor: pointer;
-  list-style: none;
-}
-.opt-more summary::-webkit-details-marker {
-  display: none;
-}
-.opt-more-chevron {
-  transition: transform 0.15s;
-}
-.opt-more[open] .opt-more-chevron {
-  transform: rotate(90deg);
-}
-.opt-more-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  margin-top: var(--sp-2);
-}
 /* A compact button for inline actions inside a field (Hide / Show). */
 .btn-sm {
   min-height: 28px;
