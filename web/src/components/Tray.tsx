@@ -1,6 +1,6 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
-import { useEffect, useMemo, useState } from "react";
-import { api, type LineConfig, type WidgetManifest } from "../api";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { api, type WidgetManifest } from "../api";
 import { CAT_COLOR } from "../colors";
 import { TRAY_DROP_ID, TRAY_PREFIX } from "../collision";
 import { categoryName, useT, widgetDesc, widgetName } from "../i18n";
@@ -37,46 +37,69 @@ function useNarrow(): boolean {
   return narrow;
 }
 
-/** `lines` with `widget` appended to the last line's left zone: where a click on a tray item puts it. */
-function appendToLast(lines: LineConfig[], widget: string): LineConfig[] {
-  const next = structuredClone(lines);
-  if (next.length === 0) next.push({ left: [], right: [] });
-  const last = next[next.length - 1]!;
-  last.left = [...(last.left ?? []), { widget }];
-  return next;
+/** Keep a floating tooltip this far from the window edges. */
+const EDGE = 8;
+
+/**
+ * What a tray item is, shown above it on hover or keyboard focus: its description and what it
+ * prints (the widget's sample). It replaced a try-on that redrew the whole preview for every item
+ * the pointer crossed. Positioned fixed from the item's box and clamped to the window, so items at
+ * either end of a row don't push it off screen.
+ */
+function TrayTip({ id, anchor, w }: { id: string; anchor: HTMLElement; w: WidgetManifest }) {
+  const t = useT();
+  const tip = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+  useLayoutEffect(() => {
+    const a = anchor.getBoundingClientRect();
+    const box = tip.current!.getBoundingClientRect();
+    const left = Math.max(EDGE, Math.min(window.innerWidth - box.width - EDGE, a.left + a.width / 2 - box.width / 2));
+    // Above the item; below it when there is no room above (the item sits at the top of the window).
+    const top = a.top - box.height - 6 >= EDGE ? a.top - box.height - 6 : a.bottom + 6;
+    setPos({ left, top });
+  }, [anchor]);
+  return (
+    <div ref={tip} id={id} role="tooltip" className="tray-tip" style={pos ? { left: pos.left, top: pos.top } : { visibility: "hidden" }}>
+      <span>{widgetDesc(t, w, w.id)}</span>
+      {w.sample && <span className="tray-tip-sample mono">{w.sample}</span>}
+    </div>
+  );
 }
 
 function TrayItem({ w, repeatable }: { w: WidgetManifest; repeatable: boolean }) {
   const t = useT();
   const lines = useStore((s) => s.config!.lines);
   const addWidget = useStore((s) => s.addWidget);
-  const setTryOn = useStore((s) => s.setTryOn);
   const { setNodeRef, listeners, isDragging } = useDraggable({ id: `${TRAY_PREFIX}${w.id}` });
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const tipId = useId();
   const name = widgetName(t, w, w.id);
-  // Hover or focus previews the statusline with this widget added; leaving goes back.
-  const tryOn = () => setTryOn({ patch: { lines: appendToLast(lines, w.id) }, label: name });
   return (
-    <button
-      ref={setNodeRef}
-      type="button"
-      className="tray-item mono"
-      style={{ ["--cat" as string]: CAT_COLOR[w.category] ?? CAT_COLOR.misc, opacity: isDragging ? 0.4 : 1 }}
-      title={widgetDesc(t, w, w.id)}
-      aria-describedby="tray-help"
-      {...listeners}
-      onMouseEnter={tryOn}
-      onMouseLeave={() => setTryOn(null)}
-      onFocus={tryOn}
-      onBlur={() => setTryOn(null)}
-      onClick={() => {
-        setTryOn(null);
-        addWidget(Math.max(0, lines.length - 1), "left", w.id);
-      }}
-    >
-      {name}
-      {repeatable && <span className="chip-empty">{t.tray.repeatable}</span>}
-      {w.source === "plugin" && <span className="chip-empty">{t.tray.plugin}</span>}
-    </button>
+    <>
+      <button
+        ref={setNodeRef}
+        type="button"
+        className="tray-item mono"
+        style={{ ["--cat" as string]: CAT_COLOR[w.category] ?? CAT_COLOR.misc, opacity: isDragging ? 0.4 : 1 }}
+        aria-describedby={`${tipId} tray-help`}
+        {...listeners}
+        onMouseEnter={(e) => setAnchor(e.currentTarget)}
+        onMouseLeave={() => setAnchor(null)}
+        // Keyboard focus only: a mouse click also focuses, and the tip is already showing then.
+        onFocus={(e) => e.currentTarget.matches(":focus-visible") && setAnchor(e.currentTarget)}
+        onBlur={() => setAnchor(null)}
+        onKeyDown={(e) => e.key === "Escape" && setAnchor(null)}
+        onClick={() => {
+          setAnchor(null);
+          addWidget(Math.max(0, lines.length - 1), "left", w.id);
+        }}
+      >
+        {name}
+        {repeatable && <span className="chip-empty">{t.tray.repeatable}</span>}
+        {w.source === "plugin" && <span className="chip-empty">{t.tray.plugin}</span>}
+      </button>
+      {anchor && !isDragging && <TrayTip id={tipId} anchor={anchor} w={w} />}
+    </>
   );
 }
 

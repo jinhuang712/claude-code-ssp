@@ -115,7 +115,7 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   (context only — the statusline sits below the prompt). WYSIWYG by construction.
 * **Probes**: an open options panel's one line of current output is rendered against the current sample —
   coalesced into one `POST /api/render/batch` per tick (`web/src/probe.ts`) and drawn in colour (`Ansi.tsx`).
-* **Try-on**: hovering/focusing a template, theme, bar style, separator or tray widget previews it
+* **Try-on**: hovering/focusing a template, theme, bar style or separator previews it
   without saving (templates only on keyboard focus: opening their menu focuses the first one). The preview's
   height is sticky during try-ons (a shrinking preview moved the hovered chip away and looped), and the
   "Previewing: …" label lives inside the prompt row for the same reason.
@@ -127,7 +127,8 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   you preview against your real session. Live samples are shown exactly as captured — no synthetic values.
 * **Tray**: every widget not in the layout sits under it, grouped by category (`custom.*` stay after use — they are
   meant to be placed several times). Click one to append it to the last line (focus moves to the new chip), drag it
-  into any zone, or drag a placed chip back onto the tray to remove it; hovering one tries it on in the preview. The
+  into any zone, or drag a placed chip back onto the tray to remove it; hovering one shows a tooltip with its
+  description and sample output (it used to redraw the preview for every item the pointer crossed). The
   tray replaced a "+" in every zone and a picker drawer. Drag widgets between zones and lines, or move them with
   Alt+Arrow keys; Delete removes a focused chip.
 * **Options open in place**: clicking a chip unfolds its options under its own line (the line and the panel read as
