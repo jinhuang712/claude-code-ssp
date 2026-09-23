@@ -38,12 +38,33 @@ export const PRESETS: Record<PresetId, { lines: LineConfig[] }> = {
       { left: [{ widget: "usage.windows" }], right: [{ widget: "context.bar" }] },
     ],
   },
+  // A layout built and tuned in the panel, taken as is — labels, bold and options included, so the
+  // preset looks like the layout it was made from. (matchingPreset compares widgets only.)
   full: {
     lines: [
-      { left: [{ widget: "project.path" }, { widget: "git.branch" }], right: [{ widget: "model.badge" }, { widget: "session.duration" }, { widget: "cost.session" }] },
-      { left: [{ widget: "usage.windows" }], right: [{ widget: "context.bar" }] },
-      { left: [{ widget: "tokens.session" }], right: [{ widget: "session.started" }, { widget: "session.lastReply" }] },
-      { left: [{ widget: "activity.agents" }, { widget: "activity.todos" }] },
+      {
+        left: [
+          { widget: "project.path", label: "Project", options: { levels: "tilde" } },
+          { widget: "project.sessionName", label: null, style: { bold: true } },
+        ],
+        right: [{ widget: "model.badge", label: null, options: { effortParens: true, effortStyle: "word" } }],
+      },
+      {
+        left: [
+          { widget: "git.repo", label: "Git" },
+          { widget: "git.branch", options: { showFileStats: true } },
+          { widget: "git.linesChanged", style: { bold: true }, options: { source: "worktree" } },
+        ],
+        right: [{ widget: "context.bar", options: { colorMode: "gradient", showTokens: true } }],
+      },
+      {
+        left: [{ widget: "usage.windows", options: { resetFormat: "absolute", bar: true, colorMode: "gradient" } }],
+        right: [{ widget: "context.promptCache", options: { showHitRatio: true } }],
+      },
+      {
+        left: [{ widget: "cost.session" }, { widget: "tokens.session", options: { style: "arrows" } }],
+        right: [{ widget: "tokens.outputSpeed" }],
+      },
     ],
   },
 };

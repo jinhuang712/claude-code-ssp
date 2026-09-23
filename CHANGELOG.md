@@ -13,6 +13,9 @@ A simpler configurator: the page is the layout and the style, and everything els
   booleans are one group of toggles; warn/crit thresholds are one band.
 - **Presets come first:** Minimal, Standard, Full or Custom, as cards at the top of Layout. The line editor and the
   widget tray belong to Custom; a custom layout is kept while you look at a preset and comes back with Custom.
+  **Full** is a new layout: project and session name · model / repo, branch and lines changed · context bar /
+  usage · prompt cache / cost and tokens · output speed, with gradient colours and bars (it had session
+  times, agents and todos).
   **Style** is three summaries (theme, bar, separator) that open their choices in place.
 - **Off the page:** render settings (width, terminal ground, right margin, colour mode, snapshots) sit behind the
   preview's sliders button; re-apply, reset counters, project config, diagnostics, "stop using", language and
