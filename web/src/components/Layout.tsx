@@ -18,7 +18,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { LineConfig, WidgetInstance, Zone } from "../api";
 import { CAT_COLOR } from "../colors";
 import { useT, widgetName } from "../i18n";
-import { effectiveLabel, emptyStateAt, hasCenter, useStore } from "../store";
+import { emptyStateAt, hasCenter, useStore } from "../store";
 import { Icon } from "./Icon";
 import { Popover } from "./Popover";
 import { Tray, TRAY_DROP_ID, TRAY_PREFIX } from "./Tray";
@@ -96,7 +96,6 @@ function Chip({ id, line, zone, index, item }: { id: string; line: number; zone:
   const manifest = s.widgets.find((w) => w.id === item.widget);
   const selected = s.selection?.line === line && s.selection.zone === zone && s.selection.index === index;
   const cat = CAT_COLOR[manifest?.category ?? "misc"];
-  const label = effectiveLabel(item, manifest);
   const empty = emptyStateAt(s.preview, { line, zone, index });
   const name = widgetName(t, manifest, item.widget);
 
@@ -122,6 +121,12 @@ function Chip({ id, line, zone, index, item }: { id: string; line: number; zone:
         className="chip-name"
         onClick={() => s.select({ line, zone, index })}
         onKeyDown={(e) => {
+          // Delete / Backspace removes (undoable; the toast says so) — the keyboard twin of dragging a chip to the tray.
+          if (e.key === "Delete" || e.key === "Backspace") {
+            e.preventDefault();
+            s.removeAt({ line, zone, index });
+            return;
+          }
           const dir = ARROWS[e.key];
           if (!dir || !e.altKey) return;
           e.preventDefault();
@@ -129,23 +134,15 @@ function Chip({ id, line, zone, index, item }: { id: string; line: number; zone:
         }}
         title={empty === "filled" ? t.layout.filledTitle : empty === "hidden" ? t.layout.hiddenTitle : t.layout.editOptions}
         aria-describedby={CHIP_HELP_ID}
-        aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown"
+        aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown Delete"
       >
-        {label && <span className="chip-label">{label}</span>}
-        {/* Its own span so a name too long for a phone-width zone truncates instead of wrapping. */}
+        {/*
+          Just the name. The label ("Project" in front of the path) used to sit beside it, which read
+          as the same word twice; it is edited, and shown, in the widget's options and the preview.
+          Its own span so a name too long for a phone-width zone truncates instead of wrapping.
+        */}
         <span className="chip-text">{name}</span>
         {empty && <span className="chip-empty">{empty === "filled" ? t.layout.sampleTag : t.layout.noDataTag}</span>}
-      </button>
-      <button
-        className="chip-x"
-        onClick={(e) => {
-          e.stopPropagation();
-          s.removeAt({ line, zone, index });
-        }}
-        aria-label={`${t.layout.remove}: ${name}`}
-        title={t.layout.remove}
-      >
-        <Icon name="x" size={12} />
       </button>
     </span>
   );

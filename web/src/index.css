@@ -943,7 +943,7 @@ input[type="checkbox"] {
   align-items: center;
   gap: 2px;
   height: 28px;
-  padding: 0 3px 0 9px;
+  padding: 0 9px;
   border-radius: var(--r-1);
   border: 1px solid var(--line-strong);
   background: var(--panel);
@@ -964,9 +964,6 @@ input[type="checkbox"] {
   border-color: var(--clay);
   box-shadow: 0 8px 24px var(--shadow);
 }
-.chip[data-ghost="true"] .chip-name {
-  padding-right: 8px;
-}
 .chip[data-selected="true"] {
   border-color: var(--clay);
   box-shadow: 0 0 0 1px var(--clay);
@@ -977,7 +974,7 @@ input[type="checkbox"] {
   gap: 6px;
   min-width: 0;
   height: 100%;
-  padding: 0 4px 0 0;
+  padding: 0;
   line-height: 1;
   color: var(--fg);
 }
@@ -986,7 +983,6 @@ input[type="checkbox"] {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.chip-label,
 .chip-empty {
   flex: none;
 }
@@ -997,18 +993,6 @@ input[type="checkbox"] {
   height: 7px;
   border-radius: 50%;
   background: var(--cat, var(--muted));
-}
-.chip-label {
-  color: var(--muted);
-}
-.chip-label::after {
-  content: "";
-  display: inline-block;
-  width: 1px;
-  height: 10px;
-  margin-left: 6px;
-  background: var(--line-strong);
-  vertical-align: -1px;
 }
 .chip[data-empty="true"] {
   border-style: dashed;
@@ -1025,20 +1009,6 @@ input[type="checkbox"] {
   line-height: 15px;
   background: var(--panel-2);
   color: var(--muted);
-}
-/* Always visible (a hover-only × can't be found by touch or by someone scanning the row). */
-.chip-x {
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  color: var(--muted);
-  transition: color 0.1s, background 0.1s;
-}
-.chip-x:hover {
-  background: var(--panel-2);
-  color: var(--fg);
 }
 
 /* The "Add line" row under the last line: dashed = a slot. */
