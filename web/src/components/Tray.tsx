@@ -2,6 +2,7 @@ import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useEffect, useMemo, useState } from "react";
 import { api, type LineConfig, type WidgetManifest } from "../api";
 import { CAT_COLOR } from "../colors";
+import { TRAY_DROP_ID, TRAY_PREFIX } from "../collision";
 import { categoryName, useT, widgetDesc, widgetName } from "../i18n";
 import { useStore } from "../store";
 
@@ -35,11 +36,6 @@ function useNarrow(): boolean {
   }, []);
   return narrow;
 }
-
-/** Drag ids for tray items are prefixed so the layout can tell "add this" from "move this chip". */
-export const TRAY_PREFIX = "tray:";
-/** The tray itself is a drop target: a chip dropped on it is removed from the statusline. */
-export const TRAY_DROP_ID = "tray";
 
 /** `lines` with `widget` appended to the last line's left zone: where a click on a tray item puts it. */
 function appendToLast(lines: LineConfig[], widget: string): LineConfig[] {

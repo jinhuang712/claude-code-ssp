@@ -2,12 +2,9 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
-  closestCenter,
-  pointerWithin,
   useDroppable,
   useSensor,
   useSensors,
-  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -17,13 +14,14 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import type { LineConfig, WidgetInstance, Zone } from "../api";
 import { CAT_COLOR } from "../colors";
+import { collision, TRAY_DROP_ID, TRAY_PREFIX, ZONE_PREFIX } from "../collision";
 import { useT, widgetName } from "../i18n";
 import { emptyStateAt, hasCenter, useStore, widgetAt } from "../store";
 import { Icon } from "./Icon";
 import { OptionsPanel } from "./Options";
 import { Templates } from "./Templates";
 import { Popover } from "./Popover";
-import { Tray, TRAY_DROP_ID, TRAY_PREFIX } from "./Tray";
+import { Tray } from "./Tray";
 
 /*
   Drag ids must survive a reorder. Positions do not, so a chip is identified by its widget id plus
@@ -35,10 +33,10 @@ const ZONES: Zone[] = ["left", "center", "right"];
 const CHIP_HELP_ID = "chip-help";
 
 function zoneId(line: number, zone: Zone): string {
-  return `zone:${line}:${zone}`;
+  return `${ZONE_PREFIX}${line}:${zone}`;
 }
 function parseZoneId(id: string): { line: number; zone: Zone } | null {
-  if (!id.startsWith("zone:")) return null;
+  if (!id.startsWith(ZONE_PREFIX)) return null;
   const [, l, z] = id.split(":");
   return { line: Number(l), zone: z as Zone };
 }
@@ -59,19 +57,6 @@ function indexChips(lines: LineConfig[]): { ids: Map<string, Pos>; at: Map<strin
   );
   return { ids, at };
 }
-
-/*
-  Prefer the chip (or the tray) under the pointer, then the zone under the pointer, then whatever is
-  nearest. The tray is left out of "nearest": dropping on it removes the widget, so letting go of a
-  chip in empty space must never resolve to it just because it happens to be the closest target.
-*/
-const collision: CollisionDetection = (args) => {
-  const within = pointerWithin(args);
-  const chips = within.filter((c) => !String(c.id).startsWith("zone:"));
-  if (chips.length) return chips;
-  if (within.length) return within;
-  return closestCenter({ ...args, droppableContainers: args.droppableContainers.filter((c) => c.id !== TRAY_DROP_ID) });
-};
 
 function ChipFace({ widget, ghost }: { widget: string; ghost?: boolean }) {
   const t = useT();
