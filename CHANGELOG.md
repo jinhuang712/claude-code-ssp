@@ -24,6 +24,8 @@ A simpler configurator: the page is the layout and the style, and everything els
   mock prompt): a small *Preview* label with the column count and settings, the lines on the same fill as the
   layout rows, the note under them. "Trying on …" shows beside the label. A dark or light terminal picked in the
   preview settings still gets its own ground.
+- **Everything is 10% larger**, and the preview's lines a little more (13px → 16px). Sizes now follow your
+  browser's font-size setting too.
 - **The preview follows your session.** `/ssp:config` opens the page bound to the session you ran it in, and the
   preview's data picker is gone (without a session it shows the most recent one).
 - **No undo.** The Undo button, Ctrl/⌘+Z and the "… — Ctrl/⌘+Z to undo" toasts are gone: they were more noise

@@ -127,6 +127,19 @@ function PreviewSettings() {
   );
 }
 
+/**
+ * The preview's type size, relative to the root: a step above the page's own mono text (chips are
+ * 0.8125rem), because the statusline is what the page is about and at the page's size it read
+ * small. xterm takes pixels, so this is resolved from the root font size once, when the terminal
+ * is created, and rounded to a whole pixel. With the 110% root that is 16px (it was 13px).
+ */
+const PREVIEW_FONT_REM = 0.9;
+
+function previewFontPx(): number {
+  const root = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  return Math.round((Number.isFinite(root) && root > 0 ? root : 16) * PREVIEW_FONT_REM);
+}
+
 export function Preview() {
   const t = useT();
   const host = useRef<HTMLDivElement>(null);
@@ -150,7 +163,7 @@ export function Preview() {
       cursorBlink: false,
       cursorInactiveStyle: "none",
       fontFamily: 'ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace',
-      fontSize: 13,
+      fontSize: previewFontPx(),
       lineHeight: 1.25,
       theme: TERM_THEMES[termScheme(useTheme.getState())],
     });

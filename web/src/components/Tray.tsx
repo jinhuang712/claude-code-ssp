@@ -50,7 +50,7 @@ function coveredBy(id: string, placed: WidgetInstance[], widgets: WidgetManifest
 /** How many items a phone shows before "Show all": about three rows at 390px. */
 const COLLAPSED_COUNT = 8;
 /** Same breakpoint as the stacked layout rows in index.css. */
-const NARROW_QUERY = "(max-width: 45rem)";
+const NARROW_QUERY = "(max-width: 49.5rem)";
 
 function useNarrow(): boolean {
   const [narrow, setNarrow] = useState(() => typeof window !== "undefined" && window.matchMedia?.(NARROW_QUERY).matches === true);
