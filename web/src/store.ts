@@ -112,7 +112,6 @@ interface State {
    * removal came with a "Ctrl/⌘+Z to undo" toast). Edits save on their own, 800 ms later.
    */
   setConfig(mutate: (c: FooterConfig) => void): void;
-  setSample(id: string | null): Promise<void>;
   setScope(scope: Scope): void;
   setColumns(n: number): void;
   setColumnsMode(m: "auto" | number): void;
@@ -180,6 +179,28 @@ function setPref(key: string, value: string): void {
 export function zoneOf(line: LineConfig, zone: Zone): WidgetInstance[] {
   if (!line[zone]) line[zone] = [];
   return line[zone]!;
+}
+
+/**
+ * The Claude Code session this page belongs to: /ssp:config opens it with `?session=<id>` (the id
+ * Claude Code exports to the slash command's shell). Null when the page was opened some other way.
+ */
+function sessionFromUrl(): string | null {
+  try {
+    return new URLSearchParams(window.location.search).get("session");
+  } catch {
+    return null; // no window (tests) or a malformed URL: behave as if opened directly
+  }
+}
+
+/**
+ * What the preview shows — there is no picker: the session /ssp:config was run from; if it hasn't
+ * rendered (and so been captured) yet, the most recent live session; with none at all, the first
+ * bundled sample. The server lists live samples newest first.
+ */
+function pickSample(samples: SampleMeta[], session: string | null): string | null {
+  const live = samples.filter((s) => s.source === "live");
+  return (session ? live.find((s) => s.sessionId === session) : undefined)?.id ?? live[0]?.id ?? samples[0]?.id ?? null;
 }
 
 /** The directory a sample's session ran in, when it is a live one. */
@@ -254,8 +275,7 @@ export const useStore = create<State>((set, get) => {
           api.installPlan().catch(() => null),
           api.health().catch(() => null),
         ]);
-        const live = samples.find((s) => s.source === "live");
-        const sampleId = live?.id ?? samples[0]?.id ?? null;
+        const sampleId = pickSample(samples, sessionFromUrl());
         const projectCwd = cwdOf(samples, sampleId);
         // The effective config depends on the project, so it loads after we know which one.
         const eff = await api.config(projectCwd).catch(() => api.config());
@@ -275,29 +295,6 @@ export const useStore = create<State>((set, get) => {
       set({ config: c });
       schedulePreview(120);
       scheduleSave();
-    },
-
-    async setSample(id) {
-      const { samples, projectCwd } = get();
-      set({ sampleId: id });
-      const cwd = cwdOf(samples, id);
-      if (cwd !== projectCwd) {
-        // A different project means a different project layer. Flush pending edits to where they
-        // were meant to go first, then load the new project's view.
-        if (saveTimer) {
-          clearTimeout(saveTimer);
-          saveTimer = null;
-          await get().saveNow();
-        }
-        try {
-          const eff = await api.config(cwd);
-          set({ projectCwd: cwd, selection: null });
-          adopt(eff, { resetScope: true });
-        } catch {
-          /* unknown to the server (e.g. an old sample): keep the current project */
-        }
-      }
-      void get().refreshPreview();
     },
 
     setScope(scope) {

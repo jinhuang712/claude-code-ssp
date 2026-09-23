@@ -130,6 +130,9 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   compactions preview as if live.
   Plus **live captures**: `render` persists the last stdin payload per `session_id` to `<data>/samples/` (throttled), so
   you preview against your real session. Live samples are shown exactly as captured — no synthetic values.
+  There is no data picker: `/ssp:config` opens the page as `?session=$CLAUDE_CODE_SESSION_ID`, and the preview
+  shows that session; if it hasn't been captured yet, the most recent live session; with none, the first fixture
+  (`pickSample` in `web/src/store.ts`).
 * **Tray**: every widget not in the layout sits under it, one group per row. Groups gather related categories
   (project + git, model + context, usage + tokens + cost…) because the tray only lists unused widgets and a
   narrow category was often down to one item; a group still left with one joins "Other" (`custom.*` stay after use — they are

@@ -8,11 +8,16 @@ URL="http://127.0.0.1:${PORT}"
 BUN="$(command -v bun || true)"
 [ -n "$BUN" ] || { echo "bun not found in PATH — install from https://bun.sh"; exit 1; }
 
+# Opens the configurator bound to the session that ran /ssp:config: Claude Code exports that
+# session's id to the slash command's shell (as for /ssp:reset), and the page previews that
+# session's data. The panel has no data picker; without the id it shows the latest live session.
 open_url() {
+  local target="$URL/"
+  if [ -n "${CLAUDE_CODE_SESSION_ID:-}" ]; then target="$URL/?session=${CLAUDE_CODE_SESSION_ID}"; fi
   case "$(uname -s)" in
-    Darwin) open "$URL" ;;
-    Linux) xdg-open "$URL" >/dev/null 2>&1 || echo "open $URL in your browser" ;;
-    *) echo "open $URL in your browser" ;;
+    Darwin) open "$target" ;;
+    Linux) xdg-open "$target" >/dev/null 2>&1 || echo "open $target in your browser" ;;
+    *) echo "open $target in your browser" ;;
   esac
 }
 

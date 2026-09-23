@@ -6,7 +6,6 @@ import { useStore } from "../store";
 import { parseAnsi } from "./Ansi";
 import { Icon } from "./Icon";
 import { Popover } from "./Popover";
-import { SampleSelect } from "./SampleSelect";
 import { TERM_THEMES, termScheme, useTheme, type TermBg } from "../theme";
 
 /**
@@ -261,11 +260,11 @@ export function Preview() {
       */}
       <div className="term-bar">
         <span className="term-title">{t.preview.title}</span>
+        {/*
+          No data picker: the preview shows the session /ssp:config was run from (see pickSample in
+          store.ts). Choosing among every captured session and bundled sample was more than anyone needed.
+        */}
         <div className="term-controls">
-          <label className="tb tb-grow">
-            <span className="tb-label">{t.preview.dataLabel}</span>
-            <SampleSelect />
-          </label>
           {/* The width the lines are laid out for, always visible: it explains why a line wraps. */}
           <span className="mono meta">{t.preview.columns(columns)}</span>
           {/* Set once per terminal and rarely touched again, so they sit behind one button. */}

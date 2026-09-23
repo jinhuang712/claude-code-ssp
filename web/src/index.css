@@ -609,11 +609,6 @@ input[type="checkbox"] {
   color: var(--muted);
   white-space: nowrap;
 }
-/* The data picker gives way first: it shrinks toward 200px before any control wraps. */
-.tb-grow {
-  flex: 1 1 200px;
-  max-width: 420px;
-}
 .term {
   padding: 10px 16px 14px;
   background: var(--term-dark);
@@ -665,21 +660,15 @@ input[type="checkbox"] {
 .term[data-fixed="true"] {
   overflow-x: auto;
 }
-/* Controls wrap as one group after the title; the data picker is the only part allowed to shrink. */
+/* The column count and the settings button, at the toolbar's right end. */
 .term-controls {
   display: flex;
   flex: 1 1 auto;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px 16px;
   min-width: 0;
-}
-.sample-select {
-  flex: 1 1 auto;
-  width: auto;
-  min-width: 0;
-  max-width: 100%;
-  text-overflow: ellipsis;
 }
 /* The note and errors under the terminal are set off by the change of ground, not a rule. */
 .term-note {

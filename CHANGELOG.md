@@ -20,6 +20,8 @@ A simpler configurator: the page is the layout and the style, and everything els
   toggle are gone (a config that already uses the center zone stays editable).
 - Chips show just the widget's name; surfaces are separated by fill rather than borders (80 outlined elements on
   the page before, 5 now).
+- **The preview follows your session.** `/ssp:config` opens the page bound to the session you ran it in, and the
+  preview's data picker is gone (without a session it shows the most recent one).
 - **No undo.** The Undo button, Ctrl/⌘+Z and the "… — Ctrl/⌘+Z to undo" toasts are gone: they were more noise
   than help. Edits still save on their own; a custom layout survives a trip to a preset within the page view.
 - **The right side of a line never moves.** When a line is too long, the left side now continues on the next row

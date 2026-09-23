@@ -50,8 +50,6 @@ export const en = {
   preview: {
     title: "Preview",
     renderTime: "Render time",
-    /** Short visible labels for the toolbar; each control's longer aria-label contains the word. */
-    dataLabel: "Data",
     widthLabel: "Width",
     terminalLabel: "Terminal",
     /** Placeholder in the mock Claude Code prompt drawn above the statusline. */
@@ -64,25 +62,6 @@ export const en = {
     fitWindow: "Fit to window",
     fixedColumns: "Fixed columns",
     columns: (n: number) => `${n} cols`,
-    sample: "Data for the preview: a snapshot of your real session, or a built-in sample",
-    noSamples: "No data available",
-    liveSample: (label: string) => `My session · ${label}`,
-    fixtureSample: (label: string) => `Sample · ${label}`,
-    /** One option per live session: which model, how long ago it last rendered. */
-    sessionOption: (project: string, model: string, when: string) => `${project} · ${model} · ${when}`,
-    unknownModel: "Unknown model",
-    builtInSamples: "Built-in samples",
-    otherProject: "Other",
-    fixtures: {
-      basic: "Typical session",
-      bedrock: "Amazon Bedrock (no cost reported)",
-      "fresh-session": "Fresh session",
-      "context-1m": "1M context window",
-      "no-rate-limits": "API key (no usage limits)",
-      "post-compact": "Right after /compact",
-      "vim-mode": "Vim mode",
-      worktree: "In a git worktree",
-    } as Record<string, string>,
     tryingOn: (label: string) => `Previewing: ${label} — click to apply`,
     terminalHint: "Pick the background your terminal uses, so colors are judged fairly",
     termAuto: "Match panel",
