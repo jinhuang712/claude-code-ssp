@@ -1,6 +1,6 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useT } from "../i18n";
 import { useStore } from "../store";
 import { parseAnsi } from "./Ansi";
@@ -197,6 +197,20 @@ export function Preview() {
     if (w && cell && cols) setColumns(Math.max(20, Math.floor((w / cell) * cols)));
   }, [columnsMode, setColumns]);
 
+  // The height held for a try-on is let go once nothing has been tried on for a moment. Keeping it
+  // until the line count changed left a tall empty terminal after hovering a 4-line template. The
+  // delay is what keeps the loop below away: sweeping across a row of choices never goes 500 ms
+  // without a try-on, and once the pointer has left them, shrinking can't move one back under it.
+  const [released, setReleased] = useState(0);
+  useEffect(() => {
+    if (tryOn || !hold.current) return;
+    const timer = setTimeout(() => {
+      hold.current = null;
+      setReleased((n) => n + 1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [tryOn]);
+
   // Redraw only from a preview rendered for the current width; a stale one would wrap.
   useEffect(() => {
     const xt = term.current;
@@ -204,8 +218,8 @@ export function Preview() {
     const lines = preview.lines;
     // Height is sticky around try-ons. Hovering a 1-line preset used to shrink the preview, which
     // moved the preset out from under the pointer (mouseleave → real config → grows back →
-    // mouseenter …) and looped every ~80 ms. So a try-on may grow the preview but never shrink it,
-    // and the grown height is kept until the real config's line count changes.
+    // mouseenter …) and looped every ~80 ms. So a try-on may grow the preview but never shrink it;
+    // the grown height is kept while the line count stays the same, until the release above.
     let rows = Math.max(1, lines.length);
     if (tryOn) {
       rows = Math.max(rows, xt.rows);
@@ -226,7 +240,7 @@ export function Preview() {
       // xterm keeps the bottom anchored on resize; pin the top so line 1 is what shows first.
       xt.scrollToTop();
     });
-  }, [preview, previewColumns, columns, tryOn, lineCount]);
+  }, [preview, previewColumns, columns, tryOn, lineCount, released]);
 
   const shown = preview?.lines.length ?? 0;
   const hidden = Math.max(0, lineCount - shown);
