@@ -71,6 +71,14 @@
   --r-1: 6px;
   --r-2: 10px;
   --r-3: 14px;
+  /*
+    Editor surfaces, separated by fill instead of borders: page < row (a layout line, the tray, a
+    style summary) < chip (a widget, a choice). They alias existing tokens because the order flips
+    with the scheme — on a dark page lighter is "raised", on a light page the row goes grey and
+    the chip white.
+  */
+  --row: var(--panel);
+  --chip: var(--panel-2);
 }
 
 /*
@@ -97,6 +105,8 @@
   --danger: #b93a2c;
   --scrim: rgba(20, 20, 19, 0.2);
   --shadow: rgba(20, 20, 19, 0.12);
+  --row: var(--panel-2);
+  --chip: var(--panel);
 }
 
 body {
@@ -227,9 +237,8 @@ button:disabled {
   min-width: 0;
   max-width: 100%;
   padding: 3px 10px 3px 9px;
-  border: 1px solid var(--line);
   border-radius: 999px;
-  background: var(--panel);
+  background: var(--row);
   font-size: var(--fs-xs);
   color: var(--fg-2);
 }
@@ -422,9 +431,9 @@ input[type="checkbox"] {
   gap: 10px;
   min-height: 36px;
   padding: 0 12px;
-  border: 1px solid var(--line-strong);
+  border: 1px solid transparent;
   border-radius: var(--r-1);
-  background: var(--panel);
+  background: var(--chip);
   font-size: var(--fs-sm);
   color: var(--fg-2);
   transition: border-color 0.12s, color 0.12s, background 0.12s;
@@ -436,7 +445,7 @@ input[type="checkbox"] {
 .choice[data-active="true"] {
   color: var(--fg);
   border-color: var(--clay);
-  background: color-mix(in srgb, var(--clay) 9%, var(--panel));
+  background: color-mix(in srgb, var(--clay) 9%, var(--chip));
   box-shadow: inset 0 0 0 1px var(--clay);
 }
 .choice small {
@@ -459,9 +468,9 @@ input[type="checkbox"] {
   gap: 10px;
   min-height: 40px;
   padding: 0 12px;
-  border: 1px solid var(--line-strong);
+  border: 1px solid transparent;
   border-radius: var(--r-1);
-  background: var(--panel);
+  background: var(--row);
   font-size: var(--fs-sm);
   color: var(--fg);
   transition: border-color 0.12s, background 0.12s;
@@ -491,8 +500,7 @@ input[type="checkbox"] {
   margin-top: var(--sp-2);
   padding: var(--sp-3) var(--sp-4) var(--sp-4);
   border-radius: var(--r-2);
-  background: var(--sunken);
-  box-shadow: inset 0 0 0 1px var(--line);
+  background: var(--row);
 }
 .style-panel > .hint {
   margin: 0;
@@ -684,10 +692,10 @@ input[type="checkbox"] {
   max-width: 100%;
   text-overflow: ellipsis;
 }
+/* The note and errors under the terminal are set off by the change of ground, not a rule. */
 .term-note {
   margin: 0;
   padding: 6px 16px;
-  border-top: 1px solid var(--line);
   background: var(--panel);
   font-size: var(--fs-xs);
   color: var(--muted);
@@ -698,49 +706,26 @@ input[type="checkbox"] {
 .term-errors {
   margin: 0;
   padding: 6px 14px 8px;
-  border-top: 1px solid var(--line);
   font-size: var(--fs-xs);
   color: var(--warn);
 }
 
-/* A raised surface that groups one editor (the layout, the style choices). */
-.card {
-  padding: var(--sp-3);
-  border: 1px solid var(--line);
-  border-radius: var(--r-2);
-  background: var(--panel);
-}
 
 /* ---- layout editor: each row is a statusline line; zones size to their content ----
    Zones used to split 50/50, which wrapped a busy right side while the left sat half empty.
    Now the left zone takes the slack (never below 30%), center and right take what their chips
    need (right up to 60%) and only then wrap. Dividers no longer line up down the page — each
    row reads on its own, like the terminal line it stands for. */
+/* The lines sit straight on the page: no card around them, each line is its own filled row. */
 .layout-card {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: var(--sp-2) var(--sp-3) var(--sp-3) var(--sp-2);
 }
 .linelist {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-.linehead {
-  display: grid;
-  grid-template-columns: 28px 1fr;
-  column-gap: 8px;
-}
-.linehead-zones {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 28px;
-  padding: 0 10px;
-  font-size: var(--fs-xs);
-  color: var(--muted);
 }
 /* minmax(0, 1fr), not 1fr: an unbreakable line in an open options panel (a long path) must scroll, not widen the page. */
 .linerow {
@@ -775,9 +760,8 @@ input[type="checkbox"] {
 /* A line: a recessed well in the card, chips raised on it. */
 .linerow-body {
   display: flex;
-  border: 1px solid var(--line);
-  background: var(--sunken);
-  border-radius: var(--r-1);
+  background: var(--row);
+  border-radius: var(--r-2);
   min-height: 46px;
   min-width: 0;
 }
@@ -794,21 +778,16 @@ input[type="checkbox"] {
 .zone[data-zone="left"] {
   flex: 1 1 30%;
 }
+/* No divider between zones: the right zone is pushed to the edge, as on the real line, and that gap says enough. */
 .zone[data-zone="center"] {
   flex: 0 1 auto;
   min-width: 96px;
   justify-content: center;
-  border-left: 1px solid var(--line);
 }
 .zone[data-zone="right"] {
   flex: 0 1 auto;
   max-width: 60%;
   justify-content: flex-end;
-  border-left: 1px solid var(--line);
-}
-/* An empty zone at rest is just space: no divider standing next to nothing (the extra attribute outranks the phone-width divider rule). */
-.zone[data-zone][data-empty="true"] {
-  border-color: transparent;
 }
 .zone[data-over="true"] {
   background: color-mix(in srgb, var(--clay) 10%, transparent);
@@ -972,9 +951,9 @@ input[type="checkbox"] {
   height: 28px;
   padding: 0 9px;
   border-radius: var(--r-1);
-  border: 1px solid var(--line-strong);
-  background: var(--panel);
-  box-shadow: 0 1px 1px var(--shadow);
+  /* A filled tile on its row, no outline: the fill step (row → chip) does the separating. */
+  border: 1px solid transparent;
+  background: var(--chip);
   font-size: var(--fs-sm);
   cursor: grab;
   user-select: none;
@@ -1021,10 +1000,11 @@ input[type="checkbox"] {
   border-radius: 50%;
   background: var(--cat, var(--muted));
 }
+/* No data in this session: the one chip that keeps an edge, dashed, because the edge carries meaning. */
 .chip[data-empty="true"] {
   border-style: dashed;
+  border-color: var(--field-line);
   background: transparent;
-  box-shadow: none;
 }
 .chip[data-empty="true"] .chip-name {
   color: var(--fg-2);
@@ -1038,24 +1018,22 @@ input[type="checkbox"] {
   color: var(--muted);
 }
 
-/* The "Add line" row under the last line: dashed = a slot. */
+/* "Add line" under the last line: a quiet text button in the rows' column, not a dashed slot. */
 .addline {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-self: start;
   gap: 6px;
-  height: 36px;
-  padding: 0 8px;
+  height: 32px;
+  padding: 0 10px;
   border-radius: var(--r-1);
-  border: 1px dashed var(--field-line);
   font-size: var(--fs-sm);
   color: var(--muted);
-  transition: color 0.1s, border-color 0.1s, background 0.1s;
+  transition: color 0.1s, background 0.1s;
 }
 .addline:hover {
   color: var(--fg);
-  border-color: var(--clay);
-  background: color-mix(in srgb, var(--clay) 7%, transparent);
+  background: var(--row);
 }
 /*
   While a widget is being dragged, empty zones open up into visible drop slots. At rest they stay
@@ -1121,7 +1099,7 @@ input[type="checkbox"] {
   height: 28px;
   padding: 0 9px;
   border-radius: var(--r-1);
-  background: var(--panel);
+  background: var(--row);
   font-size: var(--fs-sm);
   color: var(--fg-2);
   cursor: grab;
@@ -1138,7 +1116,7 @@ input[type="checkbox"] {
   background: var(--cat, var(--muted));
 }
 .tray-item:hover {
-  background: var(--panel-2);
+  background: var(--chip);
   color: var(--fg);
 }
 .tray-notice {
@@ -1158,12 +1136,11 @@ input[type="checkbox"] {
 }
 
 /*
-  A widget's options, unfolded under its own line. The line and the panel read as one card: the
-  line loses its bottom corners and edge, the panel continues it below, and the chip being edited
-  keeps its clay ring — so what is edited stays right next to the thing it changes.
+  A widget's options, unfolded under its own line. The line and the panel read as one filled card:
+  the line loses its bottom corners, the panel continues the same fill below, and the chip being
+  edited keeps its clay ring — so what is edited stays right next to the thing it changes.
 */
 .linerow[data-open="true"] .linerow-body {
-  border-bottom-color: transparent;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
@@ -1172,12 +1149,9 @@ input[type="checkbox"] {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
-  margin-top: -1px;
-  padding: var(--sp-3) var(--sp-4) var(--sp-4);
-  border: 1px solid var(--line);
-  border-top: 0;
-  border-radius: 0 0 var(--r-1) var(--r-1);
-  background: var(--sunken);
+  padding: var(--sp-2) var(--sp-4) var(--sp-4);
+  border-radius: 0 0 var(--r-2) var(--r-2);
+  background: var(--row);
   font-size: var(--fs-sm);
 }
 .opt-head {
@@ -1244,9 +1218,9 @@ input[type="checkbox"] {
 .pill {
   min-height: 28px;
   padding: 0 10px;
-  border: 1px solid var(--line-strong);
+  border: 1px solid transparent;
   border-radius: var(--r-1);
-  background: var(--panel);
+  background: var(--chip);
   font-size: var(--fs-sm);
   color: var(--fg-2);
   transition: border-color 0.12s, background 0.12s, color 0.12s;
@@ -1258,7 +1232,7 @@ input[type="checkbox"] {
 .pill[aria-checked="true"],
 .pill[aria-pressed="true"] {
   border-color: var(--clay);
-  background: color-mix(in srgb, var(--clay) 12%, var(--panel));
+  background: color-mix(in srgb, var(--clay) 12%, var(--chip));
   color: var(--fg);
 }
 .pill[data-inactive="true"] {
@@ -1489,7 +1463,6 @@ input[type="checkbox"] {
   padding: 10px 12px;
   border-radius: var(--r-1);
   background: var(--sunken);
-  box-shadow: inset 0 0 0 1px var(--line);
 }
 .sk-line {
   display: flex;
@@ -1678,16 +1651,9 @@ input[type="checkbox"] {
     max-width: none;
     justify-content: flex-start;
   }
-  .zone[data-zone="right"],
-  .zone[data-zone="center"] {
-    border-left: 0;
-    border-top: 1px solid var(--line);
-  }
+  /* Stacked zones are told apart by their caption ("Left", "Right"), not a rule between them. */
   .zone .zone-cap {
     display: block;
     width: 100%;
-  }
-  .linehead-zones > span {
-    display: none;
   }
 }

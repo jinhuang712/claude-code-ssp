@@ -379,15 +379,8 @@ export function Layout() {
           setCaret(null);
         }}
       >
-        <div className="card layout-card">
-          <div className="linehead">
-            <span />
-            <div className="linehead-zones">
-              <span>{t.layout.zones.left}</span>
-              {withCenter && <span>{t.layout.zones.center}</span>}
-              <span>{t.layout.zones.right}</span>
-            </div>
-          </div>
+        {/* No Left / Right header row: the right zone sits at the right edge as on the real line; stacked rows on a phone caption each zone. */}
+        <div className="layout-card">
           {/* data-dragging widens empty zones into visible drop slots, only while something is being dragged. */}
           <div className="linelist" data-dragging={dragging !== null}>
             {config.lines.map((line, i) => (

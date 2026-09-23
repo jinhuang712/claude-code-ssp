@@ -99,7 +99,10 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
 * **Look**: Claude Code's own design language, defined as tokens at the top of `web/src/index.css` — warm
   ivory/slate neutrals, one fixed clay accent (`--clay`, not the edited theme's colour, so focus rings and the
   primary button keep their contrast), serif titles over a sans body, mono for everything that mirrors the
-  terminal, and the ✻ mark. Every text token is checked for WCAG AA on every surface; icons are inline SVGs
+  terminal, and the ✻ mark. Surfaces are told apart by fill, not borders — page < row (`--row`) < chip
+  (`--chip`), two aliases whose order flips with the scheme; outlines are kept for the terminal, inputs
+  (3:1 edges), the sticky header's rule, floating popovers and the clay selection ring. Every text token is
+  checked for WCAG AA on every surface; icons are inline SVGs
   (`components/Icon.tsx`). The page reads Layout (templates behind a button by its title, the tray of unused
   widgets under the lines) → Style (three summaries — theme, bar, separator — each opening its choices in
   place). Rarely used things stay off the page:
