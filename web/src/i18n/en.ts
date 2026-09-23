@@ -187,6 +187,16 @@ export const en = {
     plugin: "plugin",
     added: (name: string, line: number) => `${name} added to line ${line}. Alt+Arrow keys move it; Enter opens its options.`,
     untrusted: "This project has its own widgets, but they don't load until you trust the project:",
+    /** Tray groups (each gathers related widget categories; see GROUPS in Tray.tsx). */
+    groups: {
+      projectGit: "Project · Git",
+      modelContext: "Model · Context",
+      usageCost: "Usage · Cost",
+      session: "Session",
+      activity: "Activity",
+      environment: "Environment",
+      misc: "Other",
+    },
   },
 
   options: {

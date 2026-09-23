@@ -6,7 +6,7 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
 
 A simpler configurator: the page is the layout and the style, and everything else is one click away.
 
-- **Widgets are added from a tray** of unused ones under the layout, grouped by category: click to append to the
+- **Widgets are added from a tray** of unused ones under the layout, one group per row: click to append to the
   last line, drag to put one anywhere, drag a chip back onto the tray (or press Delete) to remove it. It replaces
   the "+" in every zone and the picker drawer.
 - **Options open in place**, under the widget's own line, instead of in a side drawer. Values are a row of choices;

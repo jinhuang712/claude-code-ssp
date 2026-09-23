@@ -3,15 +3,26 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "re
 import { api, type WidgetInstance, type WidgetManifest } from "../api";
 import { CAT_COLOR } from "../colors";
 import { TRAY_DROP_ID, TRAY_PREFIX } from "../collision";
-import { categoryName, useT, widgetDesc, widgetName } from "../i18n";
+import { useT, widgetDesc, widgetName } from "../i18n";
 import { useStore } from "../store";
 
-/** Reading order for categories: what a statusline is *about* first, bookkeeping last. */
-const CATEGORY_ORDER = ["model", "project", "git", "context", "usage", "tokens", "cost", "session", "activity", "environment", "misc"];
-const rank = (cat: string) => {
-  const i = CATEGORY_ORDER.indexOf(cat);
-  return i === -1 ? CATEGORY_ORDER.length : i;
-};
+/**
+ * Tray groups, in reading order, and the widget categories each one gathers. The tray only lists
+ * *unused* widgets, so a narrow category (project, cost…) was often down to a single item once its
+ * siblings were placed — a one-item category is no grouping at all. Related categories share a
+ * group instead; anything not listed (a plugin's own category) goes to "misc".
+ */
+const GROUPS: Array<{ id: TrayGroup; categories: string[] }> = [
+  { id: "projectGit", categories: ["project", "git"] },
+  { id: "modelContext", categories: ["model", "context"] },
+  { id: "usageCost", categories: ["usage", "tokens", "cost"] },
+  { id: "session", categories: ["session"] },
+  { id: "activity", categories: ["activity"] },
+  { id: "environment", categories: ["environment"] },
+  { id: "misc", categories: ["misc"] },
+];
+type TrayGroup = "projectGit" | "modelContext" | "usageCost" | "session" | "activity" | "environment" | "misc";
+const groupOf = (category: string): TrayGroup => GROUPS.find((g) => g.categories.includes(category))?.id ?? "misc";
 
 /**
  * Widgets meant to be placed more than once, each with its own text / variable / URL. They stay in
@@ -171,12 +182,20 @@ export function Tray() {
   const placed = useMemo(() => config.lines.flatMap((l) => [...(l.left ?? []), ...(l.center ?? []), ...(l.right ?? [])]), [config.lines]);
   const groups = useMemo(() => {
     const inUse = new Set(placed.map((w) => w.widget));
-    const map = new Map<string, WidgetManifest[]>();
+    const map = new Map<TrayGroup, WidgetManifest[]>();
     for (const w of widgets) {
       const offered = REPEATABLE(w.id) || (!inUse.has(w.id) && !coveredBy(w.id, placed, widgets));
-      if (offered) map.set(w.category, [...(map.get(w.category) ?? []), w]);
+      if (offered) map.set(groupOf(w.category), [...(map.get(groupOf(w.category)) ?? []), w]);
     }
-    return [...map.entries()].sort(([a], [b]) => rank(a) - rank(b));
+    // A group left with one widget (its siblings are all placed) isn't a group: it joins "misc", so
+    // no line of the tray holds a lone item under a heading of its own.
+    for (const [id, ws] of map) {
+      if (id === "misc" || ws.length !== 1) continue;
+      map.delete(id);
+      map.set("misc", [...(map.get("misc") ?? []), ...ws]);
+    }
+    const order = GROUPS.map((g) => g.id);
+    return [...map.entries()].sort(([a], [b]) => order.indexOf(a) - order.indexOf(b));
   }, [widgets, placed]);
   const count = groups.reduce((n, [, ws]) => n + ws.length, 0);
   // Only a chip from the layout can be dropped here (a tray item dropped back on the tray is a no-op).
@@ -204,16 +223,19 @@ export function Tray() {
       {count === 0 ? (
         <p className="hint">{t.tray.empty}</p>
       ) : (
+        // One group per row: its name in a column of its own, its widgets wrapping beside it.
         <div className="tray-items">
-          {visible.map(([cat, ws]) => (
-            <span key={cat} className="tray-group" role="group" aria-label={categoryName(t, cat)}>
+          {visible.map(([id, ws]) => (
+            <div key={id} className="tray-group" role="group" aria-label={t.tray.groups[id]}>
               <span className="tray-cat" aria-hidden="true">
-                {categoryName(t, cat)}
+                {t.tray.groups[id]}
               </span>
-              {ws.map((w) => (
-                <TrayItem key={w.id} w={w} repeatable={REPEATABLE(w.id)} />
-              ))}
-            </span>
+              <span className="tray-group-items">
+                {ws.map((w) => (
+                  <TrayItem key={w.id} w={w} repeatable={REPEATABLE(w.id)} />
+                ))}
+              </span>
+            </div>
           ))}
         </div>
       )}

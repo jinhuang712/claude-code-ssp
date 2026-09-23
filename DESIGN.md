@@ -130,7 +130,9 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   compactions preview as if live.
   Plus **live captures**: `render` persists the last stdin payload per `session_id` to `<data>/samples/` (throttled), so
   you preview against your real session. Live samples are shown exactly as captured — no synthetic values.
-* **Tray**: every widget not in the layout sits under it, grouped by category (`custom.*` stay after use — they are
+* **Tray**: every widget not in the layout sits under it, one group per row. Groups gather related categories
+  (project + git, model + context, usage + tokens + cost…) because the tray only lists unused widgets and a
+  narrow category was often down to one item; a group still left with one joins "Other" (`custom.*` stay after use — they are
   meant to be placed several times). Click one to append it to the last line (focus moves to the new chip), drag it
   into any zone, or drag a placed chip back onto the tray to remove it; hovering one shows a tooltip with its
   description and sample output (it used to redraw the preview for every item the pointer crossed). The

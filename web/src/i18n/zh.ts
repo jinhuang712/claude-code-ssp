@@ -178,6 +178,15 @@ export const zh: Messages = {
     plugin: "插件",
     added: (name, line) => `已把${name}加到第 ${line} 行。Alt+方向键移动，Enter 打开选项。`,
     untrusted: "这个项目带了自己的组件，信任这个项目后才会加载：",
+    groups: {
+      projectGit: "项目 · Git",
+      modelContext: "模型 · 上下文",
+      usageCost: "用量 · 费用",
+      session: "会话",
+      activity: "活动",
+      environment: "环境",
+      misc: "其他",
+    },
   },
 
   options: {

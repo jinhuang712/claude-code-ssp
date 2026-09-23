@@ -1081,22 +1081,37 @@ input[type="checkbox"] {
   font-weight: 600;
   color: var(--fg);
 }
+/* One group per row: the group names line up in a column, the widgets wrap beside their name. */
 .tray-items {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 14px;
+  flex-direction: column;
+  gap: var(--sp-2);
 }
-/* A category keeps its label and items together when the row wraps. */
 .tray-group {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--sp-3);
 }
 .tray-cat {
+  padding-top: 6px;
   font-size: var(--fs-xs);
   color: var(--muted);
+}
+.tray-group-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+/* On a phone the name goes above its widgets: a 112px column would leave the chips no room. */
+@media (max-width: 720px) {
+  .tray-group {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+  .tray-cat {
+    padding-top: 0;
+  }
 }
 .tray-item {
   display: inline-flex;
