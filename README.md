@@ -2,10 +2,11 @@
 
 A Claude Code statusline you configure in your browser.
 
-* **Web configurator** on `127.0.0.1:4877` — arrange widgets in left / right zones by drag or keyboard,
-  add them from the tray of unused widgets, edit a widget's options right under its line, and hover a
-  preset, theme, bar style or separator to try it on against your **real** session
-  before applying. English and 简体中文, light and dark.
+* **Web configurator** on `127.0.0.1:4877` — start from a preset (Minimal, Standard, Full) or build your
+  own: arrange widgets in left / right zones by drag or keyboard, add them from the tray of unused widgets,
+  and edit a widget's options right under its line. The preview draws your **real** session — the one you
+  ran `/ssp:config` from — and hovering a preset, theme, bar style or separator tries it on before you
+  apply it. English and 简体中文, light and dark.
 * **Widget registry** — 39 built-ins (model, git, PR, context, rate limits, tokens, cost, agents, todos, tools, MCP…).
 * **User plugins** — drop a `.ts`/`.js` file in `~/.config/claude-code-ssp/widgets/`; a broken plugin shows `⚠`
   instead of blanking the line.
@@ -27,7 +28,7 @@ claude plugin install ssp@claude-code-ssp
 Then, inside Claude Code:
 
 ```
-/ssp:config     # opens the configurator (starts the local server if needed)
+/ssp:config     # opens the configurator on this session's data (starts the local server if needed)
 /ssp:reset      # zero this session's cost / tokens / API calls / lines-changed counters
 ```
 
