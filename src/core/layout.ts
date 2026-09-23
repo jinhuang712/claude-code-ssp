@@ -99,8 +99,12 @@ function pad(n: number): string {
   return n > 0 ? " ".repeat(n) : "";
 }
 
-/** Lay out one line's zones into 1+ physical rows. */
-export function layoutLine(zones: Record<Zone, RenderedWidget>, columns: number, overflow: LineConfig["overflow"] = "wrap"): string[] {
+/**
+ * Lay out one line's zones into 1+ physical rows. The default overflow is "truncate": one row per
+ * line, always. "wrap" left the right column with holes on every continuation row, which read as
+ * missing data; it stays available per line.
+ */
+export function layoutLine(zones: Record<Zone, RenderedWidget>, columns: number, overflow: LineConfig["overflow"] = "truncate"): string[] {
   const { left, center, right } = zones;
   const parts = [left, center, right].filter((z) => z.width > 0);
   if (parts.length === 0) return [];
@@ -149,7 +153,7 @@ export function layoutLine(zones: Record<Zone, RenderedWidget>, columns: number,
     return [withRight(cut, visualWidth(cut))];
   }
 
-  // "wrap" (the default): fill the first row's room with whole widgets, then continue on full-width
+  // "wrap" (opt-in per line): fill the first row's room with whole widgets, then continue on full-width
   // rows below. Breaks fall between widgets, never inside one; a widget wider than a whole row is
   // cut to it. When not even the first widget fits beside the right zone, it starts the second row.
   const flow: Array<{ piece: RenderedWidget; joiner: RenderedWidget }> = [];

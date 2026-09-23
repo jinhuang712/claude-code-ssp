@@ -10,7 +10,7 @@ A Claude Code statusline you configure in your browser.
 * **User plugins** — drop a `.ts`/`.js` file in `~/.config/claude-code-ssp/widgets/`; a broken plugin shows `⚠`
   instead of blanking the line.
 * **Zone layout** — the right zone is truly right-aligned and never moves; any widget can go anywhere; a left side
-  too long for the terminal continues on the next row or is cut short (per line).
+  too long for the terminal is cut short with `…` (or, per line, continues on the next row).
 * **Fast & local** — ~20 ms per render including Bun startup, even on 100 MB transcripts (parsed incrementally);
   slow git never blocks the line. No network, no credential scraping. Data layer derived from
   [claude-hud](https://github.com/jarrodwatts/claude-hud) (MIT).

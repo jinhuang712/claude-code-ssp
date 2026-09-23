@@ -24,10 +24,10 @@ A simpler configurator: the page is the layout and the style, and everything els
   preview's data picker is gone (without a session it shows the most recent one).
 - **No undo.** The Undo button, Ctrl/⌘+Z and the "… — Ctrl/⌘+Z to undo" toasts are gone: they were more noise
   than help. Edits still save on their own; a custom layout survives a trip to a preset within the page view.
-- **The right side of a line never moves.** When a line is too long, the left side now continues on the next row
-  (breaking between widgets) or, if you pick it per line, is cut short with `…` — the right side stays at the end
-  of the first row. Before, the right side dropped to a row of its own. "Hide the right side" is no longer
-  offered (configs that use it keep working).
+- **The right side of a line never moves.** When a line is too long, the left side is now cut short with `…` so
+  every line stays one row, and the right side keeps its place at the end of it. Per line you can have the left
+  side continue on the next row instead (breaking between widgets). Before, the right side dropped to a row of
+  its own. "Hide the right side" is no longer offered (configs that use it keep working).
 - **Gradient colours read on light terminals.** The gradient colour mode (context bar, usage) started at pure
   white and stayed pastel up to 70%, so a low bar or percentage all but vanished on a white terminal. Every stop
   is now a mid-tone that clears 3:1 on white, slate and black; on dark terminals the colours are a little less bright.

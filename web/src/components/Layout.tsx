@@ -206,15 +206,16 @@ function LineMenu({ line, index, total }: { line: LineConfig; index: number; tot
             <span>{t.layout.overflow}</span>
             <select
               className="field !w-auto"
-              value={line.overflow ?? "wrap"}
+              value={line.overflow ?? "truncate"}
               onChange={(e) =>
                 s.setConfig((c) => {
                   c.lines[index]!.overflow = e.target.value as LineConfig["overflow"];
                 })
               }
             >
-              <option value="wrap">{t.layout.overflowWrap}</option>
+              {/* Truncate first: it is the default (one row per line, no gaps in the right column). */}
               <option value="truncate">{t.layout.overflowTruncate}</option>
+              <option value="wrap">{t.layout.overflowWrap}</option>
               {/* Hiding the right side is no longer offered (the right zone stays put); shown only for a config that already chose it. */}
               {line.overflow === "drop-right" && <option value="drop-right">{t.layout.overflowDropRight}</option>}
             </select>

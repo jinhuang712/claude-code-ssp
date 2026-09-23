@@ -128,6 +128,13 @@ describe("layoutLine", () => {
     expect(visualWidth(rows[1]!)).toBe(20);
     expect(rows[1]!.endsWith("…")).toBe(true);
   });
+  // wrap left holes in the right column on every continuation row, so truncate is the default.
+  test("with no policy, an overflowing line stays one row and keeps the right zone", () => {
+    const rows = layoutLine({ left: zoneOf(["p".repeat(12), "q".repeat(12)]), center: z(""), right: z("RR") }, 20);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.endsWith("RR")).toBe(true);
+    expect(rows[0]!).toContain("…");
+  });
   test("under every policy but drop-right, the first row ends with the right zone", () => {
     for (const policy of ["wrap", "truncate"] as const) {
       const [first] = layoutLine({ left: zoneOf(["p".repeat(12), "q".repeat(12)]), center: z(""), right: z("RR") }, 20, policy);
