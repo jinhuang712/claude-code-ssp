@@ -528,13 +528,24 @@ input[type="checkbox"] {
 }
 
 /* ---- preview: the terminal is the hero ---- */
+/*
+  Not overflow: hidden — the settings popover opens from the toolbar and must be able to hang below
+  the frame. The rounded corners are kept by rounding the first and last rows instead.
+*/
 .term-frame {
   position: relative;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-2);
   background: var(--panel);
-  overflow: hidden;
   box-shadow: 0 1px 2px var(--shadow);
+}
+.term-frame > :first-child {
+  border-top-left-radius: calc(var(--r-2) - 1px);
+  border-top-right-radius: calc(var(--r-2) - 1px);
+}
+.term-frame > :last-child {
+  border-bottom-left-radius: calc(var(--r-2) - 1px);
+  border-bottom-right-radius: calc(var(--r-2) - 1px);
 }
 .term-bar {
   display: flex;
@@ -814,11 +825,55 @@ input[type="checkbox"] {
   background: var(--panel);
   box-shadow: 0 12px 32px var(--shadow);
 }
+/* Opened from a button at the right edge (preview settings, the header menu): grow leftwards. */
+.popover[data-align="end"] {
+  left: auto;
+  right: 0;
+}
 .linemenu {
   display: flex;
   flex-direction: column;
   gap: 10px;
   font-size: var(--fs-sm);
+}
+/* Preview settings: one labelled control per row, the explanation under its label. */
+/*
+  Width: at most 360px, and never wider than the viewport minus the page gutters and the popover's
+  own padding + border (2 × 16 + 2 × 13 ≈ 60px) — on a phone it is anchored to a button near the
+  right edge and grows leftwards, so anything wider would hang off the left edge.
+*/
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  width: min(360px, calc(100vw - 64px));
+  font-size: var(--fs-sm);
+  color: var(--fg);
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+.settings-row > label {
+  min-width: 0;
+}
+/* The snapshot folder is one long unbroken path: let it wrap anywhere rather than push the checkbox out. */
+.settings-row .hint {
+  overflow-wrap: anywhere;
+}
+.settings-row > :last-child {
+  flex: none;
+}
+.settings-ctl {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+}
+.settings-meta {
+  margin: 0;
 }
 .linemenu-actions {
   display: flex;

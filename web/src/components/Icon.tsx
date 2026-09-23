@@ -2,7 +2,7 @@
  * The panel's few icons, as inline stroke SVGs (1.5px strokes on a 16px grid, `currentColor`).
  *
  * Why not glyphs: arrows like ↶ and ＋ come from whatever fallback font has them, so their size and
- * weight drifted per OS and sat off the text baseline. Why not an icon library: seven icons don't
+ * weight drifted per OS and sat off the text baseline. Why not an icon library: nine icons don't
  * justify a dependency. Icons are always decorative here — the button around one carries the
  * accessible name — so every icon is aria-hidden.
  */
@@ -14,6 +14,10 @@ const PATHS = {
   search: "M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10ZM10.7 10.7 14 14",
   reset: "M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.5 2.5v2.8h2.8",
   external: "M6.5 3.5h-3v9h9v-3M9 2.5h4.5V7M13.5 2.5 7.5 8.5",
+  // Three dots drawn as tiny rings: a 1.5px stroke around r=1 reads as a filled 3.5px dot.
+  more: "M2.5 8a1 1 0 1 0 2 0a1 1 0 1 0-2 0M7 8a1 1 0 1 0 2 0a1 1 0 1 0-2 0M11.5 8a1 1 0 1 0 2 0a1 1 0 1 0-2 0",
+  // Three slider tracks with a knob each: "settings for this view".
+  sliders: "M2.5 4.5h11M2.5 8h11M2.5 11.5h11M10 3v3M5.5 6.5v3M11 10v3",
 } as const;
 
 export type IconName = keyof typeof PATHS;

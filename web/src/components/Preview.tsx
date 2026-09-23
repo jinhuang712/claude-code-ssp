@@ -4,8 +4,129 @@ import { useEffect, useId, useRef } from "react";
 import { useT } from "../i18n";
 import { useStore } from "../store";
 import { parseAnsi } from "./Ansi";
+import { Icon } from "./Icon";
+import { Popover } from "./Popover";
 import { SampleSelect } from "./SampleSelect";
 import { TERM_THEMES, termScheme, useTheme, type TermBg } from "../theme";
+
+/**
+ * How the terminal is drawn: preview width and ground (viewer preferences, per browser) and the
+ * render settings that match the statusline to a real terminal (right margin, colour depth, saved
+ * snapshots — written to the config). All set once per terminal, so they share one popover.
+ */
+function PreviewSettings() {
+  const t = useT();
+  const columns = useStore((s) => s.columns);
+  const columnsMode = useStore((s) => s.columnsMode);
+  const setColumnsMode = useStore((s) => s.setColumnsMode);
+  const ms = useStore((s) => s.preview?.ms);
+  const c = useStore((s) => s.config!);
+  const setConfig = useStore((s) => s.setConfig);
+  const samplesDir = useStore((s) => s.paths?.samples);
+  const termBg = useTheme((s) => s.termBg);
+  const setTermBg = useTheme((s) => s.setTermBg);
+  const widthId = useId();
+  const termId = useId();
+  const marginId = useId();
+  const colorId = useId();
+  const captureId = useId();
+  return (
+    <div className="settings">
+      <div className="settings-row">
+        <label htmlFor={widthId}>{t.preview.widthLabel}</label>
+        <span className="settings-ctl">
+          <select id={widthId} className="field field-sm !w-auto" value={columnsMode === "auto" ? "auto" : "fixed"} onChange={(e) => setColumnsMode(e.target.value === "auto" ? "auto" : columns)}>
+            <option value="auto">{t.preview.fitWindow}</option>
+            <option value="fixed">{t.preview.fixedColumns}</option>
+          </select>
+          {columnsMode !== "auto" && (
+            <input
+              className="field field-sm mono !w-16"
+              type="number"
+              min={40}
+              max={400}
+              value={columns}
+              aria-label={t.preview.fixedColumns}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                if (n >= 40) setColumnsMode(n);
+              }}
+            />
+          )}
+        </span>
+      </div>
+      <div className="settings-row">
+        <label htmlFor={termId}>
+          {t.preview.terminalLabel}
+          <span className="hint block">{t.preview.terminalHint}</span>
+        </label>
+        <select id={termId} className="field field-sm !w-auto" value={termBg} onChange={(e) => setTermBg(e.target.value as TermBg)}>
+          <option value="auto">{t.preview.termAuto}</option>
+          <option value="dark">{t.preview.termDark}</option>
+          <option value="light">{t.preview.termLight}</option>
+        </select>
+      </div>
+      <div className="settings-row">
+        <label htmlFor={marginId}>
+          {t.preview.rightMargin}
+          <span className="hint block">{t.preview.rightMarginHint}</span>
+        </label>
+        <input
+          id={marginId}
+          className="field field-sm mono !w-16"
+          type="number"
+          min={0}
+          max={20}
+          value={c.columnsOffset}
+          onChange={(e) =>
+            setConfig((x) => {
+              x.columnsOffset = Number(e.target.value);
+            })
+          }
+        />
+      </div>
+      <div className="settings-row">
+        <label htmlFor={colorId}>{t.preview.colorMode}</label>
+        <select
+          id={colorId}
+          className="field field-sm !w-auto"
+          value={c.colorLevel}
+          onChange={(e) =>
+            setConfig((x) => {
+              x.colorLevel = e.target.value as typeof x.colorLevel;
+            })
+          }
+        >
+          {(["auto", "truecolor", "256", "16", "none"] as const).map((lv) => (
+            <option key={lv} value={lv}>
+              {t.preview.colorLevels[lv]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="settings-row">
+        <label htmlFor={captureId}>
+          {t.preview.capture}
+          <span className="hint block">{t.preview.captureHint(samplesDir ?? "~/.claude/plugins/claude-code-ssp/samples")}</span>
+        </label>
+        <input
+          id={captureId}
+          type="checkbox"
+          checked={c.captureSamples}
+          onChange={(e) =>
+            setConfig((x) => {
+              x.captureSamples = e.target.checked;
+            })
+          }
+        />
+      </div>
+      {/* Kept for the curious (the render budget is 40 ms), but out of the toolbar: a lone "0.1 ms" read as noise. */}
+      <p className="hint settings-meta">
+        {t.preview.renderTime}: <span className="mono">{ms === undefined ? "—" : `${ms.toFixed(1)} ms`}</span>
+      </p>
+    </div>
+  );
+}
 
 export function Preview() {
   const t = useT();
@@ -18,13 +139,9 @@ export function Preview() {
   const columns = useStore((s) => s.columns);
   const setColumns = useStore((s) => s.setColumns);
   const columnsMode = useStore((s) => s.columnsMode);
-  const setColumnsMode = useStore((s) => s.setColumnsMode);
   const lineCount = useStore((s) => s.config?.lines.length ?? 0);
   const tryOn = useStore((s) => s.tryOn);
-  const termBg = useTheme((s) => s.termBg);
-  const setTermBg = useTheme((s) => s.setTermBg);
   const scheme = useTheme(termScheme);
-  const widthId = useId();
 
   useEffect(() => {
     if (!host.current) return;
@@ -129,58 +246,18 @@ export function Preview() {
         word, so voice-control users can say what they see (WCAG 2.5.3 Label in Name).
       */}
       <div className="term-bar">
-        {/* Title and render time stay together; only the controls wrap (a lone "0.1 ms" row read as a bug). */}
-        <span className="term-title">
-          {t.preview.title}
-          <span className="meta mono" title={t.preview.renderTime}>
-            {preview ? `${preview.ms.toFixed(1)} ms` : ""}
-          </span>
-        </span>
+        <span className="term-title">{t.preview.title}</span>
         <div className="term-controls">
           <label className="tb tb-grow">
             <span className="tb-label">{t.preview.dataLabel}</span>
             <SampleSelect />
           </label>
-          <span className="tb">
-            <label className="tb-label" htmlFor={widthId}>
-              {t.preview.widthLabel}
-            </label>
-            <select
-              id={widthId}
-              className="field field-sm !w-auto"
-              value={columnsMode === "auto" ? "auto" : "fixed"}
-              onChange={(e) => setColumnsMode(e.target.value === "auto" ? "auto" : columns)}
-              title={t.preview.width}
-              aria-label={t.preview.width}
-            >
-              <option value="auto">{t.preview.fitWindow}</option>
-              <option value="fixed">{t.preview.fixedColumns}</option>
-            </select>
-            {columnsMode === "auto" ? (
-              <span className="mono meta">{t.preview.columns(columns)}</span>
-            ) : (
-              <input
-                className="field field-sm mono !w-16"
-                type="number"
-                min={40}
-                max={400}
-                value={columns}
-                aria-label={t.preview.fixedColumns}
-                onChange={(e) => {
-                  const n = Number(e.target.value);
-                  if (n >= 40) setColumnsMode(n);
-                }}
-              />
-            )}
-          </span>
-          <label className="tb">
-            <span className="tb-label">{t.preview.terminalLabel}</span>
-            <select className="field field-sm !w-auto" value={termBg} onChange={(e) => setTermBg(e.target.value as TermBg)} title={t.preview.terminal} aria-label={t.preview.terminal}>
-              <option value="auto">{t.preview.termAuto}</option>
-              <option value="dark">{t.preview.termDark}</option>
-              <option value="light">{t.preview.termLight}</option>
-            </select>
-          </label>
+          {/* The width the lines are laid out for, always visible: it explains why a line wraps. */}
+          <span className="mono meta">{t.preview.columns(columns)}</span>
+          {/* Set once per terminal and rarely touched again, so they sit behind one button. */}
+          <Popover label={t.preview.settings} buttonClassName="btn btn-ghost btn-icon" buttonContent={<Icon name="sliders" />} align="end">
+            {() => <PreviewSettings />}
+          </Popover>
         </div>
       </div>
       <div className="term" data-fixed={columnsMode !== "auto"} data-scheme={scheme}>

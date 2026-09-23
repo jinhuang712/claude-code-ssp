@@ -13,6 +13,7 @@ export function Popover({
   buttonClassName,
   buttonContent,
   title,
+  align = "start",
   children,
 }: {
   /** Accessible name for both the trigger and the panel. */
@@ -20,6 +21,8 @@ export function Popover({
   buttonClassName?: string;
   buttonContent: ReactNode;
   title?: string;
+  /** Which trigger edge the panel lines up with; "end" keeps a panel opened at the right edge on screen. */
+  align?: "start" | "end";
   children: (close: () => void) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -72,6 +75,7 @@ export function Popover({
           role="dialog"
           aria-label={label}
           className="popover"
+          data-align={align}
           onKeyDown={(e) => {
             if (e.key === "Escape") {
               e.stopPropagation();

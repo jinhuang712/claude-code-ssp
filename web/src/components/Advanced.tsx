@@ -160,72 +160,13 @@ function Disclosure({ storageKey, title, hint, children }: { storageKey: string;
   );
 }
 
-/** Settings most people never need: margins, colour depth, snapshots, project files, the way out. */
+/** Settings most people never need: project files and the way out. (Render settings live in the preview's popover.) */
 export function Advanced() {
   const t = useT();
   const s = useStore();
-  const c = s.config!;
   const project = s.layers.find((l) => l.name === "project");
-  const marginId = useId();
-  const colorId = useId();
-  const captureId = useId();
   return (
     <Disclosure storageKey="ssp.advanced" title={t.advanced.title} hint={t.advanced.hint}>
-      <div className="row">
-        <label htmlFor={marginId}>
-          {t.advanced.rightMargin}
-          <span className="hint ml-2">{t.advanced.rightMarginHint}</span>
-        </label>
-        <input
-          id={marginId}
-          className="field !w-20"
-          type="number"
-          min={0}
-          max={20}
-          value={c.columnsOffset}
-          onChange={(e) =>
-            s.setConfig((x) => {
-              x.columnsOffset = Number(e.target.value);
-            })
-          }
-        />
-      </div>
-      <div className="row">
-        <label htmlFor={colorId}>{t.advanced.colorMode}</label>
-        <select
-          id={colorId}
-          className="field !w-auto"
-          value={c.colorLevel}
-          onChange={(e) =>
-            s.setConfig((x) => {
-              x.colorLevel = e.target.value as typeof x.colorLevel;
-            })
-          }
-        >
-          {(["auto", "truecolor", "256", "16", "none"] as const).map((lv) => (
-            <option key={lv} value={lv}>
-              {t.advanced.colorLevels[lv]}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="row">
-        <label htmlFor={captureId}>
-          {t.advanced.capture}
-          <span className="hint ml-2">{t.advanced.captureHint(s.paths?.samples ?? "~/.claude/plugins/claude-code-ssp/samples")}</span>
-        </label>
-        <input
-          id={captureId}
-          type="checkbox"
-          className="h-4 w-4"
-          checked={c.captureSamples}
-          onChange={(e) =>
-            s.setConfig((x) => {
-              x.captureSamples = e.target.checked;
-            })
-          }
-        />
-      </div>
       <div className="row">
         <span className="min-w-0">
           {t.advanced.saveProject}
