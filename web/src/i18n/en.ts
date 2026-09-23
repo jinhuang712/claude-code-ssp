@@ -207,6 +207,8 @@ export const en = {
     thresholds: "Thresholds",
     warnAt: "Yellow at %",
     critAt: "Red at %",
+    // Under the gradient colour mode the critical threshold no longer turns the value red, only bold.
+    critBold: "Bold at %",
     more: "More: bold, JSON",
     // "Text color", not "Color": several widgets also have a colour *mode* option right next to it.
     color: "Text color",
@@ -319,7 +321,7 @@ export const en = {
     fieldHints: {
       name: "Required, e.g. AWS_PROFILE — nothing shows until it is set",
       effortStyle: "Symbols: ○ low · ◔ medium · ◑ high · ◕ xhigh · ● max",
-      colorMode: "Gradient ignores the thresholds — check the preview above",
+      colorMode: "Gradient ignores the yellow threshold; the red one still makes the value bold — check the preview above",
     } as Record<string, string>,
     /** Friendly names for enum values, shared by every widget. */
     enums: {

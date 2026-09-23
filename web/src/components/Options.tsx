@@ -25,7 +25,8 @@ function unmetRequirement(t: ReturnType<typeof useT>, widgetId: string, schema: 
   for (const [k, want] of Object.entries(req as Record<string, unknown>)) {
     const cur = inst.options?.[k] !== undefined ? inst.options[k] : defaults[k];
     if (cur === want) continue;
-    const valueLabel = typeof want === "boolean" ? (want ? t.options.on : t.options.off) : enumLabel(t, widgetId, k, String(want));
+    // Just the value's name: an enum label may carry an explanation after a colon (see EnumField).
+    const valueLabel = typeof want === "boolean" ? (want ? t.options.on : t.options.off) : enumLabel(t, widgetId, k, String(want)).split(/[:：]/)[0]!.trim();
     return t.options.needs(fieldTitle(t, k, siblings[k] ?? {}), valueLabel);
   }
   return null;
@@ -201,7 +202,12 @@ function TogglesField({ ctx, names }: { ctx: FieldCtx; names: string[] }) {
   );
 }
 
-/** warnAt + critAt as one band: green up to the first, yellow up to the second, red after. */
+/**
+ * warnAt + critAt as one band: green up to the first, yellow up to the second, red after. Each
+ * number follows its own x-requires: under the gradient colour mode warnAt does nothing (dimmed),
+ * while critAt usually still bolds the value — so the band, which describes threshold colours,
+ * only shows while those colours apply.
+ */
 function ThresholdField({ ctx }: { ctx: FieldCtx }) {
   const t = useT();
   const warnId = useId();
@@ -210,7 +216,8 @@ function ThresholdField({ ctx }: { ctx: FieldCtx }) {
   const crit = Number(current(ctx, "critAt") ?? 85);
   const lo = Math.max(0, Math.min(100, Math.min(warn, crit)));
   const hi = Math.max(lo, Math.min(100, Math.max(warn, crit)));
-  const needs = unmetRequirement(t, ctx.inst.widget, ctx.props.warnAt!, ctx.inst, ctx.defaults, ctx.props);
+  const warnNeeds = unmetRequirement(t, ctx.inst.widget, ctx.props.warnAt!, ctx.inst, ctx.defaults, ctx.props);
+  const critNeeds = unmetRequirement(t, ctx.inst.widget, ctx.props.critAt!, ctx.inst, ctx.defaults, ctx.props);
   const num = (id: string, name: "warnAt" | "critAt", value: number) => (
     <input
       id={id}
@@ -222,30 +229,35 @@ function ThresholdField({ ctx }: { ctx: FieldCtx }) {
       onChange={(e) => e.target.value !== "" && ctx.setOption(name, Number(e.target.value))}
     />
   );
+  const bothOff = warnNeeds !== null && critNeeds !== null;
+  // One reason line: for the whole field when neither number applies, else for the one that doesn't.
+  const note = bothOff ? warnNeeds : warnNeeds !== null ? `${t.options.warnAt}: ${warnNeeds}` : critNeeds !== null ? `${t.options.critAt}: ${critNeeds}` : null;
   return (
-    <div className="opt-field opt-full" data-inactive={needs !== null}>
+    <div className="opt-field opt-full" data-inactive={bothOff}>
       <span className="opt-title">{t.options.thresholds}</span>
       <div className="threshold">
-        <span className="threshold-band" aria-hidden="true">
-          <i style={{ width: `${lo}%`, background: "var(--ok)" }} />
-          <i style={{ width: `${hi - lo}%`, background: "var(--warn)" }} />
-          <i style={{ width: `${100 - hi}%`, background: "var(--danger)" }} />
-        </span>
+        {warnNeeds === null && (
+          <span className="threshold-band" aria-hidden="true">
+            <i style={{ width: `${lo}%`, background: "var(--ok)" }} />
+            <i style={{ width: `${hi - lo}%`, background: "var(--warn)" }} />
+            <i style={{ width: `${100 - hi}%`, background: "var(--danger)" }} />
+          </span>
+        )}
         {/* Each label stays with its number when the row wraps on a phone. */}
-        <span className="threshold-num">
+        <span className="threshold-num" data-inactive={!bothOff && warnNeeds !== null}>
           <label htmlFor={warnId} className="hint">
             {t.options.warnAt}
           </label>
           {num(warnId, "warnAt", warn)}
         </span>
-        <span className="threshold-num">
+        <span className="threshold-num" data-inactive={!bothOff && critNeeds !== null}>
           <label htmlFor={critId} className="hint">
-            {t.options.critAt}
+            {warnNeeds !== null && critNeeds === null ? t.options.critBold : t.options.critAt}
           </label>
           {num(critId, "critAt", crit)}
         </span>
       </div>
-      {needs && <span className="hint needs">{needs}</span>}
+      {note && <span className="hint needs">{note}</span>}
     </div>
   );
 }

@@ -1261,6 +1261,10 @@ input[type="checkbox"] {
   align-items: center;
   gap: 6px;
 }
+/* One of the two numbers has no effect in the current colour mode (the reason is written under the field). */
+.threshold-num[data-inactive="true"] {
+  opacity: 0.5;
+}
 .opt-more summary {
   display: inline-flex;
   align-items: center;

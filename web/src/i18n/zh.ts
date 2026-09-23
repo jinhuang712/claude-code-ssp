@@ -198,6 +198,7 @@ export const zh: Messages = {
     thresholds: "阈值",
     warnAt: "黄色 %",
     critAt: "红色 %",
+    critBold: "加粗 %",
     more: "更多：加粗、JSON",
     color: "文字颜色",
     colors: { "": "默认", fg: "正文", muted: "弱化", accent: "强调", ok: "绿", warn: "黄", crit: "红" },
@@ -430,7 +431,7 @@ export const zh: Messages = {
     fieldHints: {
       name: "必填，比如 AWS_PROFILE；不填就不显示",
       effortStyle: "符号对应：○ low · ◔ medium · ◑ high · ◕ xhigh · ● max",
-      colorMode: "选渐变后阈值不再起作用；效果看上方预览",
+      colorMode: "选渐变后黄色阈值不再起作用，红色阈值仍会把数值加粗；效果看上方预览",
     },
     enums: {
       full: "完整",

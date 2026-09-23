@@ -71,7 +71,8 @@ export const contextPercent = defineWidget<{ label: string | null; value: ValueM
     properties: {
       label: { ...labelSchema, default: "ctx" },
       value: { type: "string", enum: ["percent", "tokens", "remaining", "both"], default: "percent" },
-      ...thresholdSchema(70, 85),
+      // Text only, never bold: under the gradient neither threshold changes anything.
+      ...thresholdSchema(70, 85, { critBolds: false }),
     },
   },
   defaults: { label: "ctx", value: "percent", colorMode: "thresholds", warnAt: 70, critAt: 85 },

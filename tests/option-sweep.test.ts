@@ -11,10 +11,19 @@
  * The only exceptions are options whose data can't come from a session sample; each says why.
  */
 import { describe, expect, test } from "bun:test";
+import type { JsonSchema } from "../src/core/types.ts";
 import { BASE_OPTIONS, builtinWidgets, plain, renderOne, requirementsOf, sampleContexts, valuesFor } from "./option-sweep";
 
 /** Options the sweep can't exercise, with the reason. Keep this empty unless there is no way to. */
 const EXCEPTIONS: Record<string, string> = {};
+
+/** Option × sibling-value pairs the samples can't show working, for the x-requires completeness test, with the reason. */
+const UNREACHABLE: Record<string, string> = {
+  // hideZero applies to both sources. With source=worktree the widget is hidden outright without a
+  // repo, and the one real repo the sweep uses always has an uncommitted diff — so no sample has
+  // a clean worktree for hideZero to hide.
+  "git.linesChanged.hideZero@source": "no sample has a git worktree with zero uncommitted lines",
+};
 
 const contexts = await sampleContexts();
 const widgets = builtinWidgets();
@@ -57,6 +66,50 @@ describe("option sweep", () => {
       }
     }
     expect(dead).toEqual([]);
+  });
+
+  /** Does changing `name` move the output on some sample, starting from `base`? */
+  const moves = (w: (typeof widgets)[number], name: string, schema: JsonSchema, base: Record<string, unknown>) =>
+    valuesFor(w.id, name, schema, w.defaults[name]).some((v) =>
+      contexts.some((c) => renderOne({ widget: w.id, options: base }, c.ctx).raw !== renderOne({ widget: w.id, options: { ...base, [name]: v } }, c.ctx).raw),
+    );
+
+  // The panel dims an option whose x-requires is unmet and says it has no effect. That must be true.
+  test("an option never changes the output while its x-requires is unmet", () => {
+    const lying: string[] = [];
+    for (const w of widgets) {
+      const props = w.schema.properties ?? {};
+      for (const [name, schema] of Object.entries(props)) {
+        for (const [sib, want] of Object.entries(requirementsOf(schema))) {
+          const others = typeof want === "boolean" ? [!want] : (props[sib]?.enum ?? []).filter((v) => v !== want);
+          for (const other of others) if (moves(w, name, schema, { ...BASE_OPTIONS[w.id], [sib]: other })) lying.push(`${w.id}.${name} changes the output with ${sib}=${JSON.stringify(other)}`);
+        }
+      }
+    }
+    expect(lying).toEqual([]);
+  });
+
+  // The converse: an option that does nothing under one value of a sibling enum (but something under
+  // another) must say so, or the panel offers a control that silently does nothing. This caught
+  // warnAt under the gradient colour mode.
+  test("an option that only works under some value of a sibling enum declares x-requires", () => {
+    const undeclared: string[] = [];
+    for (const w of widgets) {
+      const props = w.schema.properties ?? {};
+      for (const [name, schema] of Object.entries(props)) {
+        if (EXCEPTIONS[`${w.id}.${name}`]) continue;
+        const declared = requirementsOf(schema);
+        for (const [sib, sibSchema] of Object.entries(props)) {
+          if (sib === name || !sibSchema.enum || sib in declared || UNREACHABLE[`${w.id}.${name}@${sib}`]) continue;
+          const byValue = sibSchema.enum.map((v) => moves(w, name, schema, { ...BASE_OPTIONS[w.id], ...declared, [sib]: v }));
+          if (byValue.includes(true) && byValue.includes(false)) {
+            const dead = sibSchema.enum.filter((_, i) => !byValue[i]).map((v) => JSON.stringify(v));
+            undeclared.push(`${w.id}.${name} does nothing with ${sib}=${dead.join("|")} but has no x-requires on ${sib}`);
+          }
+        }
+      }
+    }
+    expect(undeclared).toEqual([]);
   });
 
   test("x-requires only names options the widget has", () => {
