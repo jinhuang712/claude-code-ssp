@@ -716,16 +716,6 @@ input[type="checkbox"] {
   font-size: var(--fs-xs);
   color: var(--muted);
 }
-.center-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-}
-.center-toggle:has(input:disabled) {
-  cursor: default;
-}
-
 .linerow {
   display: grid;
   grid-template-columns: 28px 1fr;

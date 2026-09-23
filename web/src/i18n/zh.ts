@@ -117,8 +117,6 @@ export const zh: Messages = {
     lineMenu: (n) => `第 ${n} 行的选项`,
     chipHelp: "Alt+方向键移动这一项，回车打开选项。",
     moved: (name, line, zone, pos) => `${name} 已移到第 ${line} 行${zone}第 ${pos} 位`,
-    centerZone: "居中区",
-    centerInUse: "有行正在用居中区，所以一直显示",
     hideBelowHint: "0 表示一直显示",
     moveUp: "上移这一行",
     moveDown: "下移这一行",

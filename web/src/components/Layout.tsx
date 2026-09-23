@@ -279,10 +279,8 @@ export function Layout() {
   const reorder = useStore((s) => s.reorder);
   const moveWidget = useStore((s) => s.moveWidget);
   const addLine = useStore((s) => s.addLine);
-  const setShowCenter = useStore((s) => s.setShowCenter);
   const live = useStore((s) => s.live);
   const withCenter = useStore(hasCenter);
-  const centerInUse = config.lines.some((l) => (l.center?.length ?? 0) > 0);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const [dragging, setDragging] = useState<string | null>(null);
   const [caret, setCaret] = useState<Pos | null>(null);
@@ -339,10 +337,7 @@ export function Layout() {
         <span />
         <div className="linehead-zones">
           <span>{t.layout.zones.left}</span>
-          <label className="center-toggle" title={centerInUse ? t.layout.centerInUse : undefined}>
-            <input type="checkbox" checked={withCenter} disabled={centerInUse} onChange={(e) => setShowCenter(e.target.checked)} />
-            {t.layout.centerZone}
-          </label>
+          {withCenter && <span>{t.layout.zones.center}</span>}
           <span>{t.layout.zones.right}</span>
         </div>
       </div>

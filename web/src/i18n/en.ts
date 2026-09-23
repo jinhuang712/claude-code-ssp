@@ -125,8 +125,6 @@ export const en = {
     lineMenu: (n: number) => `Line ${n} options`,
     chipHelp: "Alt+Arrow keys move this widget; Enter opens its options.",
     moved: (name: string, line: number, zone: string, pos: number) => `${name} moved to line ${line}, ${zone.toLowerCase()}, position ${pos}`,
-    centerZone: "Center zone",
-    centerInUse: "Some lines use the center zone, so it stays visible",
     hideBelowHint: "0 = always show",
     moveUp: "Move line up",
     moveDown: "Move line down",

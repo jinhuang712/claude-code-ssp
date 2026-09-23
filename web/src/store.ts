@@ -92,8 +92,6 @@ interface State {
   consentDismissed: boolean;
   /** Undo stack of pre-edit snapshots (cap 30); typing bursts coalesce into one step. */
   past: FooterConfig[];
-  /** Show the center zone even while no line uses it (a viewer preference, remembered per browser). */
-  showCenter: boolean;
   /** Where keyboard focus should land after a keyboard move; the chip rendered there claims it. */
   focusPos: Selection | null;
   /** Latest screen-reader announcement (rendered into an aria-live region). */
@@ -136,7 +134,6 @@ interface State {
   dismissConsent(): void;
   resetCounters(): Promise<void>;
   refreshPreview(): Promise<void>;
-  setShowCenter(v: boolean): void;
   /** Keyboard move: one step within the zone, across to the neighbouring zone at an edge, or to the line above/below. */
   nudge(sel: Selection, dir: "left" | "right" | "up" | "down"): void;
   claimFocus(): void;
@@ -230,7 +227,6 @@ export const useStore = create<State>((set, get) => {
     consent: null,
     consentDismissed: false,
     past: [],
-    showCenter: pref("ssp.center") === "1",
     focusPos: null,
     live: "",
     tryOn: null,
@@ -513,11 +509,6 @@ export const useStore = create<State>((set, get) => {
       }
     },
 
-    setShowCenter(v) {
-      setPref("ssp.center", v ? "1" : "0");
-      set({ showCenter: v });
-    },
-
     nudge(sel, dir) {
       const c = get().config!;
       const line = c.lines[sel.line];
@@ -563,9 +554,13 @@ export const useStore = create<State>((set, get) => {
   };
 });
 
-/** The center zone is shown when the viewer asked for it or any line already uses it. */
-export function hasCenter(state: Pick<State, "showCenter" | "config">): boolean {
-  return state.showCenter || (state.config?.lines.some((l) => (l.center?.length ?? 0) > 0) ?? false);
+/**
+ * The center zone is only shown while some line uses it. The engine still renders `center`, but
+ * the editor no longer offers it for new widgets: a centred statusline segment is rare, and the
+ * opt-in toggle cost every visitor a control. Configs that already use it stay fully editable.
+ */
+export function hasCenter(state: Pick<State, "config">): boolean {
+  return state.config?.lines.some((l) => (l.center?.length ?? 0) > 0) ?? false;
 }
 
 export function widgetAt(state: State, sel: Selection | null): WidgetInstance | null {
