@@ -140,8 +140,9 @@ export default function App() {
       </div>
       <main className="wrap page">
         <Welcome />
-        <Layout />
+        {/* Style first: three short summaries, then the layout (presets, and the editor in Custom), which can run long. */}
         <Style />
+        <Layout />
       </main>
       {toast && (
         <div className="toast" role="status">

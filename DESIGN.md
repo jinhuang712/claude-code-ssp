@@ -107,7 +107,7 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   (`--chip`), two aliases whose order flips with the scheme; outlines are kept for the terminal, inputs
   (3:1 edges), the sticky header's rule, floating popovers and the clay selection ring. Every text token is
   checked for WCAG AA on every surface; icons are inline SVGs
-  (`components/Icon.tsx`). The page reads Layout → Style. Layout starts with the mode: three presets and
+  (`components/Icon.tsx`). The page reads Style → Layout. Layout starts with the mode: three presets and
   Custom, as cards; the line editor and the tray of unused widgets only show in Custom (lines built there
   are kept aside while a preset is on and come back with Custom). Style is three summaries — theme, bar,
   separator — each opening its choices in place. Rarely used things stay off the page:
