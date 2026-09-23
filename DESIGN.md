@@ -107,9 +107,10 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   (`--chip`), two aliases whose order flips with the scheme; outlines are kept for the terminal, inputs
   (3:1 edges), the sticky header's rule, floating popovers and the clay selection ring. Every text token is
   checked for WCAG AA on every surface; icons are inline SVGs
-  (`components/Icon.tsx`). The page reads Layout (templates behind a button by its title, the tray of unused
-  widgets under the lines) → Style (three summaries — theme, bar, separator — each opening its choices in
-  place). Rarely used things stay off the page:
+  (`components/Icon.tsx`). The page reads Layout → Style. Layout starts with the mode: three presets and
+  Custom, as cards; the line editor and the tray of unused widgets only show in Custom (lines built there
+  are kept aside while a preset is on and come back with Custom). Style is three summaries — theme, bar,
+  separator — each opening its choices in place. Rarely used things stay off the page:
   render settings (width, terminal ground, right margin, colour depth, snapshots) sit behind the preview's
   sliders button; repairs, project config, diagnostics, the way out and the viewer's language/appearance
   behind the header's ⋯ menu. There is no footer.
@@ -119,8 +120,8 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   (context only — the statusline sits below the prompt). WYSIWYG by construction.
 * **Probes**: an open options panel's one line of current output is rendered against the current sample —
   coalesced into one `POST /api/render/batch` per tick (`web/src/probe.ts`) and drawn in colour (`Ansi.tsx`).
-* **Try-on**: hovering/focusing a template, theme, bar style or separator previews it
-  without saving (templates only on keyboard focus: opening their menu focuses the first one). The preview's
+* **Try-on**: hovering a preset card, or hovering/focusing a theme, bar style or separator, previews it
+  without saving; the height a try-on grew the preview to is let go 500 ms after it ends. The preview's
   height is sticky during try-ons (a shrinking preview moved the hovered chip away and looped), and the
   "Previewing: …" label lives inside the prompt row for the same reason.
 * **Samples**: bundled fixtures (fresh session, post-compact null usage, 1M context, no rate_limits, worktree, vim mode,

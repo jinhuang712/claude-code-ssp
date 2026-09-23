@@ -4,7 +4,7 @@ A Claude Code statusline you configure in your browser.
 
 * **Web configurator** on `127.0.0.1:4877` — arrange widgets in left / right zones by drag or keyboard,
   add them from the tray of unused widgets, edit a widget's options right under its line, and hover a
-  template, theme, bar style or separator to try it on against your **real** session
+  preset, theme, bar style or separator to try it on against your **real** session
   before applying. English and 简体中文, light and dark.
 * **Widget registry** — 39 built-ins (model, git, PR, context, rate limits, tokens, cost, agents, todos, tools, MCP…).
 * **User plugins** — drop a `.ts`/`.js` file in `~/.config/claude-code-ssp/widgets/`; a broken plugin shows `⚠`

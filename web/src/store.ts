@@ -100,6 +100,13 @@ interface State {
    * the preview only — never saved. `label` names it in the preview toolbar.
    */
   tryOn: { patch: Partial<FooterConfig>; label: string } | null;
+  /**
+   * The viewer picked "Custom" explicitly, so the editor stays open even when the lines happen to
+   * match a preset. Otherwise the mode follows the lines (see layoutMode).
+   */
+  customMode: boolean;
+  /** The lines last edited in Custom mode, kept (this page view only) while a preset is on. */
+  lastCustom: LineConfig[] | null;
 
   init(): Promise<void>;
   setConfig(mutate: (c: FooterConfig) => void): void;
@@ -124,6 +131,11 @@ interface State {
   moveLine(i: number, dir: -1 | 1): void;
   updateAt(sel: Selection, mutate: (w: WidgetInstance) => void): void;
   applyPreset(id: PresetId): void;
+  /**
+   * Pick the layout mode: a preset replaces the lines (the custom ones are remembered), "custom"
+   * opens the editor — on the remembered custom lines when coming back from a preset.
+   */
+  chooseLayout(mode: PresetId | "custom"): void;
   /** Save pending edits to the current scope. `autoApply: false` skips the first-save install step. */
   saveNow(opts?: { autoApply?: boolean }): Promise<void>;
   /** Snapshot the current look into the previewed project's own config file and edit that from now on. */
@@ -232,6 +244,8 @@ export const useStore = create<State>((set, get) => {
     focusPos: null,
     live: "",
     tryOn: null,
+    customMode: false,
+    lastCustom: null,
 
     async init() {
       try {
@@ -404,6 +418,27 @@ export const useStore = create<State>((set, get) => {
       set({ selection: null, toast: tr().toast.presetApplied });
     },
 
+    chooseLayout(mode) {
+      const s = get();
+      const current = layoutMode(s);
+      if (mode === "custom") {
+        // Back from a preset: bring the custom lines back (undoable like any edit).
+        if (current !== "custom" && s.lastCustom) {
+          const lines = structuredClone(s.lastCustom);
+          s.setConfig((c) => {
+            c.lines = lines;
+          });
+        }
+        set({ customMode: true });
+        return;
+      }
+      if (current === mode) return;
+      // Leaving Custom for a preset: remember what was built there.
+      if (current === "custom") set({ lastCustom: structuredClone(s.config!.lines) });
+      set({ customMode: false });
+      s.applyPreset(mode);
+    },
+
     async saveNow(opts = {}) {
       const { config: c, saved, scope, layers, projectCwd } = get();
       if (!c) return;
@@ -562,6 +597,23 @@ export const useStore = create<State>((set, get) => {
     notify: (toast) => set({ toast }),
   };
 });
+
+/** A layout's shape (which widgets, in which zone, in which order), ignoring empty zones and per-widget options. */
+function shapeOf(lines: LineConfig[]): string {
+  return lines.map((l) => (["left", "center", "right"] as const).map((z) => (l[z] ?? []).map((w) => w.widget).join(",")).join("|")).join("\n");
+}
+
+/** The preset the lines match, if any. */
+export function matchingPreset(lines: LineConfig[]): PresetId | null {
+  const shape = shapeOf(lines);
+  return (Object.keys(PRESETS) as PresetId[]).find((id) => shapeOf(PRESETS[id].lines) === shape) ?? null;
+}
+
+/** Which layout mode is on: "custom" when chosen explicitly or when the lines match no preset. */
+export function layoutMode(state: Pick<State, "customMode" | "config">): PresetId | "custom" {
+  if (state.customMode || !state.config) return "custom";
+  return matchingPreset(state.config.lines) ?? "custom";
+}
 
 /**
  * The center zone is only shown while some line uses it. The engine still renders `center`, but

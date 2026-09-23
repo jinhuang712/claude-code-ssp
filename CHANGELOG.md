@@ -11,8 +11,9 @@ A simpler configurator: the page is the layout and the style, and everything els
   the "+" in every zone and the picker drawer.
 - **Options open in place**, under the widget's own line, instead of in a side drawer. Values are a row of choices;
   booleans are one group of toggles; warn/crit thresholds are one band.
-- **Presets** are a "Start from a template" menu next to the Layout title; **Style** is three summaries (theme,
-  bar, separator) that open their choices in place.
+- **Presets come first:** Minimal, Standard, Full or Custom, as cards at the top of Layout. The line editor and the
+  widget tray belong to Custom; a custom layout is kept while you look at a preset and comes back with Custom.
+  **Style** is three summaries (theme, bar, separator) that open their choices in place.
 - **Off the page:** render settings (width, terminal ground, right margin, colour mode, snapshots) sit behind the
   preview's sliders button; re-apply, reset counters, project config, diagnostics, "stop using", language and
   appearance behind the header's ⋯ menu. The Advanced and Diagnostics sections, the footer and the center-zone

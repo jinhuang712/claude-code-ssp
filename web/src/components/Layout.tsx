@@ -16,10 +16,10 @@ import type { LineConfig, WidgetInstance, Zone } from "../api";
 import { CAT_COLOR } from "../colors";
 import { collision, TRAY_DROP_ID, TRAY_PREFIX, ZONE_PREFIX } from "../collision";
 import { useT, widgetName } from "../i18n";
-import { emptyStateAt, hasCenter, useStore, widgetAt } from "../store";
+import { emptyStateAt, hasCenter, layoutMode, useStore, widgetAt } from "../store";
 import { Icon } from "./Icon";
 import { OptionsPanel } from "./Options";
-import { Templates } from "./Templates";
+import { LayoutModes } from "./LayoutModes";
 import { Popover } from "./Popover";
 import { Tray } from "./Tray";
 
@@ -294,6 +294,7 @@ export function Layout() {
   const addLine = useStore((s) => s.addLine);
   const live = useStore((s) => s.live);
   const withCenter = useStore(hasCenter);
+  const mode = useStore(layoutMode);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const [dragging, setDragging] = useState<string | null>(null);
   const [caret, setCaret] = useState<Pos | null>(null);
@@ -350,22 +351,33 @@ export function Layout() {
 
   return (
     <section className="section" aria-labelledby="layout-title">
-      <div className="section-head section-head-row">
-        <div className="section-head">
-          <h2 id="layout-title" className="h2">
-            {t.layout.title}
-          </h2>
-          <p className="hint">{t.layout.hint}</p>
-        </div>
-        <Templates />
+      <div className="section-head">
+        <h2 id="layout-title" className="h2">
+          {t.layout.title}
+        </h2>
       </div>
-      <p id={CHIP_HELP_ID} className="sr-only">
-        {t.layout.chipHelp}
-      </p>
+      <LayoutModes />
       <p className="sr-only" aria-live="polite">
         {live}
       </p>
-      {/* One drag context for the lines and the tray, so widgets travel both ways between them. */}
+      {mode === "custom" && (
+        <>
+          <p className="hint layout-hint">{t.layout.hint}</p>
+          <p id={CHIP_HELP_ID} className="sr-only">
+            {t.layout.chipHelp}
+          </p>
+          {renderEditor()}
+        </>
+      )}
+    </section>
+  );
+
+  // The line editor and the tray: only in Custom mode (a preset is picked above, not built here).
+  // Called as a function, not rendered as <Component/>: a component defined inside Layout would be a
+  // new type on every render and remount, losing drag state and focus each time.
+  function renderEditor() {
+    return (
+      /* One drag context for the lines and the tray, so widgets travel both ways between them. */
       <DndContext
         sensors={sensors}
         collisionDetection={collision}
@@ -397,6 +409,6 @@ export function Layout() {
         <Tray />
         <DragOverlay dropAnimation={null}>{dragging ? <ChipFace widget={widgetOfDragId(dragging)} ghost /> : null}</DragOverlay>
       </DndContext>
-    </section>
-  );
+    );
+  }
 }
