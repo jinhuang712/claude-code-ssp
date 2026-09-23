@@ -21,6 +21,7 @@ import { useT, widgetName } from "../i18n";
 import { emptyStateAt, hasCenter, useStore, widgetAt } from "../store";
 import { Icon } from "./Icon";
 import { OptionsPanel } from "./Options";
+import { Templates } from "./Templates";
 import { Popover } from "./Popover";
 import { Tray, TRAY_DROP_ID, TRAY_PREFIX } from "./Tray";
 
@@ -351,11 +352,14 @@ export function Layout() {
 
   return (
     <section className="section" aria-labelledby="layout-title">
-      <div className="section-head">
-        <h2 id="layout-title" className="h2">
-          {t.layout.title}
-        </h2>
-        <p className="hint">{t.layout.hint}</p>
+      <div className="section-head section-head-row">
+        <div className="section-head">
+          <h2 id="layout-title" className="h2">
+            {t.layout.title}
+          </h2>
+          <p className="hint">{t.layout.hint}</p>
+        </div>
+        <Templates />
       </div>
       <p id={CHIP_HELP_ID} className="sr-only">
         {t.layout.chipHelp}

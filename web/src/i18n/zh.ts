@@ -92,10 +92,9 @@ export const zh: Messages = {
   },
 
   presets: {
-    title: "预设",
-    matches: "当前布局就是这个预设",
-    hoverHint: "鼠标悬停或键盘聚焦即可在上方预览",
-    customised: "当前布局已在预设基础上改动，点一个预设会整体替换（Ctrl/⌘+Z 可撤销）",
+    title: "从模板开始",
+    matches: "当前布局就是这个模板",
+    customised: "当前布局已经改动过，点一个模板会整体替换（Ctrl/⌘+Z 可撤销）。悬停即可预览。",
     lines: (n) => `${n} 行`,
     minimal: { name: "极简", blurb: "一行：项目 · 分支 · 模型 · 上下文" },
     standard: { name: "标准", blurb: "两行：加上用量与费用" },
@@ -165,7 +164,7 @@ export const zh: Messages = {
   welcome: {
     title: "三步设置你的状态栏",
     steps: [
-      "在下面选一个预设，或者一行一行自己搭。",
+      "点「布局」旁边的「从模板开始」，或者用下面的组件一行一行自己搭。",
       "第一次改动会自动应用到 Claude Code（如果你已经在用别的状态栏，会先问你）。",
       "打开一个 Claude Code 会话，预览里就会出现真实数据；在那之前显示的是示例。",
     ],

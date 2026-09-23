@@ -100,10 +100,9 @@ export const en = {
   },
 
   presets: {
-    title: "Presets",
-    matches: "Your layout matches this preset",
-    hoverHint: "Hover or focus one to preview it above",
-    customised: "Your layout is customised — picking a preset replaces it (Ctrl/⌘+Z undoes)",
+    title: "Start from a template",
+    matches: "Your layout matches this template",
+    customised: "Your layout is customised — picking a template replaces it (Ctrl/⌘+Z undoes). Hover one to preview it.",
     lines: (n: number) => (n === 1 ? "1 line" : `${n} lines`),
     minimal: { name: "Minimal", blurb: "One line: project, branch, model, context" },
     standard: { name: "Standard", blurb: "Two lines: adds usage limits and cost" },
@@ -173,7 +172,7 @@ export const en = {
   welcome: {
     title: "Set up your statusline",
     steps: [
-      "Pick a preset below — or build your own layout, one line at a time.",
+      "Start from a template (next to Layout) — or build your own, one line at a time from the widgets below it.",
       "Your first edit applies it to Claude Code (it asks first if you already use another statusline).",
       "Open a Claude Code session: its real data shows up in the preview. Until then you see samples.",
     ] as readonly string[],
