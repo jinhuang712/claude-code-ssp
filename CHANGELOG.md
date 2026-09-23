@@ -4,6 +4,21 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
 
 ## Unreleased
 
+A simpler configurator: the page is the layout and the style, and everything else is one click away.
+
+- **Widgets are added from a tray** of unused ones under the layout, grouped by category: click to append to the
+  last line, drag to put one anywhere, drag a chip back onto the tray (or press Delete) to remove it. It replaces
+  the "+" in every zone and the picker drawer.
+- **Options open in place**, under the widget's own line, instead of in a side drawer. Values are a row of choices
+  you can hover to try on in the preview; booleans are one group of toggles; warn/crit thresholds are one band.
+- **Presets** are a "Start from a template" menu next to the Layout title; **Style** is three summaries (theme,
+  bar, separator) that open their choices in place.
+- **Off the page:** render settings (width, terminal ground, right margin, colour mode, snapshots) sit behind the
+  preview's sliders button; re-apply, reset counters, project config, diagnostics, "stop using", language and
+  appearance behind the header's ⋯ menu. The Advanced and Diagnostics sections, the footer and the center-zone
+  toggle are gone (a config that already uses the center zone stays editable).
+- Chips show just the widget's name; surfaces are separated by fill rather than borders (80 outlined elements on
+  the page before, 5 now).
 - **Gradient colours read on light terminals.** The gradient colour mode (context bar, usage) started at pure
   white and stayed pastel up to 70%, so a low bar or percentage all but vanished on a white terminal. Every stop
   is now a mid-tone that clears 3:1 on white, slate and black; on dark terminals the colours are a little less bright.
