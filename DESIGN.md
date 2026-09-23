@@ -101,7 +101,8 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   primary button keep their contrast), serif titles over a sans body, mono for everything that mirrors the
   terminal, and the ✻ mark. Every text token is checked for WCAG AA on every surface; icons are inline SVGs
   (`components/Icon.tsx`). The page reads Layout (templates behind a button by its title, the tray of unused
-  widgets under the lines) → Style. Rarely used things stay off the page:
+  widgets under the lines) → Style (three summaries — theme, bar, separator — each opening its choices in
+  place). Rarely used things stay off the page:
   render settings (width, terminal ground, right margin, colour depth, snapshots) sit behind the preview's
   sliders button; repairs, project config, diagnostics, the way out and the viewer's language/appearance
   behind the header's ⋯ menu. There is no footer.

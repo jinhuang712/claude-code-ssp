@@ -447,28 +447,54 @@ input[type="checkbox"] {
   color: var(--fg-2);
 }
 
-/* ---- style card: one labelled row per setting ---- */
-/* Rows carry their own padding so the rules between them run edge to edge (beats .card's padding). */
-.card.style-card {
-  padding: 0;
+/* ---- style: three summaries (theme, bar, separator), one opening its choices underneath ---- */
+.style-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
 }
-.style-row {
-  display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
-  gap: var(--sp-2) var(--sp-5);
-  align-items: start;
-  padding: var(--sp-4);
-}
-.style-row + .style-row {
-  border-top: 1px solid var(--line);
-}
-.style-label h3 {
-  margin: 6px 0 2px;
-  font-size: var(--fs-md);
-  font-weight: 600;
+.style-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-1);
+  background: var(--panel);
+  font-size: var(--fs-sm);
   color: var(--fg);
+  transition: border-color 0.12s, background 0.12s;
 }
-.style-label .hint {
+.style-pick:hover {
+  border-color: var(--field-line);
+}
+.style-pick[aria-expanded="true"] {
+  border-color: var(--clay);
+  box-shadow: inset 0 0 0 1px var(--clay);
+}
+.style-pick-label {
+  color: var(--muted);
+}
+.style-pick-chevron {
+  color: var(--muted);
+  transform: rotate(90deg);
+  transition: transform 0.15s;
+}
+.style-pick[aria-expanded="true"] .style-pick-chevron {
+  transform: rotate(-90deg);
+}
+.style-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  border-radius: var(--r-2);
+  background: var(--sunken);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.style-panel > .hint {
   margin: 0;
 }
 
@@ -1634,12 +1660,12 @@ input[type="checkbox"] {
   .wrap {
     padding: 0 16px;
   }
-  .style-row {
-    grid-template-columns: minmax(0, 1fr);
-    padding: var(--sp-3);
+  /* The three style summaries stack full-width, chevron at the right edge. */
+  .style-pick {
+    flex: 1 1 100%;
   }
-  .style-label h3 {
-    margin-top: 0;
+  .style-pick-chevron {
+    margin-left: auto;
   }
   .masthead {
     padding: 12px 0;

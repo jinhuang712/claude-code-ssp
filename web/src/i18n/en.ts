@@ -137,17 +137,16 @@ export const en = {
 
   style: {
     title: "Style",
-    hint: "How it looks in your terminal. Hover or focus a choice to preview it; click to apply.",
+    hint: "Hover or focus a choice to preview it above; click to apply. Esc closes.",
+    customTheme: "custom",
   },
 
   themes: {
     title: "Color theme",
-    hint: "The colors every widget uses in your terminal",
   },
 
   bars: {
     title: "Progress bars",
-    hint: "Shared by every bar (context, usage, …)",
     names: {
       theme: "Theme default",
       block: "Full block",
@@ -163,7 +162,6 @@ export const en = {
 
   separators: {
     title: "Separator",
-    hint: "Drawn between widgets in the same zone",
     custom: "Custom",
     customLabel: "Custom separator",
     spacesShown: "␣ marks a space",

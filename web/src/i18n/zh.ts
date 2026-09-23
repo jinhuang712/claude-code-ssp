@@ -129,17 +129,16 @@ export const zh: Messages = {
 
   style: {
     title: "样式",
-    hint: "在终端里的样子。悬停或键盘聚焦即可预览，点击才会应用。",
+    hint: "悬停或键盘聚焦即可在上方预览，点击才会应用。Esc 收起。",
+    customTheme: "自定义",
   },
 
   themes: {
     title: "配色",
-    hint: "终端里每一项用的颜色",
   },
 
   bars: {
     title: "进度条字符",
-    hint: "上下文、用量等所有进度条共用",
     names: {
       theme: "跟随配色",
       block: "整格",
@@ -155,7 +154,6 @@ export const zh: Messages = {
 
   separators: {
     title: "分隔符",
-    hint: "同一区里各项之间的分隔",
     custom: "自定义",
     customLabel: "自定义分隔符",
     spacesShown: "␣ 表示空格",

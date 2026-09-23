@@ -1,0 +1,247 @@
+import { useId, useState, type ReactNode } from "react";
+import type { FooterConfig, ThemeDef } from "../api";
+import { uiColor } from "../colors";
+import { useT, type Messages } from "../i18n";
+import { useStore } from "../store";
+import { termScheme, useTheme } from "../theme";
+import { Icon } from "./Icon";
+import { TextField } from "./TextField";
+
+/**
+ * Hover or focus a choice to see it in the preview before committing to it (the try-on never
+ * saves; clicking applies). Spread the result onto the choice button.
+ */
+function useTryOn() {
+  const setTryOn = useStore((s) => s.setTryOn);
+  return (patch: Partial<FooterConfig>, label: string) => ({
+    onMouseEnter: () => setTryOn({ patch, label }),
+    onMouseLeave: () => setTryOn(null),
+    onFocus: () => setTryOn({ patch, label }),
+    onBlur: () => setTryOn(null),
+  });
+}
+
+/* Six theme tokens laid out in the proportions they occupy on a real line. */
+const STRIP: Array<[string, number]> = [
+  ["project", 22],
+  ["git", 14],
+  ["accent", 14],
+  ["ok", 10],
+  ["warn", 10],
+  ["crit", 10],
+];
+
+/** A theme's colours on the preview's terminal ground (theme colours are made for a terminal, not the panel). */
+function Strip({ theme, scale = 1 }: { theme: ThemeDef | undefined; scale?: number }) {
+  const ground = useTheme(termScheme);
+  return (
+    <span className="strip" data-scheme={ground} aria-hidden="true">
+      {STRIP.map(([k, w]) => (
+        <i key={k} style={{ width: w * scale, background: uiColor(theme?.tokens[k]) }} />
+      ))}
+    </span>
+  );
+}
+
+function ThemeChoices() {
+  const themes = useStore((s) => s.themes);
+  const config = useStore((s) => s.config)!;
+  const setConfig = useStore((s) => s.setConfig);
+  const setTryOn = useStore((s) => s.setTryOn);
+  const tryOn = useTryOn();
+  const current = typeof config.theme === "string" ? config.theme : "custom";
+  return (
+    <>
+      {themes.map((th) => (
+        <button
+          key={th.name}
+          className="choice"
+          data-active={current === th.name}
+          aria-pressed={current === th.name}
+          {...tryOn({ theme: th.name }, th.name)}
+          onClick={() => {
+            setConfig((c) => {
+              c.theme = th.name;
+            });
+            setTryOn(null);
+          }}
+        >
+          <Strip theme={th} />
+          {th.name}
+        </button>
+      ))}
+    </>
+  );
+}
+
+/* Bar glyph pairs; each one is shown exactly as the statusline will draw it. Names live in `bars.names`. */
+const BAR_SETS: Array<{ id: keyof Messages["bars"]["names"]; filled: string; empty: string }> = [
+  { id: "theme", filled: "", empty: "" },
+  { id: "block", filled: "█", empty: "░" },
+  { id: "rect", filled: "▮", empty: "▯" },
+  { id: "low", filled: "▆", empty: "▁" },
+  { id: "half", filled: "▄", empty: "▁" },
+  { id: "slant", filled: "▰", empty: "▱" },
+  { id: "square", filled: "■", empty: "□" },
+  { id: "line", filled: "━", empty: "╌" },
+  { id: "dot", filled: "●", empty: "○" },
+];
+const drawBar = (f: string, e: string) => f.repeat(4) + e.repeat(6);
+
+/** The bar style in effect: a named set, the theme's own ("theme"), or hand-edited glyphs ("custom"). */
+function useBarState() {
+  const config = useStore((s) => s.config)!;
+  const themes = useStore((s) => s.themes);
+  const themeBar = (typeof config.theme === "string" ? themes.find((th) => th.name === config.theme)?.bar : config.theme.bar) ?? { filled: "█", empty: "░" };
+  const named = BAR_SETS.find((b) => b.id !== "theme" && config.bar?.filled === b.filled && config.bar?.empty === b.empty)?.id;
+  const current: (typeof BAR_SETS)[number]["id"] | "custom" = named ?? (config.bar ? "custom" : "theme");
+  const glyphs = config.bar ?? themeBar;
+  return { themeBar, current, glyphs };
+}
+
+function BarChoices() {
+  const t = useT();
+  const setConfig = useStore((s) => s.setConfig);
+  const setTryOn = useStore((s) => s.setTryOn);
+  const tryOn = useTryOn();
+  const { themeBar, current } = useBarState();
+  return (
+    <>
+      {BAR_SETS.map((b) => (
+        <button
+          key={b.id}
+          className="choice"
+          data-active={current === b.id}
+          aria-pressed={current === b.id}
+          // "Theme default" previews as the theme's own glyphs: patch them in explicitly.
+          {...tryOn({ bar: b.id === "theme" ? themeBar : { filled: b.filled, empty: b.empty } }, t.bars.names[b.id])}
+          onClick={() => {
+            setConfig((c) => {
+              if (b.id === "theme") delete c.bar;
+              else c.bar = { filled: b.filled, empty: b.empty };
+            });
+            setTryOn(null);
+          }}
+        >
+          <span className="mono glyphs">{b.id === "theme" ? drawBar(themeBar.filled, themeBar.empty) : drawBar(b.filled, b.empty)}</span>
+          <small>{t.bars.names[b.id]}</small>
+        </button>
+      ))}
+    </>
+  );
+}
+
+/** Common separators. Each chip shows it between two words so the spacing is visible. */
+const SEPARATORS = [" │ ", " · ", " • ", " / ", " | ", " ❯ ", "  "];
+/** Spaces are invisible in a text field; ␣ makes a leading/trailing/double space readable. */
+const showSpaces = (s: string) => s.replace(/ /g, "␣");
+
+function SeparatorChoices() {
+  const t = useT();
+  const sep = useStore((s) => s.config!.separator);
+  const setConfig = useStore((s) => s.setConfig);
+  const setTryOn = useStore((s) => s.setTryOn);
+  const tryOn = useTryOn();
+  const custom = !SEPARATORS.includes(sep);
+  const set = (v: string) => {
+    setConfig((c) => {
+      c.separator = v;
+    });
+    setTryOn(null);
+  };
+  return (
+    <>
+      {SEPARATORS.map((v) => (
+        <button key={v} className="choice" data-active={sep === v} aria-pressed={sep === v} {...tryOn({ separator: v }, showSpaces(v))} onClick={() => set(v)} aria-label={showSpaces(v)}>
+          <span className="mono sep-sample">
+            main<b>{v}</b>42%
+          </span>
+        </button>
+      ))}
+      <span className="choice choice-custom" data-active={custom}>
+        {/* Empty unless the value really is custom: a preset like " │ " in a text box reads as an empty field with a caret. */}
+        <TextField className="field mono !w-28" value={custom ? sep : ""} onChange={(v) => setConfig((c) => void (c.separator = v))} ariaLabel={t.separators.customLabel} placeholder={t.separators.custom} />
+        {custom && (
+          <span className="mono hint" title={t.separators.spacesShown}>
+            {showSpaces(sep)}
+          </span>
+        )}
+      </span>
+    </>
+  );
+}
+
+type Part = "theme" | "bar" | "separator";
+
+/**
+ * How the statusline looks, as one row of three summaries — the current theme, bar and separator —
+ * each opening its choices in place underneath. It used to lay out all 24 choices at once; most
+ * visits change none of them, and the one that does only needs one group at a time.
+ */
+export function Style() {
+  const t = useT();
+  const panelId = useId();
+  const [open, setOpen] = useState<Part | null>(null);
+  const config = useStore((s) => s.config)!;
+  const themes = useStore((s) => s.themes);
+  const setTryOn = useStore((s) => s.setTryOn);
+  const { current: barId, glyphs } = useBarState();
+  const themeName = typeof config.theme === "string" ? config.theme : t.style.customTheme;
+  const theme = typeof config.theme === "string" ? themes.find((th) => th.name === config.theme) : config.theme;
+
+  const toggle = (p: Part) => {
+    setTryOn(null);
+    setOpen(open === p ? null : p);
+  };
+  const pick = (p: Part, label: string, summary: ReactNode) => (
+    <button className="style-pick" aria-expanded={open === p} aria-controls={open === p ? panelId : undefined} onClick={() => toggle(p)}>
+      <span className="style-pick-label">{label}</span>
+      {summary}
+      <Icon name="chevron" size={12} className="style-pick-chevron" />
+    </button>
+  );
+  const titles: Record<Part, string> = { theme: t.themes.title, bar: t.bars.title, separator: t.separators.title };
+
+  return (
+    <section className="section" aria-labelledby="style-title">
+      <div className="section-head">
+        <h2 id="style-title" className="h2">
+          {t.style.title}
+        </h2>
+      </div>
+      <div className="style-picks">
+        {pick("theme", t.themes.title, <><Strip theme={theme} scale={0.6} /><span>{themeName}</span></>)}
+        {pick("bar", t.bars.title, <><span className="mono glyphs">{drawBar(glyphs.filled, glyphs.empty)}</span><span>{barId === "custom" ? t.separators.custom : t.bars.names[barId]}</span></>)}
+        {pick(
+          "separator",
+          t.separators.title,
+          <span className="mono sep-sample">
+            main<b>{config.separator}</b>42%
+          </span>,
+        )}
+      </div>
+      {open && (
+        <div
+          id={panelId}
+          className="style-panel"
+          role="group"
+          aria-label={titles[open]}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.stopPropagation();
+              setTryOn(null);
+              setOpen(null);
+            }
+          }}
+        >
+          <p className="hint">{t.style.hint}</p>
+          <div className="choices">
+            {open === "theme" && <ThemeChoices />}
+            {open === "bar" && <BarChoices />}
+            {open === "separator" && <SeparatorChoices />}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
