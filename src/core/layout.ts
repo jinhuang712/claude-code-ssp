@@ -108,10 +108,12 @@ export function layoutLine(zones: Record<Zone, RenderedWidget>, columns: number,
   const { left, center, right } = zones;
   const parts = [left, center, right].filter((z) => z.width > 0);
   if (parts.length === 0) return [];
-  if (parts.length === 1) {
+  // One zone that fits: place it and done. One that doesn't goes through the overflow rules below
+  // like any other line; it used to come back whole, and the terminal broke it mid-word.
+  if (parts.length === 1 && (columns <= 0 || parts[0]!.width <= columns)) {
     const only = parts[0]!;
-    if (only === right && columns > 0 && right.width <= columns) return [pad(columns - right.width) + right.text];
-    if (only === center && columns > 0 && center.width <= columns) return [pad(Math.floor((columns - center.width) / 2)) + center.text];
+    if (only === right && columns > 0) return [pad(columns - right.width) + right.text];
+    if (only === center && columns > 0) return [pad(Math.floor((columns - center.width) / 2)) + center.text];
     return [only.text];
   }
   const gaps = parts.length - 1; // at least one space between zones
@@ -137,7 +139,8 @@ export function layoutLine(zones: Record<Zone, RenderedWidget>, columns: number,
   // does. (It used to drop to a row of its own under a long left side, which read as the two sides
   // pushing each other around.) What gives is the left, together with the center, which has no
   // room of its own to float in once the line is full.
-  if (overflow === "drop-right") {
+  // With nothing but the right zone there is nothing to drop it for: it is cut like any other.
+  if (overflow === "drop-right" && (left.width > 0 || center.width > 0)) {
     // Kept for configs that chose it; the panel no longer offers it (it hides the right zone).
     return layoutLine({ left, center, right: { text: "", width: 0 } }, columns, "truncate");
   }

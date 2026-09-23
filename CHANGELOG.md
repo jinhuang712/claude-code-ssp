@@ -31,7 +31,8 @@ A simpler configurator: the page is the layout and the style, and everything els
 - **The right side of a line never moves.** When a line is too long, the left side is now cut short with `…` so
   every line stays one row, and the right side keeps its place at the end of it. Per line you can have the left
   side continue on the next row instead (breaking between widgets). Before, the right side dropped to a row of
-  its own. "Hide the right side" is no longer offered (configs that use it keep working).
+  its own. "Hide the right side" is no longer offered (configs that use it keep working). A line with widgets
+  on one side only follows the same rules; before, it was never cut and the terminal broke it mid-word.
 - **Gradient colours read on light terminals.** The gradient colour mode (context bar, usage) started at pure
   white and stayed pastel up to 70%, so a low bar or percentage all but vanished on a white terminal. Every stop
   is now a mid-tone that clears 3:1 on white, slate and black; on dark terminals the colours are a little less bright.

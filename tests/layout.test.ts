@@ -142,6 +142,25 @@ describe("layoutLine", () => {
       expect(visualWidth(first!)).toBe(20);
     }
   });
+  // A line that uses one zone only (the Full preset's agents + todos line) used to come back whole
+  // however wide it was, and the terminal broke it mid-word onto a second row.
+  test("a line with only one zone is cut to the terminal like any other", () => {
+    const left = layoutLine({ left: zoneOf(["p".repeat(12), "q".repeat(12)]), center: z(""), right: z("") }, 20);
+    expect(left).toHaveLength(1);
+    expect(visualWidth(left[0]!)).toBe(20);
+    expect(left[0]!.endsWith("…")).toBe(true);
+    for (const zone of ["center", "right"] as const) {
+      const rows = layoutLine({ left: z(""), center: z(""), right: z(""), [zone]: z("x".repeat(30)) }, 20);
+      expect(rows).toEqual([`${"x".repeat(19)}…`]);
+    }
+  });
+  test("wrap on a one-zone line breaks between widgets and fills whole rows", () => {
+    const rows = layoutLine({ left: zoneOf(["a".repeat(8), "b".repeat(8), "c".repeat(8)]), center: z(""), right: z("") }, 20, "wrap");
+    expect(rows).toEqual([`${"a".repeat(8)} | ${"b".repeat(8)}`, "c".repeat(8)]);
+  });
+  test("drop-right never blanks a line whose only zone is the right one", () => {
+    expect(layoutLine({ left: z(""), center: z(""), right: z("y".repeat(30)) }, 20, "drop-right")).toEqual([`${"y".repeat(19)}…`]);
+  });
   test("drop-right policy hides the right zone", () => {
     const rows = layoutLine({ left: z("x".repeat(15)), center: z(""), right: z("y".repeat(10)) }, 20, "drop-right");
     expect(rows).toEqual(["x".repeat(15)]);
