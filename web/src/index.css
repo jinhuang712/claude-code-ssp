@@ -65,9 +65,13 @@
   --danger: #ef7a6b;
   --scrim: rgba(10, 9, 8, 0.45);
   --shadow: rgba(0, 0, 0, 0.45);
-  /* The preview's terminal ground; matches TERM_THEMES in theme.ts. */
-  --term-dark: #141413;
-  --term-light: #ffffff;
+  /*
+    The preview's terminal ground; matches TERM_THEMES in theme.ts. Each is the --row fill of its
+    scheme (dark --panel, light --panel-2), so on "Match panel" the preview is just another row.
+    Literals, not aliases: a light terminal on a dark page must stay light.
+  */
+  --term-dark: #262523;
+  --term-light: #f0eee6;
   --r-1: 6px;
   --r-2: 10px;
   --r-3: 14px;
@@ -552,44 +556,28 @@ input[type="checkbox"] {
   color: var(--fg-2);
 }
 
-/* ---- preview: the terminal is the hero ---- */
-/*
-  Not overflow: hidden — the settings popover opens from the toolbar and must be able to hang below
-  the frame. The rounded corners are kept by rounding the first and last rows instead.
-*/
-.term-frame {
-  position: relative;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-2);
-  background: var(--panel);
-  box-shadow: 0 1px 2px var(--shadow);
+/* ---- preview: one more filled surface of the page ----
+   A small label row with the controls, the lines on the row fill, and the note under it. The
+   bordered terminal window it replaced — a title bar, a black ground, a mock prompt — read as a
+   different app pasted into the page. */
+.term-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
 }
-.term-frame > :first-child {
-  border-top-left-radius: calc(var(--r-2) - 1px);
-  border-top-right-radius: calc(var(--r-2) - 1px);
-}
-.term-frame > :last-child {
-  border-bottom-left-radius: calc(var(--r-2) - 1px);
-  border-bottom-right-radius: calc(var(--r-2) - 1px);
-}
+/* Label left, controls right; the try-on label sits between them so hovering never adds a row. */
 .term-bar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 6px 16px;
-  padding: 7px 12px 7px 16px;
-  border-bottom: 1px solid var(--line);
-  background: var(--panel);
+  gap: var(--sp-3);
+  min-height: 32px;
   font-size: var(--fs-xs);
   color: var(--muted);
 }
 .term-title {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 8px;
   font-size: var(--fs-sm);
   font-weight: 600;
-  color: var(--fg);
+  color: var(--fg-2);
   white-space: nowrap;
 }
 .term-bar .meta {
@@ -598,93 +586,48 @@ input[type="checkbox"] {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
-/* One labelled toolbar control: a muted word, then the select. */
-.tb {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+/* "Trying on: … — click to apply". Cut short before it can push the controls to a second row. */
+.term-tryon {
   min-width: 0;
-}
-.tb-label {
-  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--accent);
 }
-.term {
-  padding: 10px 16px 14px;
-  background: var(--term-dark);
+/* The column count and the settings button, at the row's right end. */
+.term-controls {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
 }
 /*
-  The mock Claude Code prompt above the statusline: '>' and a dim placeholder between two rules,
-  in the terminal's own colours. Exactly one line tall, always.
+  The surface. Its ground is TERM_THEMES in theme.ts, and the padding around the canvas must be
+  that ground too. With the terminal setting on "Match panel" (the default) it is exactly --row.
 */
-.term-prompt {
-  --tp-line: rgba(232, 230, 220, 0.18);
-  --tp-dim: #8f8d85;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 30px;
-  margin-bottom: 8px;
-  padding: 0 2px;
-  border-top: 1px solid var(--tp-line);
-  border-bottom: 1px solid var(--tp-line);
-  font-size: 13px;
-  color: #e8e6dc;
-  white-space: nowrap;
-  overflow: hidden;
+.term {
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-2);
+  background: var(--term-dark);
 }
-.term[data-scheme="light"] .term-prompt {
-  --tp-line: rgba(31, 30, 29, 0.16);
-  --tp-dim: #75736c;
-  color: #1f1e1d;
-}
-.term-ph {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--tp-dim);
-}
-/* "Previewing: … — click to apply", on the same line so hovering never changes the height. */
-.term-tryon {
-  flex: none;
-  margin-left: auto;
-  max-width: 60%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--clay);
-}
-/* Matches TERM_THEMES in theme.ts: the padding around the canvas must be the terminal's ground too. */
 .term[data-scheme="light"] {
   background: var(--term-light);
 }
 .term[data-fixed="true"] {
   overflow-x: auto;
 }
-/* The column count and the settings button, at the toolbar's right end. */
-.term-controls {
-  display: flex;
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px 16px;
-  min-width: 0;
-}
-/* The note and errors under the terminal are set off by the change of ground, not a rule. */
-.term-note {
-  margin: 0;
-  padding: 6px 16px;
-  background: var(--panel);
-  font-size: var(--fs-xs);
-  color: var(--muted);
-}
 .term .xterm .xterm-viewport {
   overflow: hidden !important;
 }
+.term-note,
 .term-errors {
   margin: 0;
-  padding: 6px 14px 8px;
+  padding: 0 2px;
   font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.term-errors {
   color: var(--warn);
 }
 

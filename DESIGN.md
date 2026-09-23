@@ -105,7 +105,7 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   ivory/slate neutrals, one fixed clay accent (`--clay`, not the edited theme's colour, so focus rings and the
   primary button keep their contrast), serif titles over a sans body, mono for everything that mirrors the
   terminal, and the ✻ mark. Surfaces are told apart by fill, not borders — page < row (`--row`) < chip
-  (`--chip`), two aliases whose order flips with the scheme; outlines are kept for the terminal, inputs
+  (`--chip`), two aliases whose order flips with the scheme; outlines are kept for inputs
   (3:1 edges), the sticky header's rule, floating popovers and the clay selection ring. Every text token is
   checked for WCAG AA on every surface; icons are inline SVGs
   (`components/Icon.tsx`). The page reads Style → Layout. Layout starts with the mode: three presets and
@@ -117,14 +117,17 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   behind the header's ⋯ menu. There is no footer.
 
 * **Preview** = `POST /api/render { config, sample, columns }` → the **same** render engine; output painted by xterm.js
-  on a dark or light terminal ground with a matching ANSI palette, under a quiet mock of Claude Code's prompt
-  (context only — the statusline sits below the prompt). WYSIWYG by construction.
+  with a matching ANSI palette on one more filled surface of the page: a small "Preview" label with the column
+  count and the settings button, the lines on the row fill, the note under them. No frame, title bar or mock
+  prompt (they read as a different app pasted in). The ground is the row fill of the page's scheme unless the
+  settings pick a dark or light terminal, which is slightly lower-contrast than pure black or white. WYSIWYG by
+  construction.
 * **Probes**: an open options panel's one line of current output is rendered against the current sample —
   coalesced into one `POST /api/render/batch` per tick (`web/src/probe.ts`) and drawn in colour (`Ansi.tsx`).
 * **Try-on**: hovering a preset card, or hovering/focusing a theme, bar style or separator, previews it
   without saving; the height a try-on grew the preview to is let go 500 ms after it ends. The preview's
   height is sticky during try-ons (a shrinking preview moved the hovered chip away and looped), and the
-  "Previewing: …" label lives inside the prompt row for the same reason.
+  "Trying on …" label lives in the preview's label row for the same reason.
 * **Samples**: bundled fixtures (fresh session, post-compact null usage, 1M context, no rate_limits, worktree, vim mode,
   Bedrock). `basic` and `post-compact` point at bundled sample transcripts whose timestamps are seconds relative to
   now; `src/core/fixtures.ts` writes a real copy with ISO times, so agents, todos, tools, MCP, output speed and

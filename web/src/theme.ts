@@ -100,8 +100,11 @@ const xtermPalette = (p: Palette16) => ({
  * dim/muted segments are judged against a realistic ground.
  */
 export const TERM_THEMES: Record<Scheme, Record<string, string>> = {
-  // Dark is Claude's slate (#141413), not pure black: the preview sits inside a warm panel and a
-  // blue-black ground read as a hole in the page. Keep in sync with --term-dark/--term-light.
-  dark: { background: "#141413", foreground: "#e8e6dc", cursor: "#141413", selectionBackground: "#3a3935", ...xtermPalette(PALETTES.dark) },
-  light: { background: "#ffffff", foreground: "#1f1e1d", cursor: "#ffffff", selectionBackground: "#f3d9cc", ...xtermPalette(PALETTES.light) },
+  // The grounds are the page's own row fill (dark #262523, light #f0eee6), not a real terminal's
+  // black or white: a slate well inside the page read as a different app pasted in. Both sit a
+  // little closer to mid-grey than black or white, so contrast here is slightly lower than in a
+  // black or white terminal (not than in every terminal: some dark themes use a lighter ground).
+  // Keep in sync with --term-dark/--term-light.
+  dark: { background: "#262523", foreground: "#e8e6dc", cursor: "#262523", selectionBackground: "#3a3935", ...xtermPalette(PALETTES.dark) },
+  light: { background: "#f0eee6", foreground: "#1f1e1d", cursor: "#f0eee6", selectionBackground: "#f3d9cc", ...xtermPalette(PALETTES.light) },
 };

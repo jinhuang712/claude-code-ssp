@@ -252,14 +252,22 @@ export function Preview() {
   if (!tryOn) realNote.current = liveNote;
   const note = tryOn ? realNote.current : liveNote;
 
+  // No frame and no toolbar: a small label with the controls beside it, the lines on one filled
+  // surface (the same fill as the layout rows), and the note under it. A bordered terminal window
+  // with its own title bar and a mock prompt read as a different app pasted into the page.
   return (
-    <div className="term-frame">
+    <div className="term-block">
       {/*
         Each control has a short visible label; its aria-label (longer, explanatory) contains that
         word, so voice-control users can say what they see (WCAG 2.5.3 Label in Name).
       */}
       <div className="term-bar">
         <span className="term-title">{t.preview.title}</span>
+        {/*
+          "Trying on: …", in the label row so hovering never changes the preview's height (a height
+          change is what made hover previews loop; see the hold above).
+        */}
+        {tryOn && <span className="term-tryon">{t.preview.tryingOn(tryOn.label)}</span>}
         {/*
           No data picker: the preview shows the session /ssp:config was run from (see pickSample in
           store.ts). Choosing among every captured session and bundled sample was more than anyone needed.
@@ -274,24 +282,13 @@ export function Preview() {
         </div>
       </div>
       <div className="term" data-fixed={columnsMode !== "auto"} data-scheme={scheme}>
-        {/*
-          Context, not content: in Claude Code the statusline sits under the prompt, so the preview
-          draws a quiet prompt line above it. While a choice is hovered, the right end of that line
-          says what is being previewed — inside the same one-line row, so the preview's height never
-          changes (a height change is what made hover previews loop; see above).
-        */}
-        <div className="term-prompt mono" aria-hidden="true">
-          <span className="term-caret">&gt;</span>
-          <span className="term-ph">{t.preview.promptHint}</span>
-          {tryOn && <span className="term-tryon">{t.preview.tryingOn(tryOn.label)}</span>}
-        </div>
         <div ref={host} className="w-full" aria-hidden="true" />
         {/* What a screen reader announces instead of the canvas: the same lines as plain text. */}
         <pre className="sr-only" aria-label={t.preview.title}>
           {(preview?.lines ?? []).map((l) => parseAnsi(l).map((r) => r.text).join("")).join("\n")}
         </pre>
       </div>
-      {/* Below the terminal, so the toolbar and the lines it controls stay adjacent. */}
+      {/* Under the surface, so the label row and the lines it controls stay adjacent. */}
       {note && <p className="term-note">{note}</p>}
       {preview?.errors.length ? <p className="term-errors">{preview.errors.map((e) => `${e.widget}: ${e.message}`).join("　")}</p> : null}
     </div>

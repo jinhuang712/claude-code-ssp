@@ -19,7 +19,11 @@ A simpler configurator: the page is the layout and the style, and everything els
   appearance behind the header's ⋯ menu. The Advanced and Diagnostics sections, the footer and the center-zone
   toggle are gone (a config that already uses the center zone stays editable).
 - Chips show just the widget's name; surfaces are separated by fill rather than borders (80 outlined elements on
-  the page before, 5 now).
+  the page before, 2 now).
+- **The preview is part of the page.** No terminal window around it any more (border, title bar, black ground,
+  mock prompt): a small *Preview* label with the column count and settings, the lines on the same fill as the
+  layout rows, the note under them. "Trying on …" shows beside the label. A dark or light terminal picked in the
+  preview settings still gets its own ground.
 - **The preview follows your session.** `/ssp:config` opens the page bound to the session you ran it in, and the
   preview's data picker is gone (without a session it shows the most recent one).
 - **No undo.** The Undo button, Ctrl/⌘+Z and the "… — Ctrl/⌘+Z to undo" toasts are gone: they were more noise

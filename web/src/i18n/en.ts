@@ -52,8 +52,6 @@ export const en = {
     renderTime: "Render time",
     widthLabel: "Width",
     terminalLabel: "Terminal",
-    /** Placeholder in the mock Claude Code prompt drawn above the statusline. */
-    promptHint: 'Try "explain this statusline"',
     filled: (n: number) => (n === 1 ? "1 item has no real data yet — showing a sample value" : `${n} items have no real data yet — showing sample values`),
     hidden: (n: number) => (n === 1 ? "1 item has no data or sample and is hidden" : `${n} items have no data or sample and are hidden`),
     emptyLines: (n: number) => (n === 1 ? "1 line is empty as a result" : `${n} lines are empty as a result`),
@@ -62,7 +60,8 @@ export const en = {
     fitWindow: "Fit to window",
     fixedColumns: "Fixed columns",
     columns: (n: number) => `${n} cols`,
-    tryingOn: (label: string) => `Previewing: ${label} — click to apply`,
+    /** Beside the "Preview" label while a choice is hovered, so it doesn't repeat that word. */
+    tryingOn: (label: string) => `Trying on ${label} — click to apply`,
     terminalHint: "Pick the background your terminal uses, so colors are judged fairly",
     termAuto: "Match panel",
     termDark: "Dark terminal",
