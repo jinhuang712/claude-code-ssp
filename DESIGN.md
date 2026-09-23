@@ -142,7 +142,7 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   one card) — it replaced a side drawer that dimmed the page. The form is generated from the widget's JSON Schema
   by kind: enums as a row of choices, every boolean in one group of toggles, `warnAt` + `critAt` as one threshold
   band, colour as swatches, bold as one more toggle (the raw JSON is in Diagnostics → Config JSON). Hovering a value leaves the preview alone (a
-  statusline changing under the pointer while reading was distracting); a click applies and is undoable, and
+  statusline changing under the pointer while reading was distracting); a click applies, and
   the panel keeps one line of what the widget prints now.
 * **Install**: the first save auto-applies unless another tool's statusLine is set — then the server answers 409 and
   the panel asks. *⋯ menu → Stop using this statusline* (two steps: it first says what comes back) restores the previous one.

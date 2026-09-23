@@ -110,7 +110,7 @@ function Chip({ id, line, zone, index, item }: { id: string; line: number; zone:
         onClick={() => (selected ? s.closeOptions() : s.select({ line, zone, index }))}
         aria-expanded={selected}
         onKeyDown={(e) => {
-          // Delete / Backspace removes (undoable; the toast says so) — the keyboard twin of dragging a chip to the tray.
+          // Delete / Backspace removes — the keyboard twin of dragging a chip to the tray.
           if (e.key === "Delete" || e.key === "Backspace") {
             e.preventDefault();
             s.removeAt({ line, zone, index });
@@ -332,7 +332,7 @@ export function Layout() {
     }
     const a = ids.get(activeId);
     if (!a) return;
-    // Dragged back onto the tray: out of the statusline (undoable, and the toast says so).
+    // Dragged back onto the tray: out of the statusline.
     if (overId === TRAY_DROP_ID) return removeAt(a);
     const z = parseZoneId(overId);
     if (z) {

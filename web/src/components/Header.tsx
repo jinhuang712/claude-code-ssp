@@ -237,11 +237,6 @@ export function Header() {
       </div>
       <div className="topbar-actions">
         <ScopeSelect />
-        <button className="btn btn-ghost" disabled={s.past.length === 0} onClick={() => s.undo()} title={s.past.length ? t.header.undoTitle(s.past.length) : t.header.nothingToUndo}>
-          <Icon name="undo" />
-          {t.header.undo}
-          {s.past.length > 1 && <span className="count">{s.past.length}</span>}
-        </button>
         {/* Applying is the one step a first-time user must take, so it stays visible until done; afterwards "Re-apply" is a repair tool and lives in the menu. */}
         {s.installed !== true && (
           <button className="btn btn-primary" onClick={() => void s.install()} title={t.header.applyTitle}>

@@ -89,8 +89,6 @@ interface State {
    */
   consent: { current: unknown } | null;
   consentDismissed: boolean;
-  /** Undo stack of pre-edit snapshots (cap 30); typing bursts coalesce into one step. */
-  past: FooterConfig[];
   /** Where keyboard focus should land after a keyboard move; the chip rendered there claims it. */
   focusPos: Selection | null;
   /** Latest screen-reader announcement (rendered into an aria-live region). */
@@ -109,8 +107,11 @@ interface State {
   lastCustom: LineConfig[] | null;
 
   init(): Promise<void>;
+  /**
+   * Apply an edit. There is no undo, on purpose: it was dropped as more noise than help (every
+   * removal came with a "Ctrl/⌘+Z to undo" toast). Edits save on their own, 800 ms later.
+   */
   setConfig(mutate: (c: FooterConfig) => void): void;
-  undo(): void;
   setSample(id: string | null): Promise<void>;
   setScope(scope: Scope): void;
   setColumns(n: number): void;
@@ -159,8 +160,6 @@ interface State {
 
 let previewTimer: ReturnType<typeof setTimeout> | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
-/** When the last undo step was pushed; typing bursts within 1.5 s share one step. */
-let lastUndoPushAt = 0;
 
 /** localStorage can throw (blocked storage, private mode); per-viewer prefs just fall back. */
 function pref(key: string): string | null {
@@ -240,7 +239,6 @@ export const useStore = create<State>((set, get) => {
     installPlan: null,
     consent: null,
     consentDismissed: false,
-    past: [],
     focusPos: null,
     live: "",
     tryOn: null,
@@ -269,19 +267,11 @@ export const useStore = create<State>((set, get) => {
       }
     },
 
-    setConfig(mutate, undoable = true) {
+    setConfig(mutate) {
       const before = get().config!;
       const c = structuredClone(before);
       mutate(c);
       if (JSON.stringify(c) === JSON.stringify(before)) return;
-      if (undoable) {
-        // Coalesce keystroke bursts: one undo step per 1.5 s of continuous editing.
-        const past = get().past;
-        if (Date.now() - lastUndoPushAt > 1500 || past.length === 0 || JSON.stringify(past[past.length - 1]) !== JSON.stringify(before)) {
-          lastUndoPushAt = Date.now();
-          set({ past: [...past.slice(-29), structuredClone(before)] });
-        }
-      }
       set({ config: c });
       schedulePreview(120);
       scheduleSave();
@@ -293,7 +283,7 @@ export const useStore = create<State>((set, get) => {
       const cwd = cwdOf(samples, id);
       if (cwd !== projectCwd) {
         // A different project means a different project layer. Flush pending edits to where they
-        // were meant to go first, then load the new project's view; undo can't cross projects.
+        // were meant to go first, then load the new project's view.
         if (saveTimer) {
           clearTimeout(saveTimer);
           saveTimer = null;
@@ -301,7 +291,7 @@ export const useStore = create<State>((set, get) => {
         }
         try {
           const eff = await api.config(cwd);
-          set({ projectCwd: cwd, past: [], selection: null });
+          set({ projectCwd: cwd, selection: null });
           adopt(eff, { resetScope: true });
         } catch {
           /* unknown to the server (e.g. an old sample): keep the current project */
@@ -327,15 +317,6 @@ export const useStore = create<State>((set, get) => {
       if (typeof m === "number") get().setColumns(m);
     },
 
-    undo() {
-      const past = get().past;
-      const prev = past[past.length - 1];
-      if (!prev) return;
-      set({ past: past.slice(0, -1), config: structuredClone(prev), selection: null });
-      schedulePreview(120);
-      scheduleSave();
-    },
-
     select: (selection) => set({ selection }),
     closeOptions: () => set((st) => ({ selection: null, focusPos: st.selection })),
 
@@ -359,7 +340,7 @@ export const useStore = create<State>((set, get) => {
       get().setConfig((c) => {
         zoneOf(c.lines[sel.line]!, sel.zone).splice(sel.index, 1);
       });
-      set({ selection: null, toast: tr().toast.removed });
+      set({ selection: null });
     },
 
     moveWidget(from, toLine, toZone, toIndex) {
@@ -391,7 +372,7 @@ export const useStore = create<State>((set, get) => {
       get().setConfig((c) => {
         c.lines.splice(i, 1);
       });
-      set({ selection: null, toast: tr().toast.lineRemoved });
+      set({ selection: null });
     },
 
     moveLine(i, dir) {
@@ -415,14 +396,14 @@ export const useStore = create<State>((set, get) => {
       get().setConfig((c) => {
         c.lines = structuredClone(PRESETS[id].lines);
       });
-      set({ selection: null, toast: tr().toast.presetApplied });
+      set({ selection: null });
     },
 
     chooseLayout(mode) {
       const s = get();
       const current = layoutMode(s);
       if (mode === "custom") {
-        // Back from a preset: bring the custom lines back (undoable like any edit).
+        // Back from a preset: bring the custom lines back.
         if (current !== "custom" && s.lastCustom) {
           const lines = structuredClone(s.lastCustom);
           s.setConfig((c) => {

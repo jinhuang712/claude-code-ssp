@@ -24,9 +24,6 @@ export const zh: Messages = {
     saveFailed: "保存失败",
     retry: "重试",
     statusDetail: "改动会自动保存；Claude Code 下次刷新状态栏时读取新配置。",
-    undo: "撤销",
-    undoTitle: (n) => `撤销上一步（还可撤销 ${n} 步），快捷键 Ctrl/⌘+Z`,
-    nothingToUndo: "没有可撤销的改动",
     resetCounters: "重置计数",
     resetCountersTitle: "费用 / Tokens / API 次数 / 改动行数从现在起重新累计，只影响当前会话",
     resetCountersHint: "费用 · tokens · 调用",
@@ -170,7 +167,7 @@ export const zh: Messages = {
   tray: {
     title: "未使用的组件",
     hint: "点一下加到最后一行 · 拖进任意一行 · 把组件拖回这里即移除",
-    dropToRemove: "松手即从状态栏移除（Ctrl/⌘+Z 可撤销）",
+    dropToRemove: "松手即从状态栏移除",
     empty: "所有组件都已经在状态栏里了。",
     showAll: (n) => `显示全部 ${n} 个`,
     showFewer: "收起",
@@ -260,9 +257,6 @@ export const zh: Messages = {
   },
 
   toast: {
-    removed: "已移除，可按 Ctrl/⌘+Z 撤销",
-    lineRemoved: "已删除整行，可按 Ctrl/⌘+Z 撤销",
-    presetApplied: "已整体替换布局，可按 Ctrl/⌘+Z 撤销",
     savedProject: "已存为项目配置：它的行布局会整体覆盖用户级，之后面板里的改动只影响非行布局部分",
     saveFailed: (e) => `保存失败：${e}`,
     installed: (file) => `已写入 ${file}。新开一个 Claude Code 会话即可看到。`,

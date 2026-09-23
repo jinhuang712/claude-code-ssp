@@ -95,22 +95,6 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [toast, notify]);
 
-  // Global undo: Ctrl/⌘+Z restores the last pre-edit snapshot. Skipped while typing
-  // (inputs own their native undo) or while IME composition is in progress.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
-        const el = e.target as HTMLElement | null;
-        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
-        if (e.isComposing) return;
-        e.preventDefault();
-        useStore.getState().undo();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
   if (loading) return <div className="p-10 text-sm opacity-60">{t.app.loading}</div>;
   if (error || !config) {
     const [a, b, c] = t.app.unreachableHint;

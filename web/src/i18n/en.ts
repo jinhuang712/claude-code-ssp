@@ -29,9 +29,6 @@ export const en = {
     saveFailed: "Couldn't save",
     retry: "Retry",
     statusDetail: "Edits save automatically. Claude Code re-reads the config on its next statusline refresh.",
-    undo: "Undo",
-    undoTitle: (n: number) => `Undo the last change (${n} available) — Ctrl/⌘+Z`,
-    nothingToUndo: "Nothing to undo",
     resetCounters: "Reset counters",
     resetCountersTitle: "Restart cost, tokens, API calls and lines changed from zero. Only affects the current session.",
     resetCountersHint: "cost · tokens · calls",
@@ -179,7 +176,7 @@ export const en = {
   tray: {
     title: "Unused widgets",
     hint: "Click one to add it to the last line · drag it into any line · drag a widget back here to remove it",
-    dropToRemove: "Let go to remove it from the statusline (Ctrl/⌘+Z undoes)",
+    dropToRemove: "Let go to remove it from the statusline",
     empty: "Every widget is already in your statusline.",
     showAll: (n: number) => `Show all ${n}`,
     showFewer: "Show fewer",
@@ -273,9 +270,6 @@ export const en = {
   },
 
   toast: {
-    removed: "Removed — Ctrl/⌘+Z to undo",
-    lineRemoved: "Line deleted — Ctrl/⌘+Z to undo",
-    presetApplied: "Layout replaced — Ctrl/⌘+Z to undo",
     savedProject: "Saved as project config. Its lines replace your user layout entirely, so later edits here only change the other settings.",
     saveFailed: (e: string) => `Couldn't save: ${e}`,
     installed: (file: string) => `Written to ${file}. Open a new Claude Code session to see it.`,

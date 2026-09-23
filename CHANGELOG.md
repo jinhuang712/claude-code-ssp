@@ -20,6 +20,8 @@ A simpler configurator: the page is the layout and the style, and everything els
   toggle are gone (a config that already uses the center zone stays editable).
 - Chips show just the widget's name; surfaces are separated by fill rather than borders (80 outlined elements on
   the page before, 5 now).
+- **No undo.** The Undo button, Ctrl/⌘+Z and the "… — Ctrl/⌘+Z to undo" toasts are gone: they were more noise
+  than help. Edits still save on their own; a custom layout survives a trip to a preset within the page view.
 - **The right side of a line never moves.** When a line is too long, the left side now continues on the next row
   (breaking between widgets) or, if you pick it per line, is cut short with `…` — the right side stays at the end
   of the first row. Before, the right side dropped to a row of its own. "Hide the right side" is no longer

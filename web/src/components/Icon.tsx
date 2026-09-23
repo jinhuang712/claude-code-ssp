@@ -2,12 +2,11 @@
  * The panel's few icons, as inline stroke SVGs (1.5px strokes on a 16px grid, `currentColor`).
  *
  * Why not glyphs: arrows like ↶ and ＋ come from whatever fallback font has them, so their size and
- * weight drifted per OS and sat off the text baseline. Why not an icon library: eight icons don't
+ * weight drifted per OS and sat off the text baseline. Why not an icon library: seven icons don't
  * justify a dependency. Icons are always decorative here — the button around one carries the
  * accessible name — so every icon is aria-hidden.
  */
 const PATHS = {
-  undo: "M5.5 4 2.5 7l3 3M3 7h6.5a3.5 3.5 0 0 1 0 7H7",
   plus: "M8 3v10M3 8h10",
   x: "M4 4l8 8M12 4l-8 8",
   chevron: "M6 3.5 10.5 8 6 12.5",

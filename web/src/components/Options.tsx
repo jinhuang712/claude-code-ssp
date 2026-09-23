@@ -111,7 +111,7 @@ function current(ctx: FieldCtx, name: string): unknown {
 /**
  * An enum as a row of choices. Hovering one does nothing to the preview on purpose: a statusline
  * that changed under the pointer while reading the options was more distracting than useful, and a
- * click is instant and undoable anyway.
+ * click is instant.
  */
 function EnumField({ ctx, name }: { ctx: FieldCtx; name: string }) {
   const t = useT();

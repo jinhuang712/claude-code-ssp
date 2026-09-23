@@ -218,17 +218,6 @@ button:disabled {
   gap: 6px;
   margin-left: auto;
 }
-/* The undo depth, as a small counter inside the button. */
-.count {
-  min-width: 18px;
-  padding: 0 5px;
-  border-radius: 9px;
-  background: var(--panel-2);
-  font-size: var(--fs-xs);
-  font-variant-numeric: tabular-nums;
-  line-height: 18px;
-  color: var(--fg-2);
-}
 /* Save state as a pill: a coloured dot + one short sentence. */
 .status {
   display: inline-flex;
