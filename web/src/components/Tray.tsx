@@ -44,8 +44,11 @@ const COVERED: Array<{ widget: string; by: string; option: string }> = [{ widget
  * removing the widget would turn it into ⚠ on those lines.
  * - usage.single ("Single rate-limit window"): "Rate-limit windows" with 7d and spend off, the label
  *   and reset time hidden prints the same `5h 23%`.
+ * - context.value ("Context value") and tokens.current ("Current context tokens"): Context usage
+ *   (context.bar) with its bar off gives the percentage, and "Show used/total tokens" the tokens.
+ *   Lost: the tokens alone without the window size or the percentage — not worth two more widgets.
  */
-const RETIRED = new Set(["usage.single"]);
+const RETIRED = new Set(["usage.single", "context.value", "tokens.current"]);
 
 /** Is `id` already shown by some placed widget (see COVERED)? */
 function coveredBy(id: string, placed: WidgetInstance[], widgets: WidgetManifest[]): boolean {
