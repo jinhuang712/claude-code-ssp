@@ -2,7 +2,7 @@
 
 Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace installs update when it changes.
 
-## Unreleased
+## 0.4.0 — 2026-09-24
 
 - **Renamed: claude-code-ssp is now claude-code-super-statusline.** The plugin is `super-statusline@claude-code-super-statusline`,
   the commands are `/super-statusline:config` and `/super-statusline:reset`, and the repo moved to
