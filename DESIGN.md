@@ -59,7 +59,7 @@ Claude Code ≥ 2.1.251 now ships `rate_limits`, `prompt_cache`, `effort`, `cost
 ```ts
 defineWidget({
   id: "context.bar",                 // namespaced, stable
-  name: "Context bar", category: "context", description: "...",
+  name: "Context usage", category: "context", description: "...",
   schema: { type: "object", properties: { width: { type: "integer", default: 10 } } },  // JSON Schema → web form
   defaults: { width: 10 },
   render(ctx, opts, api): Segment[] | string | null,   // pure; ctx is read-only

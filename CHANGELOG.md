@@ -8,6 +8,8 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
   you had to read the current language to find.
 - **"Single rate-limit window" leaves the tray.** "Rate-limit windows" shows the same with 7d and spend switched
   off. Lines that already use it keep working and can still be edited.
+- "Context bar" is now called **Context usage** (上下文用量): with "Show bar" off it is the percentage alone, so
+  "bar" undersold it. Its id, `context.bar`, is unchanged.
 
 ## 0.3.0 — 2026-09-23
 

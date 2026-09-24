@@ -21,9 +21,11 @@ function valueText(ctx: Parameters<typeof getContextPercent>[0], pct: number, mo
 }
 
 export const contextBar = defineWidget<{ label: string | null; showBar: boolean; showTokens: boolean; width: number; value: ValueMode; colorMode: ColorMode; warnAt: number; critAt: number; autoCompactWindow: number | null }>({
+  // The id stays context.bar (configs name it); the name says what it shows — usage, with or without
+  // the bar — now that it also stands in for the text-only context widgets.
   id: "context.bar",
-  name: "Context bar",
-  description: "Context window usage as a progress bar with threshold colors.",
+  name: "Context usage",
+  description: "Context window usage: a bar, the percentage and, if you like, the tokens used.",
   category: "context",
   sample: "Context ███░░░░░░░ 32%",
   schema: {
