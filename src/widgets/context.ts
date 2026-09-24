@@ -89,6 +89,26 @@ export const contextPercent = defineWidget<{ label: string | null; value: ValueM
   },
 });
 
+/*
+  Claude Code's exceeds_200k_tokens: input, cache and output of the last response together passed
+  200k. The line is fixed, whatever the window size, so on a 1M window it fires long before the
+  context bar looks full — which is exactly when it is worth a glance.
+*/
+export const over200k = defineWidget<{ label: string | null }>({
+  id: "context.over200k",
+  name: "Over 200k tokens",
+  description: "A flag while the last request carried more than 200k tokens (input, cache and output together), whatever the window size.",
+  category: "context",
+  sample: "200k+",
+  schema: { type: "object", properties: { label: { ...labelSchema, default: null } } },
+  defaults: { label: null },
+  render(ctx, o, api) {
+    if (stdin(ctx).exceeds_200k_tokens !== true) return null;
+    const label = withLabel(o.label, "");
+    return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), api.seg("200k+", { fg: "warn" })];
+  },
+});
+
 export const contextCompactions = defineWidget<{ label: string | null }>({
   id: "context.compactions",
   name: "Compactions",

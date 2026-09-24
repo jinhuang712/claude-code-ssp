@@ -8,6 +8,8 @@ Everything Claude Code documents for the statusline now has a widget or an optio
 
 - **Session ID** (`session.id`): the first 8 characters of the session's id, or the whole id — the one
   `claude --resume` takes.
+- **Over 200k tokens** (`context.over200k`): a `200k+` flag while the last request carried more than 200k tokens.
+  The line is fixed, so on a 1M window it shows well before the context bar looks full.
 
 ## 0.3.1 — 2026-09-24
 

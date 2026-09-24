@@ -76,4 +76,9 @@ describe("documented stdin fields that have their own widget or option", () => {
     expect(await renderWidget(fixtures.basic, { widget: "session.id" })).toBe("id fixture-");
     expect(await renderWidget(fixtures.basic, { widget: "session.id", options: { full: true } })).toBe("id fixture-basic");
   });
+
+  test("context.over200k: a flag only while exceeds_200k_tokens is true", async () => {
+    expect(await renderWidget(fixtures["context-1m"], { widget: "context.over200k" })).toBe("200k+");
+    expect(await renderWidget(fixtures.basic, { widget: "context.over200k" })).toBe("");
+  });
 });

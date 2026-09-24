@@ -7,7 +7,7 @@ A Claude Code statusline you configure in your browser.
   and edit a widget's options right under its line. The preview draws your **real** session — the one you
   ran `/ssp:config` from — and hovering a preset, theme, bar style or separator tries it on before you
   apply it. English and 简体中文, light and dark.
-* **Widget registry** — 40 built-ins (model, git, PR, context, rate limits, tokens, cost, agents, todos, tools, MCP…).
+* **Widget registry** — 41 built-ins (model, git, PR, context, rate limits, tokens, cost, agents, todos, tools, MCP…).
 * **User plugins** — drop a `.ts`/`.js` file in `~/.config/claude-code-ssp/widgets/`; a broken plugin shows `⚠`
   instead of blanking the line.
 * **Zone layout** — the right zone is truly right-aligned and never moves; any widget can go anywhere; a left side
