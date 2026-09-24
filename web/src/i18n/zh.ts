@@ -418,6 +418,8 @@ export const zh: Messages = {
       showRequests: "带上总请求数（2/14）",
       showCause: "最近一次未命中的原因",
       showRecached: "未命中重新缓存的 tokens（+310k）",
+      showTtl: "带上缓存寿命（42m/1h）",
+      showRecache: "缓存变冷后要重新缓存多少（↻45k）",
     },
     fieldHints: {
       name: "必填，比如 AWS_PROFILE；不填就不显示",

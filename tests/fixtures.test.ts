@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { buildContext } from "../src/core/context.ts";
+import { prepareFixture } from "../src/core/fixtures.ts";
 import { render } from "../src/core/layout.ts";
 import { listWidgets } from "../src/core/registry.ts";
 import { ensureBuiltins, plainConfig, renderWidget } from "./helpers.ts";
@@ -89,6 +90,16 @@ describe("documented stdin fields that have their own widget or option", () => {
     expect(await renderWidget(fixtures.bedrock, { widget: "context.cacheMisses" })).toBe("");
     expect(await renderWidget(fixtures.bedrock, { widget: "context.cacheMisses", options: { hideZero: false } })).toBe("miss 0/14");
     // Caching never observed (fresh session): nothing to count either way.
+    expect(await renderWidget(fixtures["fresh-session"], { widget: "context.cacheMisses", options: { hideZero: false } })).toBe("");
+  });
+
+  test("context.promptCache: the lifetime after the countdown, and what a cold cache would re-cache", async () => {
+    // basic, with its times set relative to now as the preview does: warm, 1h TTL, 42m left.
+    const basic = prepareFixture(fixtures.basic, path.join(dir, "basic.json"));
+    const out = await renderWidget(basic, { widget: "context.promptCache", options: { showTtl: true, showRecache: true } });
+    expect(out).toMatch(/^cache ● 4[12]m\/1h ↻45k$/);
+    // post-compact: cold, so no lifetime.
+    expect(await renderWidget(fixtures["post-compact"], { widget: "context.promptCache", options: { showTtl: true } })).toBe("cache ○ cold");
     expect(await renderWidget(fixtures["fresh-session"], { widget: "context.cacheMisses", options: { hideZero: false } })).toBe("");
   });
 });

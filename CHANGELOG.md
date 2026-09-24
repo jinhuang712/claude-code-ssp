@@ -12,6 +12,8 @@ Everything Claude Code documents for the statusline now has a widget or an optio
   The line is fixed, so on a 1M window it shows well before the context bar looks full.
 - **Cache misses** (`context.cacheMisses`): prompt cache misses out of all requests, with the likely cause of the
   last one — `miss 2/14 (tools changed)` — and, if you like, the tokens they re-cached. Hidden while there are none.
+- **Prompt cache** can show the lifetime its countdown runs from (`● 42m/1h`) and what a cold cache would
+  re-cache on the next request (`↻45k`).
 
 ## 0.3.1 — 2026-09-24
 

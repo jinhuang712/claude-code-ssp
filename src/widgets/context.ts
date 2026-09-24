@@ -125,7 +125,7 @@ export const contextCompactions = defineWidget<{ label: string | null }>({
   },
 });
 
-export const promptCache = defineWidget<{ label: string | null; showHitRatio: boolean }>({
+export const promptCache = defineWidget<{ label: string | null; showHitRatio: boolean; showTtl: boolean; showRecache: boolean }>({
   id: "context.promptCache",
   name: "Prompt cache",
   description: "Whether the prompt cache is warm and when it expires.",
@@ -136,9 +136,11 @@ export const promptCache = defineWidget<{ label: string | null; showHitRatio: bo
     properties: {
       label: { ...labelSchema, default: "cache" },
       showHitRatio: { type: "boolean", default: false, title: "Show hit ratio" },
+      showTtl: { type: "boolean", default: false, title: "Show the cache lifetime (42m/1h)" },
+      showRecache: { type: "boolean", default: false, title: "What a cold cache would re-cache (↻45k)" },
     },
   },
-  defaults: { label: "cache", showHitRatio: false },
+  defaults: { label: "cache", showHitRatio: false, showTtl: false, showRecache: false },
   render(ctx, o, api) {
     const pc = stdin(ctx).prompt_cache;
     const label = withLabel(o.label, "cache");
@@ -148,10 +150,15 @@ export const promptCache = defineWidget<{ label: string | null; showHitRatio: bo
       if (pc.warm && pc.expires_at) {
         const remaining = pc.expires_at * 1000 - ctx.now;
         segs.push(api.seg("●", { fg: remaining < 60_000 ? "warn" : "ok" }), api.seg(` ${api.duration(Math.max(0, remaining))}`, { fg: "fg" }));
+        // The lifetime the countdown runs down from ("5m" or "1h"), only meaningful while warm.
+        if (o.showTtl && pc.ttl) segs.push(api.seg(`/${sanitizeDisplayText(pc.ttl)}`, { fg: "muted" }));
       } else {
         segs.push(api.seg("○ cold", { fg: "muted" }));
       }
       if (o.showHitRatio && typeof pc.hit_ratio === "number") segs.push(api.seg(` ${Math.round(pc.hit_ratio * 100)}%`, { fg: "muted" }));
+      // recache_tokens_if_cold: what the next request pays to rebuild the cache if it has gone cold by
+      // then — the cost of stepping away. null right after a compaction, until the next request.
+      if (o.showRecache && typeof pc.recache_tokens_if_cold === "number") segs.push(api.seg(` ↻${api.tokens(pc.recache_tokens_if_cold)}`, { fg: "muted" }));
       return segs;
     }
     // Fallback: transcript-derived anchor (older Claude Code).
