@@ -225,19 +225,63 @@ button:disabled {
   min-width: 0;
   flex: 1 1 20rem;
 }
-.brand-mark {
-  color: var(--clay);
-  font-size: 1.375rem;
-  line-height: 1;
-  /* The glyph sits high in most fonts; nudge it onto the title's x-height. */
-  transform: translateY(1px);
-}
-.topbar h1 {
-  margin: 0 0 0 -0.25rem;
-  font-size: var(--fs-xl);
-  font-weight: 500;
+/*
+  The wordmark: a prompt, "super-statusline" in mono with "super" in the accent, a block cursor, and
+  under the name a hairline in the widget category colours (a statusline in miniature). Picked on the
+  design canvas (C+D ②) over the serif "Claude Code statusline" with ✻. Sizes are in em so the parts
+  scale with the name.
+  The cursor blinks four times and then stays: WCAG 2.2.2 allows blinking only for up to five seconds
+  unless it can be paused, and the global reduced-motion rule above stops it altogether. It is clay
+  (the fill colour); the text parts use --accent, the clay that reads as text on either scheme.
+*/
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6em;
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 600;
   letter-spacing: -0.01em;
   white-space: nowrap;
+}
+.brand-prompt,
+.brand-super {
+  color: var(--accent);
+}
+/* An inline SVG (PromptMark): its bottom edge sits on the text baseline in a baseline-aligned row,
+   so this height puts the chevron over the x-height and a little above, like a shell prompt. */
+.brand-prompt {
+  flex: none;
+  width: 0.52em;
+  height: 0.64em;
+}
+.brand-word {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+.brand-cursor {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.1em;
+  margin-left: 0.15em;
+  border-radius: 1px;
+  background: var(--clay);
+  vertical-align: -0.2em;
+  animation: brand-blink 1.1s steps(1) 4;
+}
+@keyframes brand-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.brand-base {
+  display: flex;
+  gap: 0.1875rem;
+}
+.brand-base > span {
+  height: 2px;
+  border-radius: 1px;
 }
 /* margin-left: auto keeps the actions at the right edge even after they wrap under the title on a phone. */
 .topbar-actions {

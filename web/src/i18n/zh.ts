@@ -15,7 +15,6 @@ export const zh: Messages = {
   },
 
   header: {
-    title: "Claude Code 状态栏",
     saving: "保存中…",
     dirty: "有未保存的改动",
     defaults: "正在用默认配置，还没保存过",

@@ -21,7 +21,6 @@ export const en = {
   },
 
   header: {
-    title: "Claude Code statusline",
     saving: "Saving…",
     dirty: "Unsaved changes",
     defaults: "Using defaults — nothing saved yet",

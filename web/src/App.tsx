@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Header } from "./components/Header";
+import { Header, PromptMark } from "./components/Header";
 import { Layout } from "./components/Layout";
 import { Preview } from "./components/Preview";
 import { Style } from "./components/Style";
@@ -22,9 +22,7 @@ function Welcome() {
   return (
     <section className="section welcome" aria-labelledby="welcome-title">
       <h2 id="welcome-title" className="h2">
-        <span className="brand-mark" aria-hidden="true">
-          ✻
-        </span>
+        <PromptMark />
         {t.welcome.title}
       </h2>
       <ol>

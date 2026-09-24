@@ -2,6 +2,12 @@
 
 Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace installs update when it changes.
 
+## Unreleased
+
+- **The header carries the new name.** "Claude Code statusline" with ✻ became a wordmark: `❯ super-statusline` in mono
+  with "super" in clay, a block cursor that blinks four times and then stays (never with reduced motion), and a hairline
+  in the widget colours under the name. The favicon and the first-run welcome use the same prompt.
+
 ## 0.4.0 — 2026-09-24
 
 - **Renamed: claude-code-ssp is now claude-code-super-statusline.** The plugin is `super-statusline@claude-code-super-statusline`,

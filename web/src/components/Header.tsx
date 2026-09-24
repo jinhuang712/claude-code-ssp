@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CAT_COLOR } from "../colors";
 import { HTML_LANG, LANGS, useLang, useT, type Lang, type Messages } from "../i18n";
 import { isDirty, useStore } from "../store";
 import { describeStatusLine } from "../statusline";
@@ -212,6 +213,53 @@ function AppearanceToggle() {
   );
 }
 
+/**
+ * The hairline under the name: three left-zone segments, a gap, one right-zone segment, in the
+ * layout chips' category colours. Widths in em, so it scales with the name.
+ */
+const BASELINE: Array<{ color: string; width: string } | null> = [
+  { color: CAT_COLOR.project!, width: "2.6em" },
+  { color: CAT_COLOR.git!, width: "1.3em" },
+  { color: CAT_COLOR.usage!, width: "0.8em" },
+  null,
+  { color: CAT_COLOR.context!, width: "1.75em" },
+];
+
+/**
+ * The prompt chevron of the wordmark (and of the first-run welcome), drawn rather than typed: ❯ is
+ * missing from the usual monospace fonts, and the fallback glyph came out small and sitting low.
+ * Sized in em (see .brand-prompt), so it follows the text it stands beside. Decorative.
+ */
+export function PromptMark() {
+  return (
+    <svg className="brand-prompt" viewBox="0 0 10 12" aria-hidden="true" focusable="false">
+      <path d="M2.2 1.6 7.8 6l-5.6 4.4" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/**
+ * The product's name as the page heading (styles and rationale at .brand in index.css). The prompt,
+ * the cursor and the hairline are decoration, so the heading reads "super-statusline". It is a proper
+ * name, the same in every language, so it isn't a locale string.
+ */
+function Wordmark() {
+  return (
+    <h1 className="brand mono">
+      <PromptMark />
+      <span className="brand-word">
+        <span>
+          <span className="brand-super">super</span>-statusline
+          <span className="brand-cursor" aria-hidden="true" />
+        </span>
+        <span className="brand-base" aria-hidden="true">
+          {BASELINE.map((seg, i) => (seg ? <span key={i} style={{ width: seg.width, background: seg.color }} /> : <span key={i} style={{ flex: 1 }} />))}
+        </span>
+      </span>
+    </h1>
+  );
+}
+
 export function Header() {
   const t = useT();
   const s = useStore();
@@ -221,11 +269,7 @@ export function Header() {
     <>
     <header className="topbar">
       <div className="topbar-id">
-        {/* ✻ is Claude Code's own mark (its welcome box and spinner); decorative, the h1 names the page. */}
-        <span className="brand-mark" aria-hidden="true">
-          ✻
-        </span>
-        <h1 className="serif">{t.header.title}</h1>
+        <Wordmark />
         {s.sandbox && (
           <span className="tag tag-warn" title={t.header.sandboxTitle}>
             {t.header.sandbox}
