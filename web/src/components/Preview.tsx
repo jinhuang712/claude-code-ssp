@@ -9,9 +9,74 @@ import { Popover } from "./Popover";
 import { TERM_THEMES, termScheme, useTheme, type TermBg } from "../theme";
 
 /**
+ * The snapshot folder, shortened for display: the home directory becomes "~" (macOS /Users/<name>,
+ * Linux /home/<name>). The full path stays in the tooltip.
+ */
+const HOME_PREFIX = /^\/(?:Users|home)\/[^/]+(?=\/)/;
+
+/**
+ * A choice between a few values, drawn as the page's segmented switch (.seg, like the header's
+ * language and appearance switches) and named by its row's label. `title` gives a short visible
+ * label its full name — it must contain the visible text (WCAG 2.5.3 Label in Name).
+ */
+function Seg<T extends string>({ labelledBy, value, options, onChange }: { labelledBy: string; value: T; options: Array<{ value: T; label: string; title?: string }>; onChange(v: T): void }) {
+  return (
+    <span className="seg" role="group" aria-labelledby={labelledBy}>
+      {options.map((o) => (
+        <button key={o.value} type="button" aria-pressed={value === o.value} aria-label={o.title} title={o.title} onClick={() => onChange(o.value)}>
+          {o.label}
+        </button>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * − n + in the same track, for small counts where a bordered number box looked like another app.
+ * Typing is kept as a draft until it is a whole number in range, so "1" on the way to "120" doesn't
+ * snap to the minimum mid-keystroke; leaving the field drops an unfinished draft.
+ */
+function Stepper({ value, min, max, label, onChange }: { value: number; min: number; max: number; label: string; onChange(n: number): void }) {
+  const t = useT();
+  const [draft, setDraft] = useState<string | null>(null);
+  const valid = (n: number) => Number.isInteger(n) && n >= min && n <= max;
+  const step = (d: number) => {
+    const n = value + d;
+    if (valid(n)) onChange(n);
+  };
+  return (
+    <span className="seg stepper" role="group" aria-label={label}>
+      <button type="button" aria-label={t.preview.decrease(label)} title={t.preview.decrease(label)} disabled={value <= min} onClick={() => step(-1)}>
+        −
+      </button>
+      <input
+        className="mono"
+        type="number"
+        inputMode="numeric"
+        min={min}
+        max={max}
+        value={draft ?? String(value)}
+        aria-label={label}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          const n = Number(e.target.value);
+          if (e.target.value !== "" && valid(n)) onChange(n);
+        }}
+        onBlur={() => setDraft(null)}
+      />
+      <button type="button" aria-label={t.preview.increase(label)} title={t.preview.increase(label)} disabled={value >= max} onClick={() => step(1)}>
+        +
+      </button>
+    </span>
+  );
+}
+
+/**
  * How the terminal is drawn: preview width and ground (viewer preferences, per browser) and the
  * render settings that match the statusline to a real terminal (right margin, colour depth, saved
- * snapshots — written to the config). All set once per terminal, so they share one popover.
+ * snapshots — written to the config). All set once per terminal, so they share one popover. Every
+ * control is a segmented switch or a stepper, like the header's: native selects, number boxes and a
+ * checkbox made this the one panel that looked like a different app.
  */
 function PreviewSettings() {
   const t = useT();
@@ -21,7 +86,7 @@ function PreviewSettings() {
   const ms = useStore((s) => s.preview?.ms);
   const c = useStore((s) => s.config!);
   const setConfig = useStore((s) => s.setConfig);
-  const samplesDir = useStore((s) => s.paths?.samples);
+  const samplesDir = useStore((s) => s.paths?.samples) ?? "~/.claude/plugins/claude-code-ssp/samples";
   const termBg = useTheme((s) => s.termBg);
   const setTermBg = useTheme((s) => s.setTermBg);
   const widthId = useId();
@@ -32,89 +97,89 @@ function PreviewSettings() {
   return (
     <div className="settings">
       <div className="settings-row">
-        <label htmlFor={widthId}>{t.preview.widthLabel}</label>
+        <span className="settings-label" id={widthId}>
+          {t.preview.widthLabel}
+        </span>
         <span className="settings-ctl">
-          <select id={widthId} className="field field-sm !w-auto" value={columnsMode === "auto" ? "auto" : "fixed"} onChange={(e) => setColumnsMode(e.target.value === "auto" ? "auto" : columns)}>
-            <option value="auto">{t.preview.fitWindow}</option>
-            <option value="fixed">{t.preview.fixedColumns}</option>
-          </select>
-          {columnsMode !== "auto" && (
-            <input
-              className="field field-sm mono !w-16"
-              type="number"
-              min={40}
-              max={400}
-              value={columns}
-              aria-label={t.preview.fixedColumns}
-              onChange={(e) => {
-                const n = Number(e.target.value);
-                if (n >= 40) setColumnsMode(n);
-              }}
-            />
-          )}
+          <Seg
+            labelledBy={widthId}
+            value={columnsMode === "auto" ? "auto" : "fixed"}
+            options={[
+              { value: "auto", label: t.preview.fitWindow },
+              { value: "fixed", label: t.preview.fixedColumns },
+            ]}
+            onChange={(v) => setColumnsMode(v === "auto" ? "auto" : columns)}
+          />
+          {columnsMode !== "auto" && <Stepper value={columns} min={40} max={400} label={t.preview.columnsLabel} onChange={(n) => setColumnsMode(n)} />}
         </span>
       </div>
       <div className="settings-row">
-        <label htmlFor={termId}>
-          {t.preview.terminalLabel}
-          <span className="hint block">{t.preview.terminalHint}</span>
-        </label>
-        <select id={termId} className="field field-sm !w-auto" value={termBg} onChange={(e) => setTermBg(e.target.value as TermBg)}>
-          <option value="auto">{t.preview.termAuto}</option>
-          <option value="dark">{t.preview.termDark}</option>
-          <option value="light">{t.preview.termLight}</option>
-        </select>
+        <span className="settings-label">
+          <span id={termId}>{t.preview.terminalLabel}</span>
+          <span className="hint">{t.preview.terminalHint}</span>
+        </span>
+        <Seg
+          labelledBy={termId}
+          value={termBg}
+          options={[
+            { value: "auto", label: t.preview.termAuto },
+            { value: "dark", label: t.preview.termDark },
+            { value: "light", label: t.preview.termLight },
+          ]}
+          onChange={(v: TermBg) => setTermBg(v)}
+        />
       </div>
       <div className="settings-row">
-        <label htmlFor={marginId}>
-          {t.preview.rightMargin}
-          <span className="hint block">{t.preview.rightMarginHint}</span>
-        </label>
-        <input
-          id={marginId}
-          className="field field-sm mono !w-16"
-          type="number"
+        <span className="settings-label">
+          <span id={marginId}>{t.preview.rightMargin}</span>
+          <span className="hint">{t.preview.rightMarginHint}</span>
+        </span>
+        <Stepper
+          value={c.columnsOffset}
           min={0}
           max={20}
-          value={c.columnsOffset}
-          onChange={(e) =>
+          label={t.preview.rightMargin}
+          onChange={(n) =>
             setConfig((x) => {
-              x.columnsOffset = Number(e.target.value);
+              x.columnsOffset = n;
             })
           }
         />
       </div>
       <div className="settings-row">
-        <label htmlFor={colorId}>{t.preview.colorMode}</label>
-        <select
-          id={colorId}
-          className="field field-sm !w-auto"
+        <span className="settings-label" id={colorId}>
+          {t.preview.colorMode}
+        </span>
+        <Seg
+          labelledBy={colorId}
           value={c.colorLevel}
-          onChange={(e) =>
+          options={(["auto", "truecolor", "256", "16", "none"] as const).map((lv) => ({ value: lv, label: t.preview.colorLevelsShort[lv]!, title: t.preview.colorLevels[lv] }))}
+          onChange={(v) =>
             setConfig((x) => {
-              x.colorLevel = e.target.value as typeof x.colorLevel;
+              x.colorLevel = v;
             })
           }
-        >
-          {(["auto", "truecolor", "256", "16", "none"] as const).map((lv) => (
-            <option key={lv} value={lv}>
-              {t.preview.colorLevels[lv]}
-            </option>
-          ))}
-        </select>
+        />
       </div>
       <div className="settings-row">
-        <label htmlFor={captureId}>
-          {t.preview.capture}
-          <span className="hint block">{t.preview.captureHint(samplesDir ?? "~/.claude/plugins/claude-code-ssp/samples")}</span>
-        </label>
-        <input
-          id={captureId}
-          type="checkbox"
-          checked={c.captureSamples}
-          onChange={(e) =>
+        <span className="settings-label">
+          <span id={captureId}>{t.preview.capture}</span>
+          <span className="hint" title={samplesDir}>
+            {t.preview.captureWhere}
+            {/* The folder on a line of its own: wrapped into the sentence, it broke mid-path. */}
+            <span className="mono block">{samplesDir.replace(HOME_PREFIX, "~")}</span>
+          </span>
+        </span>
+        <Seg
+          labelledBy={captureId}
+          value={c.captureSamples ? "on" : "off"}
+          options={[
+            { value: "on", label: t.preview.on },
+            { value: "off", label: t.preview.off },
+          ]}
+          onChange={(v) =>
             setConfig((x) => {
-              x.captureSamples = e.target.checked;
+              x.captureSamples = v === "on";
             })
           }
         />

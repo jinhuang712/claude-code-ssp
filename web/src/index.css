@@ -96,6 +96,8 @@
   */
   --row: var(--panel);
   --chip: var(--panel-2);
+  /* A control track sunk into a panel (switches inside a popover): one step below --panel. */
+  --inset: var(--bg);
 }
 
 /*
@@ -124,6 +126,7 @@
   --shadow: rgba(20, 20, 19, 0.12);
   --row: var(--panel-2);
   --chip: var(--panel);
+  --inset: var(--panel-2);
 }
 
 /*
@@ -432,6 +435,44 @@ input[type="checkbox"] {
   background: var(--chip);
   color: var(--fg);
   box-shadow: 0 1px 2px var(--shadow);
+}
+/*
+  On a panel (the preview settings popover) the track sinks one step below the panel instead: on
+  the page's own background, --row was a raised strip, but a dark popover *is* --panel = --row and
+  the track vanished into it.
+*/
+.popover .seg {
+  background: var(--inset);
+}
+.seg > button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.seg > button:disabled:hover {
+  color: var(--muted);
+}
+/* − n +: the buttons are square, the number sits in the track with no box of its own. */
+.stepper > button {
+  min-width: 1.75rem;
+  padding: 0;
+  font-size: var(--fs-md);
+}
+.stepper > input {
+  width: 3.25em;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font-size: var(--fs-xs);
+  text-align: center;
+  /* No native spin arrows: the − and + beside it are the steppers (Firefox, then WebKit/Blink). */
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.stepper > input::-webkit-inner-spin-button,
+.stepper > input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
 }
 /* Icon-only options: square, centred on the glyph. */
 .seg-icons > button {
@@ -811,38 +852,56 @@ input[type="checkbox"] {
   own padding + border (2 × 16 + 2 × 13 ≈ 60px) — on a phone it is anchored to a button near the
   right edge and grows leftwards, so anything wider would hang off the left edge.
 */
+/*
+  Preview settings: a label (with a one-line hint where it helps) and its switch on each row, the
+  same way the ⋯ menu lays out its items. When the switch doesn't fit beside the label (a phone,
+  the five colour levels) it drops under it, right-aligned, instead of squeezing the label.
+*/
 .settings {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
-  width: min(22.5rem, calc(100vw - 4rem));
+  gap: var(--sp-4);
+  width: min(25rem, calc(100vw - 4rem));
+  padding: var(--sp-1) 0.125rem;
   font-size: var(--fs-sm);
   color: var(--fg);
 }
 .settings-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sp-4);
+  gap: var(--sp-2) var(--sp-4);
 }
-.settings-row > label {
+.settings-label {
+  display: flex;
+  flex: 1 1 8rem;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
-/* The snapshot folder is one long unbroken path: let it wrap anywhere rather than push the checkbox out. */
-.settings-row .hint {
+.settings-label .hint {
+  font-size: var(--fs-xs);
+  /* The snapshot folder is one long unbroken path: let it wrap anywhere. */
   overflow-wrap: anywhere;
-}
-.settings-row > :last-child {
-  flex: none;
 }
 .settings-ctl {
   display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: var(--sp-2);
-  flex: none;
+  margin-left: auto;
 }
+.settings-row > .seg {
+  margin-left: auto;
+}
+/* Set apart like the menu's last row: a hairline, then the small print. */
 .settings-meta {
   margin: 0;
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-xs);
 }
 /* The header's ⋯ menu: full-width rows, a short hint on the right where one helps. */
 .menu {

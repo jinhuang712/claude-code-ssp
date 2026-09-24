@@ -2,6 +2,12 @@
 
 Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace installs update when it changes.
 
+## Unreleased
+
+- **Preview settings look like the rest of the page.** Width, terminal, colors and snapshots are the same
+  segmented switches as the header's language and appearance; right margin and fixed columns are a − n +
+  stepper. No more native dropdowns, number boxes or checkbox, and the hints are shorter.
+
 ## 0.3.2 — 2026-09-24
 
 Everything Claude Code documents for the statusline now has a widget or an option.
