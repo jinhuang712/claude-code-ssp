@@ -38,6 +38,15 @@ const REPEATABLE = (id: string) => id.startsWith("custom.");
  */
 const COVERED: Array<{ widget: string; by: string; option: string }> = [{ widget: "model.effort", by: "model.badge", option: "showEffort" }];
 
+/**
+ * Widgets no longer offered at all, because another widget does the same with its own options. They
+ * stay registered, so a line that already uses one keeps rendering and its chip stays editable;
+ * removing the widget would turn it into ⚠ on those lines.
+ * - usage.single ("Single rate-limit window"): "Rate-limit windows" with 7d and spend off, the label
+ *   and reset time hidden prints the same `5h 23%`.
+ */
+const RETIRED = new Set(["usage.single"]);
+
 /** Is `id` already shown by some placed widget (see COVERED)? */
 function coveredBy(id: string, placed: WidgetInstance[], widgets: WidgetManifest[]): boolean {
   return COVERED.some((c) => {
@@ -184,7 +193,7 @@ export function Tray() {
     const inUse = new Set(placed.map((w) => w.widget));
     const map = new Map<TrayGroup, WidgetManifest[]>();
     for (const w of widgets) {
-      const offered = REPEATABLE(w.id) || (!inUse.has(w.id) && !coveredBy(w.id, placed, widgets));
+      const offered = !RETIRED.has(w.id) && (REPEATABLE(w.id) || (!inUse.has(w.id) && !coveredBy(w.id, placed, widgets)));
       if (offered) map.set(groupOf(w.category), [...(map.get(groupOf(w.category)) ?? []), w]);
     }
     // A group left with one widget (its siblings are all placed) isn't a group: it joins "misc", so

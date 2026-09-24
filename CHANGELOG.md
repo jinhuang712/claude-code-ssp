@@ -6,6 +6,8 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
 
 - **Language switch in the header:** EN / 中文, beside the ⋯ menu. It leaves the menu, where it was a dropdown
   you had to read the current language to find.
+- **"Single rate-limit window" leaves the tray.** "Rate-limit windows" shows the same with 7d and spend switched
+  off. Lines that already use it keep working and can still be edited.
 
 ## 0.3.0 — 2026-09-23
 
