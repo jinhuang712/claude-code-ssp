@@ -61,10 +61,13 @@ COLUMNS=120 bun src/cli/main.ts render --fixture src/fixtures/basic.json   # pre
 
 ## Config
 
-`~/.config/claude-code-super-statusline/config.json` (user) ← `<project>/.claude/claude-code-ssp.json` (project overlay).
-Objects deep-merge, `lines` replaces wholesale. Re-read on every render, so saves apply on the next refresh.
+`~/.config/claude-code-super-statusline/config.json` (user) ← `<project>/.claude/claude-code-super-statusline.json`
+(project overlay). Objects deep-merge, `lines` replaces wholesale. Re-read on every render, so saves apply on the next
+refresh.
 Before 0.4.0 the user folder was `~/.config/claude-code-ssp/`; it is moved to the new name the first time the new
 version runs, and so is the data folder (`~/.claude/plugins/claude-code-ssp/`: snapshots, counter resets, caches).
+Project files are never moved (they may be committed): a project's `.claude/claude-code-ssp.json` or
+`.claude/claude-code-ssp/widgets/` keeps working where it is; rename it when your team is ready.
 
 The panel writes **only what you changed** into the file it saves to: untouched settings keep following the
 defaults, and a project's settings never leak into your user file. When the session you preview belongs to a
@@ -98,7 +101,7 @@ Colors are theme tokens (`fg muted accent ok warn crit model project git usage c
 * The configurator listens on `127.0.0.1` only and answers only requests whose `Host` and `Origin` are its own
   address — other web pages can't read your sessions or change your settings, and DNS rebinding is refused.
   Writes must be JSON; there is no CORS.
-* **Project widgets are code.** `<project>/.claude/claude-code-ssp/widgets/*` runs on every statusline refresh, so it
+* **Project widgets are code.** `<project>/.claude/claude-code-super-statusline/widgets/*` runs on every statusline refresh, so it
   only loads for projects listed in `plugins.trustedProjects` in your *user* config (*⋯ menu → Diagnostics* has a
   *Trust this project* button). A project's own config can't trust itself or add plugin folders.
 * The preview only renders captured samples and built-in fixtures, never paths a request supplies.

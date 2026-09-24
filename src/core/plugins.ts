@@ -3,7 +3,7 @@
  * widget definition (or an array of them). Load failures are collected, never thrown.
  *
  * Trust model: a plugin is code that runs on every statusline tick. The user's own widgets dir and
- * the dirs listed in the *user* config always load. A project's `.claude/claude-code-ssp/widgets/`
+ * the dirs listed in the *user* config always load. A project's `.claude/claude-code-super-statusline/widgets/`
  * loads only when the project is listed in `plugins.trustedProjects` — otherwise cloning a repo and
  * opening it in Claude Code would execute whatever that repo ships. (Project config files can't set
  * `plugins` at all; loadEffectiveConfig drops it.)
@@ -12,6 +12,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
+import { APP_NAME, LEGACY_APP_NAME, newOrLegacy } from "../data/app-name.js";
 import { userConfigDir } from "./config.js";
 import { registerWidget } from "./registry.js";
 import type { FooterConfig, WidgetDefinition } from "./types.js";
@@ -24,9 +25,14 @@ export interface PluginLoadReport {
   skipped: Array<{ dir: string; reason: string }>;
 }
 
-/** Where a project keeps its own widgets. */
+/**
+ * Where a project keeps its own widgets: `.claude/claude-code-super-statusline/widgets/`, or the
+ * pre-0.4.0 `.claude/claude-code-ssp/widgets/` if that is the one it has. Either way the trust rule
+ * below applies to it.
+ */
 export function projectWidgetsDir(cwd: string): string {
-  return path.join(cwd, ".claude", "claude-code-ssp", "widgets");
+  const dir = path.join(cwd, ".claude");
+  return newOrLegacy(path.join(dir, APP_NAME, "widgets"), path.join(dir, LEGACY_APP_NAME, "widgets"));
 }
 
 function canonical(p: string): string {

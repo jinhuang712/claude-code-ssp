@@ -4,9 +4,12 @@ import { useT } from "../i18n";
 import { useStore } from "../store";
 import { Drawer } from "./Drawer";
 
-/** A skipped project widget folder `<root>/.claude/claude-code-ssp/widgets` → its project root. */
+/**
+ * A skipped project widget folder `<root>/.claude/claude-code-super-statusline/widgets` → its project
+ * root. `claude-code-ssp` is the folder's pre-0.4.0 name, still loaded where a project has it.
+ */
 function projectRootOf(dir: string): string {
-  return dir.replace(/[\\/]\.claude[\\/]claude-code-ssp[\\/]widgets[\\/]?$/, "");
+  return dir.replace(/[\\/]\.claude[\\/]claude-code-(?:super-statusline|ssp)[\\/]widgets[\\/]?$/, "");
 }
 
 /** Where every setting came from, which custom widgets loaded (or were refused), and raw inputs. */

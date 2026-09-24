@@ -81,7 +81,8 @@ light terminals; only accents are coloured.
 
 ## Plugins
 
-`~/.config/claude-code-super-statusline/widgets/*.{js,ts,mjs}` and `<project>/.claude/claude-code-ssp/widgets/*` are dynamically
+`~/.config/claude-code-super-statusline/widgets/*.{js,ts,mjs}` and `<project>/.claude/claude-code-super-statusline/widgets/*`
+(or a project's pre-0.4.0 `.claude/claude-code-ssp/widgets/`, under the same trust rule) are dynamically
 imported; each module's default export is a widget definition or an array of them. A plugin that throws at load or at
 render time is replaced by a dim `⚠ <id>` segment — a broken plugin never blanks the statusline.
 
@@ -91,7 +92,9 @@ you just cloned can't trust itself or point at other folders). Skipped folders a
 
 ## Config layering
 
-`defaults` → `~/.config/claude-code-super-statusline/config.json` (or `$CLAUDE_CODE_SSP_CONFIG`) → `<cwd>/.claude/claude-code-ssp.json`.
+`defaults` → `~/.config/claude-code-super-statusline/config.json` (or `$CLAUDE_CODE_SSP_CONFIG`) → `<cwd>/.claude/claude-code-super-statusline.json`.
+A project that only has the pre-0.4.0 `.claude/claude-code-ssp.json` reads and saves that one (`newOrLegacy`): project
+files may be committed, so they are never moved.
 Objects deep-merge; `lines` replaces wholesale. The web UI shows which layer set each value and lets you edit either.
 Config is re-read on every render (cheap: one small JSON) so saves from the web UI apply on the next tick.
 

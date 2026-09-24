@@ -93,7 +93,7 @@ function canonicalDir(dir: string): string {
 
 /**
  * `?cwd=` picks which project's config layer the API reads and writes. Left open, any caller could
- * make us read — or, through a project-scope save, write — `.claude/claude-code-ssp.json` in an
+ * make us read — or, through a project-scope save, write — `.claude/claude-code-super-statusline.json` in an
  * arbitrary directory. So it may only name the directory the server runs in or the project of a
  * session Claude Code has actually rendered a statusline for (a captured sample).
  */

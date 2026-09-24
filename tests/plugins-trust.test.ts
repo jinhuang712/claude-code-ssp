@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { loadEffectiveConfig } from "../src/core/config.ts";
 import { isTrustedProject, loadPlugins, projectWidgetsDir } from "../src/core/plugins.ts";
+import { APP_NAME, LEGACY_APP_NAME } from "../src/data/app-name.ts";
 import { enterSandbox, type Sandbox } from "./server-sandbox.ts";
 
 let sb: Sandbox;
@@ -50,7 +51,7 @@ describe("project widgets", () => {
 
   test("a repo can't trust itself or add plugin dirs through its project config", async () => {
     fs.writeFileSync(
-      path.join(repo, ".claude", "claude-code-ssp.json"),
+      path.join(repo, ".claude", `${APP_NAME}.json`),
       JSON.stringify({ plugins: { trustedProjects: [repo], dirs: [projectWidgetsDir(repo)] }, separator: " ~ " }),
     );
     const { config } = loadEffectiveConfig(repo);
@@ -68,5 +69,33 @@ describe("project widgets", () => {
     expect(report.skipped).toEqual([]);
     expect(report.loaded[0]?.ids).toEqual(["evil.widget"]);
     expect(fs.existsSync(marker)).toBe(true);
+  });
+});
+
+describe("a project's pre-0.4.0 widgets folder (.claude/claude-code-ssp/widgets)", () => {
+  let oldRepo: string;
+  let oldMarker: string;
+  beforeAll(() => {
+    oldRepo = path.join(sb.root, "old-repo");
+    oldMarker = path.join(sb.root, "OLD-PWNED.txt");
+    const dir = path.join(oldRepo, ".claude", LEGACY_APP_NAME, "widgets");
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(
+      path.join(dir, "old.js"),
+      `import * as fs from "node:fs"; fs.writeFileSync(${JSON.stringify(oldMarker)}, "ran"); export default { id: "old.widget", render: () => "x" };`,
+    );
+  });
+
+  test("is found under its old name and held to the same trust rule", async () => {
+    fs.mkdirSync(path.dirname(sb.userConfig), { recursive: true });
+    fs.writeFileSync(sb.userConfig, JSON.stringify({ plugins: { trustedProjects: [] } }));
+    expect(projectWidgetsDir(oldRepo)).toBe(path.join(oldRepo, ".claude", LEGACY_APP_NAME, "widgets"));
+    const report = await loadPlugins(loadEffectiveConfig(oldRepo).config, oldRepo);
+    expect(report.skipped.map((s) => s.dir)).toEqual([projectWidgetsDir(oldRepo)]);
+    expect(fs.existsSync(oldMarker)).toBe(false);
+
+    fs.writeFileSync(sb.userConfig, JSON.stringify({ plugins: { trustedProjects: [oldRepo] } }));
+    const trusted = await loadPlugins(loadEffectiveConfig(oldRepo).config, oldRepo);
+    expect(trusted.loaded[0]?.ids).toEqual(["old.widget"]);
   });
 });

@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { APP_NAME } from "../src/data/app-name.ts";
 import { handleRequest, parseColumns } from "../src/server/serve.ts";
 import { enterSandbox, writeSample, type Sandbox } from "./server-sandbox.ts";
 
@@ -37,7 +38,7 @@ describe("?cwd= allowlist", () => {
     const res = await call(`/api/config?cwd=${encodeURIComponent(project)}`);
     expect(res.status).toBe(200);
     const body = (await res.json()) as { paths: { project: string } };
-    expect(body.paths.project).toBe(path.join(project, ".claude", "claude-code-ssp.json"));
+    expect(body.paths.project).toBe(path.join(project, ".claude", `${APP_NAME}.json`));
   });
   test("any other directory is refused, so a project-scope save can't write elsewhere", async () => {
     const elsewhere = path.join(sb.root, "not-a-session");

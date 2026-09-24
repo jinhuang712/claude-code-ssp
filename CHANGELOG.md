@@ -8,6 +8,10 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
   `~/.claude/plugins/claude-code-ssp/` (session snapshots, counter resets, caches) become
   `…/claude-code-super-statusline/` the first time the new version runs. If the move can't happen, the old folder
   keeps being used. `serve --sandbox` never moves them.
+- **Project files: new name, old one still works.** A project's overlay is `.claude/claude-code-super-statusline.json`
+  and its widgets `.claude/claude-code-super-statusline/widgets/`. A project that has the old
+  `claude-code-ssp` file or folder keeps using it (reads and saves go there): those may be committed, so they are
+  never moved. *Save as project config* names the file it will write.
 
 ## 0.3.3 — 2026-09-24
 

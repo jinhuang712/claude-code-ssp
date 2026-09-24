@@ -5,7 +5,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { adoptLegacyDir, APP_NAME, LEGACY_APP_NAME } from "../data/app-name.js";
+import { adoptLegacyDir, APP_NAME, LEGACY_APP_NAME, newOrLegacy } from "../data/app-name.js";
 import type { FooterConfig, LineConfig } from "./types.js";
 
 export const CONFIG_VERSION = 1 as const;
@@ -22,8 +22,10 @@ export function userConfigPath(env: NodeJS.ProcessEnv = process.env, homeDir = o
   return path.join(userConfigDir(env, homeDir), "config.json");
 }
 
+/** A project's overlay, `.claude/claude-code-super-statusline.json` — or its pre-0.4.0 `claude-code-ssp.json` if that is the one it has. */
 export function projectConfigPath(cwd: string): string {
-  return path.join(cwd, ".claude", "claude-code-ssp.json");
+  const dir = path.join(cwd, ".claude");
+  return newOrLegacy(path.join(dir, `${APP_NAME}.json`), path.join(dir, `${LEGACY_APP_NAME}.json`));
 }
 
 export const DEFAULT_LINES: LineConfig[] = [

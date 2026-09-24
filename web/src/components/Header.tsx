@@ -145,8 +145,9 @@ function HeaderMenu({ close, openDiagnostics }: { close: () => void; openDiagnos
       </button>
       <button className="menu-item" onClick={run(() => void s.saveAsProject())} title={project?.path ?? undefined}>
         {project?.exists ? t.header.overwriteProject : t.header.saveAsProject}
-        {/* The file name is the same in every language (it is a path), so it isn't a locale string. */}
-        <span className="hint mono">.claude/claude-code-ssp.json</span>
+        {/* The file name is the same in every language (it is a path), so it isn't a locale string. Taken
+            from the server's path: a project that still has the pre-0.4.0 claude-code-ssp.json saves there. */}
+        <span className="hint mono">.claude/{project?.path?.split(/[\\/]/).pop() ?? "claude-code-super-statusline.json"}</span>
       </button>
       <button className="menu-item" onClick={run(openDiagnostics)}>
         {t.doctor.title}

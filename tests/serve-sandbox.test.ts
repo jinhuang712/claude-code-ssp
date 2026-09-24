@@ -88,6 +88,6 @@ describe("serve --sandbox", () => {
       body: JSON.stringify({ scope: "project", config: { separator: " x " } }),
     });
     expect(res.status).toBe(403);
-    expect(fs.existsSync(path.join(sb.root, ".claude", "claude-code-ssp.json"))).toBe(false);
+    expect(fs.existsSync(path.join(sb.root, ".claude", `${APP_NAME}.json`))).toBe(false);
   });
 });

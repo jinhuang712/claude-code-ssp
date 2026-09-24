@@ -11,6 +11,16 @@ export const APP_NAME = "claude-code-super-statusline";
 /** The name before 0.4.0 — still found on disk in configs, caches and settings.json. */
 export const LEGACY_APP_NAME = "claude-code-ssp";
 
+/**
+ * For the files a *project* keeps under `.claude/` (its config overlay, its widgets folder), which
+ * are never moved: they may be committed to someone's repo, and renaming them is that team's call.
+ * The old path when only it exists — so reads and saves both go to the file the project already
+ * has — otherwise the new one (it wins when both exist).
+ */
+export function newOrLegacy(p: string, legacyP: string): string {
+  return !fs.existsSync(p) && fs.existsSync(legacyP) ? legacyP : p;
+}
+
 let movesAllowed = true;
 
 /**
