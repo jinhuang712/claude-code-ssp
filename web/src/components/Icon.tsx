@@ -16,6 +16,10 @@ const PATHS = {
   more: "M2.5 8a1 1 0 1 0 2 0a1 1 0 1 0-2 0M7 8a1 1 0 1 0 2 0a1 1 0 1 0-2 0M11.5 8a1 1 0 1 0 2 0a1 1 0 1 0-2 0",
   // Three slider tracks with a knob each: "settings for this view".
   sliders: "M2.5 4.5h11M2.5 8h11M2.5 11.5h11M10 3v3M5.5 6.5v3M11 10v3",
+  // Appearance: follow the system (a screen on its stand), light (a sun), dark (a crescent).
+  monitor: "M2.5 3.5h11v7.5h-11ZM6 13.5h4M8 11v2.5",
+  sun: "M8 5.25a2.75 2.75 0 1 0 0 5.5a2.75 2.75 0 1 0 0-5.5M8 1.75v1.5M8 12.75v1.5M1.75 8h1.5M12.75 8h1.5M3.6 3.6l1 1M11.4 11.4l1 1M3.6 12.4l1-1M11.4 4.6l1-1",
+  moon: "M13.25 9.6A5.5 5.5 0 1 1 6.4 2.75a4.4 4.4 0 0 0 6.85 6.85Z",
 } as const;
 
 export type IconName = keyof typeof PATHS;

@@ -6,6 +6,8 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
 
 - **Language switch in the header:** EN / 中文, beside the ⋯ menu. It leaves the menu, where it was a dropdown
   you had to read the current language to find.
+- **Appearance switch in the header** too: system / light / dark, as three icons next to the language. The ⋯
+  menu now holds only the rare actions (re-apply, reset counters, project config, diagnostics, stop using).
 - **"Single rate-limit window" leaves the tray.** "Rate-limit windows" shows the same with 7d and spend switched
   off. Lines that already use it keep working and can still be edited.
 - **"Context value" and "Current context tokens" leave the tray too:** Context usage shows the percentage with its

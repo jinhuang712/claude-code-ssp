@@ -115,9 +115,10 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   are kept aside while a preset is on and come back with Custom). Style is three summaries — theme, bar,
   separator — each opening its choices in place. Rarely used things stay off the page:
   render settings (width, terminal ground, right margin, colour depth, snapshots) sit behind the preview's
-  sliders button; repairs, project config, diagnostics, the way out and the panel's appearance behind the
-  header's ⋯ menu. The language is the exception: an EN / 中文 switch beside ⋯, each option in its own
-  language, because a page in the wrong language can't be read to find a setting. There is no footer.
+  sliders button; repairs, project config, diagnostics and the way out behind the header's ⋯ menu. The
+  viewer's own settings are the exception and sit beside ⋯: an EN / 中文 switch (each option in its own
+  language, because a page in the wrong language can't be read to find a setting) and an appearance switch
+  (system / light / dark, as icons). There is no footer.
 
 * **Preview** = `POST /api/render { config, sample, columns }` → the **same** render engine; output painted by xterm.js
   with a matching ANSI palette on one more filled surface of the page: a small "Preview" label with the column

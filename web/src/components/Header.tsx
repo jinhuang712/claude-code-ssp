@@ -1,10 +1,10 @@
-import { useId, useState } from "react";
+import { useState } from "react";
 import { HTML_LANG, LANGS, useLang, useT, type Lang, type Messages } from "../i18n";
 import { isDirty, useStore } from "../store";
 import { describeStatusLine } from "../statusline";
 import { useTheme, type ThemePref } from "../theme";
 import { Diagnostics } from "./Diagnostics";
-import { Icon } from "./Icon";
+import { Icon, type IconName } from "./Icon";
 import { Popover } from "./Popover";
 
 /**
@@ -152,7 +152,6 @@ function HeaderMenu({ close, openDiagnostics }: { close: () => void; openDiagnos
         {t.doctor.title}
       </button>
       {s.installed === true && <RestoreItem close={close} />}
-      <ViewerPrefs />
       <a className="menu-item menu-link" href="https://github.com/jinhuang712/claude-code-ssp" target="_blank" rel="noreferrer">
         <span className="inline-flex items-center gap-1.5">
           {t.prefs.source}
@@ -162,8 +161,6 @@ function HeaderMenu({ close, openDiagnostics }: { close: () => void; openDiagnos
     </div>
   );
 }
-
-const APPEARANCE: ThemePref[] = ["system", "light", "dark"];
 
 /**
  * The language switch, in the header's corner rather than the ⋯ menu: a wrong language is the
@@ -176,7 +173,7 @@ function LangToggle() {
   const lang = useLang((s) => s.lang);
   const setLang = useLang((s) => s.setLang);
   return (
-    <span className="seg seg-fill" role="group" aria-label={t.header.language}>
+    <span className="seg" role="group" aria-label={t.header.language}>
       {(Object.keys(LANGS) as Lang[]).map((l) => (
         <button key={l} type="button" lang={HTML_LANG[l]} aria-pressed={lang === l} aria-label={LANGS[l].langName} title={LANGS[l].langName} onClick={() => setLang(l)}>
           {LANGS[l].langShort}
@@ -186,30 +183,31 @@ function LangToggle() {
   );
 }
 
+/** The appearance choices, in switch order, with the icon each one wears. */
+const APPEARANCE: Array<{ pref: ThemePref; icon: IconName }> = [
+  { pref: "system", icon: "monitor" },
+  { pref: "light", icon: "sun" },
+  { pref: "dark", icon: "moon" },
+];
+
 /**
- * The panel's appearance: per browser, never written to the config. It follows the system, so
- * most people never touch it — the menu is enough. (Language used to sit here too; it has its own
- * switch in the header now.)
+ * The panel's appearance (per browser, never written to the config), beside the language switch.
+ * Hidden in the ⋯ menu it read as if the page had no light mode. Icons rather than words keep
+ * three options narrow enough for a phone's header; each carries its name as the accessible name
+ * and tooltip.
  */
-function ViewerPrefs() {
+function AppearanceToggle() {
   const t = useT();
   const pref = useTheme((s) => s.pref);
   const setPref = useTheme((s) => s.setPref);
-  const appearanceId = useId();
   return (
-    <div className="menu-prefs">
-      {/* Three options, all visible: a segmented control (toggle buttons in a named group). */}
-      <div className="menu-field" role="group" aria-labelledby={appearanceId}>
-        <span id={appearanceId}>{t.prefs.appearance}</span>
-        <span className="seg">
-          {APPEARANCE.map((p) => (
-            <button key={p} type="button" aria-pressed={pref === p} onClick={() => setPref(p)}>
-              {t.prefs[p]}
-            </button>
-          ))}
-        </span>
-      </div>
-    </div>
+    <span className="seg seg-icons" role="group" aria-label={t.prefs.appearance}>
+      {APPEARANCE.map(({ pref: p, icon }) => (
+        <button key={p} type="button" aria-pressed={pref === p} aria-label={t.prefs[p]} title={t.prefs[p]} onClick={() => setPref(p)}>
+          <Icon name={icon} size={15} />
+        </button>
+      ))}
+    </span>
   );
 }
 
@@ -251,6 +249,7 @@ export function Header() {
           </button>
         )}
         <LangToggle />
+        <AppearanceToggle />
         <Popover label={t.header.more} buttonClassName="btn btn-ghost btn-icon" buttonContent={<Icon name="more" />} align="end">
           {(close) => <HeaderMenu close={close} openDiagnostics={() => setDiagnostics(true)} />}
         </Popover>
