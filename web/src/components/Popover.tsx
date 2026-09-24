@@ -5,8 +5,11 @@ const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select
 /**
  * A small non-modal popover anchored to its trigger button (disclosure pattern).
  *
- * Keyboard contract: opening moves focus to the first control inside; Esc closes and returns focus
- * to the trigger; tabbing out or clicking elsewhere closes without stealing focus back.
+ * Keyboard contract: opening from the keyboard moves focus to the first control inside; opening
+ * with the pointer focuses the panel itself (so Esc and Tab still work from there) — giving the
+ * first control focus after a click drew its focus ring, and a select nobody chose looked selected.
+ * Esc closes and returns focus to the trigger; tabbing out or clicking elsewhere closes without
+ * stealing focus back.
  */
 export function Popover({
   label,
@@ -29,6 +32,8 @@ export function Popover({
   const wrap = useRef<HTMLSpanElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
+  /** Whether the last open came from Enter/Space on the trigger rather than a pointer click. */
+  const byKeyboard = useRef(false);
   const id = useId();
 
   const close = (refocus = true) => {
@@ -46,7 +51,8 @@ export function Popover({
       const shift = r.left < 8 ? 8 - r.left : r.right > window.innerWidth - 8 ? window.innerWidth - 8 - r.right : 0;
       if (shift) el.style.transform = `translateX(${Math.round(shift)}px)`;
     }
-    panel.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    if (byKeyboard.current) panel.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    else panel.current?.focus();
     const onDown = (e: PointerEvent) => {
       if (!wrap.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -72,7 +78,11 @@ export function Popover({
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
-        onClick={() => setOpen((v) => !v)}
+        onClick={(e) => {
+          // A click synthesized from Enter/Space has no pointer press behind it: detail is 0.
+          byKeyboard.current = e.detail === 0;
+          setOpen((v) => !v);
+        }}
       >
         {buttonContent}
       </button>
@@ -82,6 +92,8 @@ export function Popover({
           id={id}
           role="dialog"
           aria-label={label}
+          // Focusable by script only: the landing spot after a pointer open (see the contract above).
+          tabIndex={-1}
           className="popover"
           data-align={align}
           onKeyDown={(e) => {

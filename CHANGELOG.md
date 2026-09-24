@@ -14,6 +14,8 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
   "bar" undersold it. Its id, `context.bar`, is unchanged.
 - The **Minimal** preset shows its context figure with Context usage (bar off) instead of Context value. It prints
   the same `ctx 32%`; a layout picked from the old Minimal now shows as Custom.
+- Opening the preview settings or the ⋯ menu with the mouse no longer lights up its first control ("Fit to
+  window" looked selected). Opened from the keyboard, focus still lands on it.
 
 ## 0.3.0 — 2026-09-23
 

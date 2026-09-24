@@ -782,6 +782,13 @@ input[type="checkbox"] {
   background: var(--panel);
   box-shadow: 0 12px 32px var(--shadow);
 }
+/*
+  The panel takes focus itself after a pointer open (Popover.tsx), as a landing spot for Esc and
+  Tab. It is a container, not a control: no ring around the whole panel.
+*/
+.popover:focus {
+  outline: none;
+}
 /* Opened from a button at the right edge (preview settings, the header menu): grow leftwards. */
 .popover[data-align="end"] {
   left: auto;
