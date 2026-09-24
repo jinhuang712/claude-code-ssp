@@ -123,7 +123,7 @@ export function Diagnostics({ onClose }: { onClose: () => void }) {
         </details>
         <p className="hint">
           {pluginsA}
-          <code className="mono">~/.config/claude-code-ssp/widgets/</code>
+          <code className="mono">~/.config/claude-code-super-statusline/widgets/</code>
           {pluginsB}
         </p>
       </div>

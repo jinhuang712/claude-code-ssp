@@ -5,13 +5,15 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { adoptLegacyDir, APP_NAME, LEGACY_APP_NAME } from "../data/app-name.js";
 import type { FooterConfig, LineConfig } from "./types.js";
 
 export const CONFIG_VERSION = 1 as const;
 
+/** The user's own folder: config.json and widgets/. A pre-0.4.0 `claude-code-ssp` one is moved here on first use. */
 export function userConfigDir(env: NodeJS.ProcessEnv = process.env, homeDir = os.homedir()): string {
   const xdg = env.XDG_CONFIG_HOME && env.XDG_CONFIG_HOME.trim() ? env.XDG_CONFIG_HOME : path.join(homeDir, ".config");
-  return path.join(xdg, "claude-code-ssp");
+  return adoptLegacyDir(path.join(xdg, APP_NAME), path.join(xdg, LEGACY_APP_NAME));
 }
 
 export function userConfigPath(env: NodeJS.ProcessEnv = process.env, homeDir = os.homedir()): string {

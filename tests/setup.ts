@@ -1,7 +1,8 @@
 /**
  * Test preload (wired up in bunfig.toml): points every directory the code can write to at a
  * throwaway temp root BEFORE any test module runs, so `bun test` can never touch the developer's
- * real ~/.claude (samples, caches, reset baselines, settings.json) or ~/.config/claude-code-ssp.
+ * real ~/.claude (samples, caches, reset baselines, settings.json) or ~/.config/claude-code-super-statusline
+ * (nor move a pre-0.4.0 ~/.config/claude-code-ssp to that name).
  *
  * Why these variables and not just HOME: Bun caches `os.homedir()` at startup, so changing HOME
  * here does not redirect the current process. Every write path, however, resolves through one of
@@ -27,7 +28,7 @@ for (const d of Object.values(dirs)) fs.mkdirSync(d, { recursive: true });
 process.env.SSP_TEST_ROOT = root;
 process.env.CLAUDE_CONFIG_DIR = dirs.claude;
 process.env.XDG_CONFIG_HOME = dirs.xdg;
-process.env.CLAUDE_CODE_SSP_CONFIG = path.join(dirs.xdg, "claude-code-ssp", "config.json");
+process.env.CLAUDE_CODE_SSP_CONFIG = path.join(dirs.xdg, "claude-code-super-statusline", "config.json");
 process.env.HOME = dirs.home;
 // The ambient Claude session id (set when tests run inside Claude Code) would make reset tests
 // depend on whoever ran them; tests that need one set it explicitly.

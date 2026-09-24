@@ -15,6 +15,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { samplesDir } from "../core/capture.js";
 import { userConfigPath } from "../core/config.js";
+import { APP_NAME, freezeLegacyDirs } from "../data/app-name.js";
 import { PREVIOUS_KEY, settingsPath } from "./install.js";
 
 let sandboxRoot: string | null = null;
@@ -46,13 +47,15 @@ function copyIfExists(from: string, to: string): boolean {
  * copied. Call before the server handles any request.
  */
 export function enterServeSandbox(): { root: string; seeded: string[] } {
-  // Resolve the real locations while the environment still points at them.
+  // Resolve the real locations while the environment still points at them — without moving a
+  // pre-0.4.0 folder to its new name: the real files are only read here.
+  freezeLegacyDirs();
   const real = { samples: samplesDir(), userConfig: userConfigPath(), settings: settingsPath() };
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "claude-code-ssp-sandbox-")));
   const claudeDir = path.join(root, "claude");
   const seeded: string[] = [];
 
-  if (copyIfExists(real.samples, path.join(claudeDir, "plugins", "claude-code-ssp", "samples"))) seeded.push("samples");
+  if (copyIfExists(real.samples, path.join(claudeDir, "plugins", APP_NAME, "samples"))) seeded.push("samples");
   if (copyIfExists(real.userConfig, path.join(root, "config.json"))) seeded.push("user config");
   // Only the statusLine keys: a real settings.json can carry `env` with API keys, hooks, permissions…
   // none of which the configurator needs, so none of it is copied into a temp dir.

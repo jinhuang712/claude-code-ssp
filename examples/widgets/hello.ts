@@ -1,5 +1,5 @@
 /**
- * Example user widget. Copy this file to ~/.config/claude-code-ssp/widgets/ (or <project>/.claude/claude-code-ssp/widgets/),
+ * Example user widget. Copy this file to ~/.config/claude-code-super-statusline/widgets/ (or <project>/.claude/claude-code-ssp/widgets/),
  * restart `claude-code-ssp serve`, and it appears in the picker under "misc".
  *
  * A widget module's default export is one definition or an array of them. `render` must be fast and pure:

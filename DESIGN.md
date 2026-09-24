@@ -81,7 +81,7 @@ light terminals; only accents are coloured.
 
 ## Plugins
 
-`~/.config/claude-code-ssp/widgets/*.{js,ts,mjs}` and `<project>/.claude/claude-code-ssp/widgets/*` are dynamically
+`~/.config/claude-code-super-statusline/widgets/*.{js,ts,mjs}` and `<project>/.claude/claude-code-ssp/widgets/*` are dynamically
 imported; each module's default export is a widget definition or an array of them. A plugin that throws at load or at
 render time is replaced by a dim `⚠ <id>` segment — a broken plugin never blanks the statusline.
 
@@ -91,7 +91,7 @@ you just cloned can't trust itself or point at other folders). Skipped folders a
 
 ## Config layering
 
-`defaults` → `~/.config/claude-code-ssp/config.json` (or `$CLAUDE_CODE_SSP_CONFIG`) → `<cwd>/.claude/claude-code-ssp.json`.
+`defaults` → `~/.config/claude-code-super-statusline/config.json` (or `$CLAUDE_CODE_SSP_CONFIG`) → `<cwd>/.claude/claude-code-ssp.json`.
 Objects deep-merge; `lines` replaces wholesale. The web UI shows which layer set each value and lets you edit either.
 Config is re-read on every render (cheap: one small JSON) so saves from the web UI apply on the next tick.
 
@@ -178,5 +178,11 @@ Claude Code debounces at 300 ms and kills in-flight scripts. Target **< 40 ms wa
 
 ## Data root
 
-`$CLAUDE_CONFIG_DIR/plugins/claude-code-ssp/` (defaults to `~/.claude/plugins/claude-code-ssp/`): transcript-cache,
-context-cache, config-cache, samples. Files 0600, dirs 0700, temp+rename writes (inherited conventions).
+`$CLAUDE_CONFIG_DIR/plugins/claude-code-super-statusline/` (defaults to `~/.claude/plugins/claude-code-super-statusline/`):
+transcript-cache, context-cache, config-cache, samples. Files 0600, dirs 0700, temp+rename writes (inherited conventions).
+
+**Folders from before 0.4.0** (`claude-code-ssp`, for this data root and for `~/.config/…`) are moved to the new name the
+first time they are looked up (`adoptLegacyDir` in `src/data/app-name.ts`): a single rename between siblings, so nothing
+is half-moved; if the rename fails the old folder stays in use rather than the user starting over from defaults.
+`serve --sandbox` turns the move off (`freezeLegacyDirs`): it only reads the real folders, and an older install may still
+be the live statusline.

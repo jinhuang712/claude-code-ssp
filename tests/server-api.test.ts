@@ -5,6 +5,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { APP_NAME } from "../src/data/app-name.ts";
 import { PREVIOUS_KEY, settingsPath } from "../src/server/install.ts";
 import { handleRequest } from "../src/server/serve.ts";
 import { enterSandbox, writeSample, type Sandbox } from "./server-sandbox.ts";
@@ -30,7 +31,7 @@ describe("samples and paths", () => {
     writeSample(sb.claudeDir, "older", { workspace: { current_dir: proj }, model: { display_name: "Sonnet 5" } }, 1_000);
     writeSample(sb.claudeDir, "newer", { workspace: { current_dir: proj }, model: { display_name: "Opus 5.5" } }, 2_000);
     // Same session captured under a second file name must not show twice.
-    const dup = path.join(sb.claudeDir, "plugins", "claude-code-ssp", "samples", "newer-copy.json");
+    const dup = path.join(sb.claudeDir, "plugins", APP_NAME, "samples", "newer-copy.json");
     fs.writeFileSync(dup, JSON.stringify({ capturedAt: 1_500, payload: { session_id: "newer", workspace: { current_dir: proj } } }));
     const list = (await (await call("/api/samples")).json()) as Array<Record<string, unknown>>;
     const live = list.filter((s) => s.source === "live");
@@ -44,8 +45,8 @@ describe("samples and paths", () => {
 
   test("GET /api/config reports the real samples dir and data dir (they follow CLAUDE_CONFIG_DIR)", async () => {
     const { paths } = (await (await call("/api/config")).json()) as { paths: Record<string, string> };
-    expect(paths.dataDir).toBe(path.join(sb.claudeDir, "plugins", "claude-code-ssp"));
-    expect(paths.samples).toBe(path.join(sb.claudeDir, "plugins", "claude-code-ssp", "samples"));
+    expect(paths.dataDir).toBe(path.join(sb.claudeDir, "plugins", APP_NAME));
+    expect(paths.samples).toBe(path.join(sb.claudeDir, "plugins", APP_NAME, "samples"));
   });
 });
 

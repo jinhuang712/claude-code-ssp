@@ -2,6 +2,13 @@
 
 Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace installs update when it changes.
 
+## Unreleased
+
+- **Your folders move to the new name.** `~/.config/claude-code-ssp/` (config, your widgets) and
+  `~/.claude/plugins/claude-code-ssp/` (session snapshots, counter resets, caches) become
+  `…/claude-code-super-statusline/` the first time the new version runs. If the move can't happen, the old folder
+  keeps being used. `serve --sandbox` never moves them.
+
 ## 0.3.3 — 2026-09-24
 
 - **Preview settings look like the rest of the page.** Width, terminal, colors and snapshots are the same

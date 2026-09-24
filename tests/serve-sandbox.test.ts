@@ -5,6 +5,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { APP_NAME, LEGACY_APP_NAME } from "../src/data/app-name.ts";
 import { enterSandbox, writeSample, type Sandbox } from "./server-sandbox.ts";
 
 const PORT = 4891;
@@ -33,7 +34,9 @@ beforeAll(async () => {
   fs.writeFileSync(settingsFile, JSON.stringify({ statusLine: { type: "command", command: "~/.claude/statusline.sh" }, env: { ANTHROPIC_API_KEY: "sk-secret" } }));
   fs.mkdirSync(path.dirname(sb.userConfig), { recursive: true });
   fs.writeFileSync(sb.userConfig, JSON.stringify({ separator: " real " }));
-  writeSample(sb.claudeDir, "sess-1", { workspace: { current_dir: sb.root }, model: { display_name: "Opus 5.5" } });
+  // The "real" samples sit in a pre-0.4.0 folder: the sandbox must still find them, and must not
+  // move that folder to its new name (an older install may still be the live statusline).
+  writeSample(sb.claudeDir, "sess-1", { workspace: { current_dir: sb.root }, model: { display_name: "Opus 5.5" } }, Date.now(), LEGACY_APP_NAME);
   proc = Bun.spawn([process.execPath, MAIN, "serve", "--sandbox", "--port", String(PORT)], { env: { ...process.env }, stdout: "ignore", stderr: "ignore" });
   await waitForServer();
 });
@@ -56,6 +59,11 @@ describe("serve --sandbox", () => {
     expect(config.separator).toBe(" real ");
     const samples = (await (await fetch(`${BASE}/api/samples`)).json()) as Array<{ sessionId: string | null }>;
     expect(samples.some((s) => s.sessionId === "sess-1")).toBe(true);
+  });
+
+  test("a pre-0.4.0 data folder is read where it is, not moved", () => {
+    expect(fs.existsSync(path.join(sb.claudeDir, "plugins", LEGACY_APP_NAME, "samples", "sess-1.json"))).toBe(true);
+    expect(fs.existsSync(path.join(sb.claudeDir, "plugins", APP_NAME))).toBe(false);
   });
 
   test("only the statusLine is copied out of settings.json — no env secrets in the temp dir", async () => {

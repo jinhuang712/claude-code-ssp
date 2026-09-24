@@ -8,7 +8,7 @@ A Claude Code statusline you configure in your browser.
   ran `/ssp:config` from — and hovering a preset, theme, bar style or separator tries it on before you
   apply it. English and 简体中文, light and dark.
 * **Widget registry** — 42 built-ins (model, git, PR, context, rate limits, tokens, cost, agents, todos, tools, MCP…).
-* **User plugins** — drop a `.ts`/`.js` file in `~/.config/claude-code-ssp/widgets/`; a broken plugin shows `⚠`
+* **User plugins** — drop a `.ts`/`.js` file in `~/.config/claude-code-super-statusline/widgets/`; a broken plugin shows `⚠`
   instead of blanking the line.
 * **Zone layout** — the right zone is truly right-aligned and never moves; any widget can go anywhere; a left side
   too long for the terminal is cut short with `…` (or, per line, continues on the next row).
@@ -61,8 +61,10 @@ COLUMNS=120 bun src/cli/main.ts render --fixture src/fixtures/basic.json   # pre
 
 ## Config
 
-`~/.config/claude-code-ssp/config.json` (user) ← `<project>/.claude/claude-code-ssp.json` (project overlay).
+`~/.config/claude-code-super-statusline/config.json` (user) ← `<project>/.claude/claude-code-ssp.json` (project overlay).
 Objects deep-merge, `lines` replaces wholesale. Re-read on every render, so saves apply on the next refresh.
+Before 0.4.0 the user folder was `~/.config/claude-code-ssp/`; it is moved to the new name the first time the new
+version runs, and so is the data folder (`~/.claude/plugins/claude-code-ssp/`: snapshots, counter resets, caches).
 
 The panel writes **only what you changed** into the file it saves to: untouched settings keep following the
 defaults, and a project's settings never leak into your user file. When the session you preview belongs to a
@@ -104,7 +106,7 @@ Colors are theme tokens (`fg muted accent ok warn crit model project git usage c
 ## Writing a widget
 
 ```ts
-// ~/.config/claude-code-ssp/widgets/hello.ts
+// ~/.config/claude-code-super-statusline/widgets/hello.ts
 export default {
   id: "example.hello", name: "Hello", description: "…", category: "misc",
   schema: { type: "object", properties: { name: { type: "string", default: "friend" } } },
