@@ -108,4 +108,9 @@ describe("documented stdin fields that have their own widget or option", () => {
     expect(await renderWidget(fixtures["post-compact"], { widget: "project.path", options: plain })).toBe("checkout");
     expect(await renderWidget(fixtures["post-compact"], { widget: "project.path", options: { ...plain, dir: "launch" } })).toBe("acme-web");
   });
+
+  test("project.worktree: the branch the worktree session was entered from, on request", async () => {
+    expect(await renderWidget(fixtures.worktree, { widget: "project.worktree" })).toBe("⎇ search-ranking");
+    expect(await renderWidget(fixtures.worktree, { widget: "project.worktree", options: { showOriginal: true } })).toBe("⎇ search-ranking ← main");
+  });
 });

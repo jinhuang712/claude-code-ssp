@@ -16,6 +16,11 @@ Everything Claude Code documents for the statusline now has a widget or an optio
   re-cache on the next request (`↻45k`).
 - **Project path** can name the directory Claude Code was started in instead of the current one, so a session
   that `cd`s into a subfolder still shows the project.
+- **Worktree** can show the branch the worktree session was entered from (`⎇ my-feature ← main`).
+
+Left out on purpose: `prompt_id` (a UUID for matching telemetry, nothing to read at a glance), `transcript_path`
+(read behind the scenes, not shown) and the finer cache counters (`expected_rebuilds`, `cache_write_tokens`,
+`miss_causes`).
 
 ## 0.3.1 — 2026-09-24
 

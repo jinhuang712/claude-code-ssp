@@ -14,7 +14,9 @@
   "worktree": {
     "name": "search-ranking",
     "path": "/Users/you/projects/acme-web/.claude/worktrees/search-ranking",
-    "branch": "wt-search-ranking"
+    "branch": "wt-search-ranking",
+    "original_cwd": "/Users/you/projects/acme-web",
+    "original_branch": "main"
   },
   "pr": { "number": 1287, "url": "https://github.com/acme/acme-web/pull/1287", "review_state": "changes_requested", "kind": "pr" },
   "version": "2.1.280",

@@ -61,18 +61,29 @@ export const projectAddedDirs = defineWidget<{ max: number }>({
   },
 });
 
-export const projectWorktree = defineWidget<Record<string, never>>({
+export const projectWorktree = defineWidget<{ showOriginal: boolean }>({
   id: "project.worktree",
   name: "Worktree",
-  description: "Name of the active git worktree session.",
+  description: "Name of the active git worktree session, and optionally the branch it was entered from.",
   category: "project",
   sample: "⎇ my-feature",
-  schema: { type: "object", properties: {} },
-  defaults: {},
-  render(ctx, _o, api) {
+  schema: {
+    type: "object",
+    properties: {
+      // worktree.original_branch: only Claude Code's own worktree sessions report it (not hook-based
+      // ones, and not a plain `git worktree` the session merely sits in), so the arrow can be absent.
+      showOriginal: { type: "boolean", default: false, title: "Show the branch it came from (← main)" },
+    },
+  },
+  defaults: { showOriginal: false },
+  render(ctx, o, api) {
     const s = stdin(ctx);
     const name = s.worktree?.name ?? s.workspace?.git_worktree;
-    return name ? [api.seg(`⎇ ${sanitizeDisplayText(name)}`, { fg: "git" })] : null;
+    if (!name) return null;
+    const segs = [api.seg(`⎇ ${sanitizeDisplayText(name)}`, { fg: "git" })];
+    const from = s.worktree?.original_branch;
+    if (o.showOriginal && from) segs.push(api.seg(` ← ${sanitizeDisplayText(from)}`, { fg: "muted" }));
+    return segs;
   },
 });
 

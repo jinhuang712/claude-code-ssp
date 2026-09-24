@@ -302,7 +302,7 @@ export const zh: Messages = {
       "model.claudeVersion": "Claude Code 的版本号。",
       "project.path": "工作目录：只显示末级、末 N 级、~ 相对或完整路径。",
       "project.addedDirs": "用 /add-dir 加入的目录。",
-      "project.worktree": "当前 git worktree 的名字。",
+      "project.worktree": "当前 git worktree 的名字，可以带上进入 worktree 前所在的分支。",
       "project.sessionName": "会话标题。Claude Code 会把最近一条提问当标题发过来，/rename 设过的优先。",
       "git.branch": "分支名，可附带改动标记、领先/落后数和文件统计。",
       "git.repo": "从 origin 解析出的 owner/name。",
@@ -421,6 +421,7 @@ export const zh: Messages = {
       showTtl: "带上缓存寿命（42m/1h）",
       showRecache: "缓存变冷后要重新缓存多少（↻45k）",
       dir: "目录",
+      showOriginal: "带上进来前的分支（← main）",
     },
     fieldHints: {
       name: "必填，比如 AWS_PROFILE；不填就不显示",
