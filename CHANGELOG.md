@@ -2,7 +2,7 @@
 
 Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace installs update when it changes.
 
-## Unreleased
+## 0.3.3 — 2026-09-24
 
 - **Preview settings look like the rest of the page.** Width, terminal, colors and snapshots are the same
   segmented switches as the header's language and appearance; right margin and fixed columns are a − n +
