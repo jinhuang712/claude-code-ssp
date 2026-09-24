@@ -2,7 +2,7 @@
 
 Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace installs update when it changes.
 
-## Unreleased
+## 0.3.2 — 2026-09-24
 
 Everything Claude Code documents for the statusline now has a widget or an option.
 
