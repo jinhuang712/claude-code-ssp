@@ -16,7 +16,7 @@ import * as path from "node:path";
 import { samplesDir } from "../core/capture.js";
 import { userConfigPath } from "../core/config.js";
 import { APP_NAME, freezeLegacyDirs } from "../data/app-name.js";
-import { PREVIOUS_KEY, settingsPath } from "./install.js";
+import { LEGACY_PREVIOUS_KEY, PREVIOUS_KEY, settingsPath } from "./install.js";
 
 let sandboxRoot: string | null = null;
 
@@ -63,7 +63,7 @@ export function enterServeSandbox(): { root: string; seeded: string[] } {
     const s = JSON.parse(fs.readFileSync(real.settings, "utf8")) as Record<string, unknown>;
     const subset: Record<string, unknown> = {};
     if (s.statusLine !== undefined) subset.statusLine = s.statusLine;
-    if (s[PREVIOUS_KEY] !== undefined) subset[PREVIOUS_KEY] = s[PREVIOUS_KEY];
+    for (const key of [PREVIOUS_KEY, LEGACY_PREVIOUS_KEY]) if (s[key] !== undefined) subset[key] = s[key];
     fs.mkdirSync(claudeDir, { recursive: true });
     fs.writeFileSync(path.join(claudeDir, "settings.json"), JSON.stringify(subset, null, 2) + "\n");
     seeded.push("statusLine from settings.json");

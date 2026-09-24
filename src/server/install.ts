@@ -19,7 +19,17 @@ import { fileURLToPath } from "node:url";
 import { getClaudeConfigDir } from "../data/claude-config-dir.js";
 
 /** settings.json key holding the statusLine we replaced, restored by uninstall. */
-export const PREVIOUS_KEY = "statusLine.previous.claude-code-ssp";
+export const PREVIOUS_KEY = "statusLine.previous.claude-code-super-statusline";
+/**
+ * The same key before 0.4.0. Read wherever PREVIOUS_KEY is (the new one wins when both exist) and
+ * moved to it on the next install, so a statusline parked by 0.3.x still comes back on uninstall.
+ */
+export const LEGACY_PREVIOUS_KEY = "statusLine.previous.claude-code-ssp";
+
+/** The parked statusLine, under either key name. */
+function parkedPrevious(settings: Record<string, unknown>): unknown {
+  return settings[PREVIOUS_KEY] ?? settings[LEGACY_PREVIOUS_KEY];
+}
 
 export interface InstallOptions {
   /** Override the launcher command; default resolves this checkout's src/cli/main.ts via bun. */
@@ -36,15 +46,22 @@ export function settingsPath(homeDir = os.homedir()): string {
 /**
  * Is this settings.json statusLine entry one that we wrote?
  * Every command we install runs `<plugin root>/src/cli/main.ts render`, where the plugin root is either
- * a checkout called claude-code-ssp or a Claude Code plugin-cache dir for the `ssp` plugin. claude-hud
+ * a checkout called claude-code-super-statusline or a Claude Code plugin-cache dir for the
+ * `super-statusline` plugin — or, before 0.4.0, claude-code-ssp and `ssp`, which must still count as
+ * ours so an upgrade replaces them instead of parking them as "your previous statusline". claude-hud
  * and other tools use different entry points, so all three markers together don't collide with them.
+ * The plugin dir is followed by `/` in a version-pinned path (`…/ssp/0.2.0/src/…`) and by `"` in the
+ * launcher, which quotes the dir and then globs the version dirs after the closing quote.
  */
 export function isOurStatusLine(entry: unknown): boolean {
   if (!entry || typeof entry !== "object") return false;
   const cmd = (entry as { command?: unknown }).command;
   if (typeof cmd !== "string") return false;
-  return /src[\\/]cli[\\/]main\.ts/.test(cmd) && /\brender\b/.test(cmd) && /claude-code-ssp|[\\/]ssp[\\/]/.test(cmd);
+  return /src[\\/]cli[\\/]main\.ts/.test(cmd) && /\brender\b/.test(cmd) && /claude-code-(?:super-statusline|ssp)|[\\/](?:super-statusline|ssp)[\\/"]/.test(cmd);
 }
+
+/** A command that runs the plugin from before 0.4.0, when it was called `ssp` (any marketplace name). */
+const LEGACY_PLUGIN_CACHE = /[\\/]plugins[\\/]cache[\\/][^\\/"]+[\\/]ssp[\\/"]/;
 
 /**
  * The bun binary to bake into the command. process.execPath is the *resolved* binary — under Homebrew
@@ -102,9 +119,13 @@ export function launcherCommand(entry: string, bun = stableBunPath()): string {
   return `sh -c ${sq(script)}`;
 }
 
+/** This install's src/cli/main.ts. */
+function defaultEntry(): string {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "cli", "main.ts");
+}
+
 export function defaultCommand(): string {
-  const entry = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "cli", "main.ts");
-  return launcherCommand(entry);
+  return launcherCommand(defaultEntry());
 }
 
 function readSettings(file: string): Record<string, unknown> {
@@ -160,7 +181,7 @@ export function planInstall(opts: InstallOptions = {}): InstallPlan {
   planned.type = "command";
   planned.command = opts.command ?? defaultCommand();
   if (opts.refreshInterval) planned.refreshInterval = opts.refreshInterval;
-  const saved = settings[PREVIOUS_KEY];
+  const saved = parkedPrevious(settings);
   return { settingsFile: file, planned, current, currentIsOurs, savedPrevious: saved !== undefined && !isOurStatusLine(saved) ? saved : null, previous: current };
 }
 
@@ -186,8 +207,10 @@ export function install(opts: InstallOptions = {}): InstallResult {
   const settings = readSettings(plan.settingsFile);
   // Heal settings left by the old bug where PREVIOUS_KEY got our own stale command: restoring that on
   // uninstall would just reinstall us.
-  const legacyOwnPrevious = isOurStatusLine(settings[PREVIOUS_KEY]);
-  if (plan.currentIsOurs && JSON.stringify(plan.current) === JSON.stringify(plan.planned) && !legacyOwnPrevious) {
+  const legacyOwnPrevious = isOurStatusLine(parkedPrevious(settings));
+  // Parked by a pre-0.4.0 install under the old key name: this write moves it to PREVIOUS_KEY.
+  const oldKey = settings[LEGACY_PREVIOUS_KEY] !== undefined;
+  if (plan.currentIsOurs && JSON.stringify(plan.current) === JSON.stringify(plan.planned) && !legacyOwnPrevious && !oldKey) {
     return { settingsFile: plan.settingsFile, backup: null, replaced: null, unchanged: true, statusLine: plan.planned };
   }
   if (plan.current !== null && !plan.currentIsOurs) {
@@ -197,7 +220,10 @@ export function install(opts: InstallOptions = {}): InstallResult {
     settings[PREVIOUS_KEY] = plan.current;
   } else if (legacyOwnPrevious) {
     delete settings[PREVIOUS_KEY];
+  } else if (oldKey && settings[PREVIOUS_KEY] === undefined) {
+    settings[PREVIOUS_KEY] = settings[LEGACY_PREVIOUS_KEY];
   }
+  delete settings[LEGACY_PREVIOUS_KEY];
   settings.statusLine = plan.planned;
   const backup = writeSettings(plan.settingsFile, settings);
   return { settingsFile: plan.settingsFile, backup, replaced: plan.current, unchanged: false, statusLine: plan.planned };
@@ -216,11 +242,29 @@ export function uninstall(): UninstallResult {
   const file = settingsPath();
   const settings = readSettings(file);
   if (!isOurStatusLine(settings.statusLine)) return { settingsFile: file, restored: null, removed: false, backup: null };
-  const prev = settings[PREVIOUS_KEY];
+  const prev = parkedPrevious(settings);
   const restorable = prev !== undefined && prev !== null && !isOurStatusLine(prev);
   if (restorable) settings.statusLine = prev;
   else delete settings.statusLine;
   delete settings[PREVIOUS_KEY];
+  delete settings[LEGACY_PREVIOUS_KEY];
   const backup = writeSettings(file, settings);
   return { settingsFile: file, restored: restorable ? prev : null, removed: true, backup };
+}
+
+/**
+ * Before 0.4.0 the plugin was called `ssp`, so a statusLine installed then runs
+ * `…/plugins/cache/<marketplace>/ssp/…`. After installing the renamed plugin that command keeps
+ * running the old version — and prints "plugin files not found" once the old plugin is removed — so
+ * the configurator calls this on startup to point it at `entry` instead: the user's tweaks to the
+ * entry are kept and a parked statusline is carried over (install does both).
+ *
+ * Only a plugin install takes over, and only from that old plugin path: a statusLine aimed at a
+ * checkout is a developer's deliberate choice and stays. Returns null when there was nothing to do.
+ */
+export function adoptLegacyStatusLine(entry = defaultEntry()): InstallResult | null {
+  if (!pluginCacheBase(entry)) return null;
+  const current = readSettings(settingsPath()).statusLine;
+  if (!isOurStatusLine(current) || !LEGACY_PLUGIN_CACHE.test((current as { command: string }).command)) return null;
+  return install({ command: launcherCommand(entry) });
 }

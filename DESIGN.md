@@ -21,7 +21,7 @@ Claude Code ≥ 2.1.251 now ships `rate_limits`, `prompt_cache`, `effort`, `cost
 | `claude-code-ssp render` | stdin JSON → ANSI lines on stdout. Hot path. Imports only `core` + `widgets` + `data`. |
 | `claude-code-ssp serve [--port 4877] [--open]` | Bun.serve on 127.0.0.1 serving `web/dist` + JSON API. Lazy-imported. |
 | `claude-code-ssp serve --sandbox` | Same on `:4878` against temp copies of config, samples and statusLine (for UI work and automation). |
-| `claude-code-ssp install [--replace]` / `uninstall` | Atomic merge into `~/.claude/settings.json` (`.bak.<ts>` backup). Replacing a statusLine that isn't ours needs `--replace` (the panel asks); it is parked under `statusLine.previous.claude-code-ssp` and `uninstall` restores it. `uninstall` never touches a statusLine that isn't ours. |
+| `claude-code-ssp install [--replace]` / `uninstall` | Atomic merge into `~/.claude/settings.json` (`.bak.<ts>` backup). Replacing a statusLine that isn't ours needs `--replace` (the panel asks); it is parked under `statusLine.previous.claude-code-super-statusline` (`…claude-code-ssp` before 0.4.0: still read, moved on the next install) and `uninstall` restores it. `uninstall` never touches a statusLine that isn't ours. |
 | `claude-code-ssp reset [--session ID]` | Baseline the session counters; `/ssp:reset` passes `$CLAUDE_CODE_SESSION_ID` so the right session is reset. |
 | `claude-code-ssp doctor` | Shows effective config, layer provenance, last captured payload, render timing. |
 
@@ -160,6 +160,9 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   the panel keeps one line of what the widget prints now.
 * **Install**: the first save auto-applies unless another tool's statusLine is set — then the server answers 409 and
   the panel asks. *⋯ menu → Stop using this statusline* (two steps: it first says what comes back) restores the previous one.
+  A statusLine that still runs the pre-0.4.0 `ssp` plugin (`…/plugins/cache/<marketplace>/ssp/…`) counts as ours, and
+  the configurator repoints it at itself when it starts from a plugin install (`adoptLegacyStatusLine`), so upgrading is
+  "install the renamed plugin, open the configurator once". A statusLine aimed at a checkout is never taken over.
 * **i18n**: typed message objects (`web/src/i18n`), English and 简体中文, browser-detected with a switcher.
 * **Security**: see `src/server/guard.ts` — own Host/Origin only, no CORS, JSON-only writes, 1 MB cap.
 * **Shipping**: `web/dist` is committed (marketplace installs run it as-is), stamped with a hash of its sources;

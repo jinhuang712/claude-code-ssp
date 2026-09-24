@@ -19,7 +19,7 @@ import { getHudPluginDir } from "../data/claude-config-dir.js";
 import type { StdinData } from "../data/types.js";
 import { registerBuiltinWidgets } from "../widgets/index.js";
 import { guardRequest, HttpError, MAX_BODY_BYTES, readJson } from "./guard.js";
-import { install, NeedsConfirmError, planInstall, settingsPath, uninstall } from "./install.js";
+import { adoptLegacyStatusLine, install, NeedsConfirmError, planInstall, settingsPath, uninstall } from "./install.js";
 import { currentSandbox, enterServeSandbox, isInsideSandbox } from "./sandbox.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -373,6 +373,15 @@ export async function serve(opts: { port: number; open?: boolean; sandbox?: bool
     const { root, seeded } = enterServeSandbox();
     console.log(`sandbox → ${root}`);
     console.log(`  seeded from your real setup: ${seeded.length ? seeded.join(", ") : "nothing (fresh install)"}; nothing outside this dir is written`);
+  }
+  // The plugin's config command is the first thing an upgraded user runs, and it starts this server:
+  // the moment to point a statusLine that still runs the pre-0.4.0 `ssp` plugin at this one.
+  try {
+    const moved = adoptLegacyStatusLine();
+    if (moved && !moved.unchanged) console.log(`statusLine switched from the old ssp plugin to this one (${moved.settingsFile})`);
+  } catch (err) {
+    // An unreadable settings.json: the panel's install state reports it; the server still starts.
+    console.error(`could not update the statusLine of the old ssp plugin: ${err instanceof Error ? err.message : String(err)}`);
   }
   registerBuiltinWidgets();
   const { config } = loadEffectiveConfig(process.cwd());

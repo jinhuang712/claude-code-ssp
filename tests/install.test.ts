@@ -1,12 +1,27 @@
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { install, isOurStatusLine, launcherCommand, NeedsConfirmError, planInstall, pluginCacheBase, PREVIOUS_KEY, settingsPath, uninstall } from "../src/server/install.ts";
+import {
+  adoptLegacyStatusLine,
+  install,
+  isOurStatusLine,
+  launcherCommand,
+  LEGACY_PREVIOUS_KEY,
+  NeedsConfirmError,
+  planInstall,
+  pluginCacheBase,
+  PREVIOUS_KEY,
+  settingsPath,
+  uninstall,
+} from "../src/server/install.ts";
 import { enterSandbox, type Sandbox } from "./server-sandbox.ts";
 
 const HUD = { type: "command", command: "bash -c 'exec bun ~/.claude/plugins/cache/claude-hud/claude-hud/1.2.0/src/index.ts'", refreshInterval: 5 };
 const OURS_OLD = { type: "command", command: '/opt/homebrew/bin/bun "/Users/me/dev/claude-code-ssp/src/cli/main.ts" render', padding: 0 };
 const OURS_NEW = '/opt/homebrew/bin/bun "/Users/me/elsewhere/claude-code-ssp/src/cli/main.ts" render';
+/** What a 0.3.x plugin install left in settings.json (the plugin was called `ssp` then), with a user tweak. */
+const OLD_PLUGIN = { type: "command", command: launcherCommand("/h/.claude/plugins/cache/claude-code-ssp/ssp/0.3.3/src/cli/main.ts", "/usr/bin/bun"), padding: 0, refreshInterval: 3 };
+const NEW_PLUGIN_ENTRY = "/h/.claude/plugins/cache/claude-code-super-statusline/super-statusline/0.4.0/src/cli/main.ts";
 
 let sb: Sandbox;
 const settings = () => JSON.parse(fs.readFileSync(settingsPath(), "utf8")) as Record<string, unknown>;
@@ -29,6 +44,65 @@ describe("isOurStatusLine", () => {
     expect(isOurStatusLine({ command: "~/.claude/statusline.sh" })).toBe(false);
     expect(isOurStatusLine({ command: 'bun "/x/other-tool/src/cli/main.ts" render' })).toBe(false);
     expect(isOurStatusLine(null)).toBe(false);
+  });
+
+  test("recognises the names from before and after the 0.4.0 rename, from any marketplace", () => {
+    for (const entry of [
+      NEW_PLUGIN_ENTRY,
+      "/h/.claude/plugins/cache/my-fork/super-statusline/0.4.0/src/cli/main.ts",
+      "/h/.claude/plugins/cache/my-fork/ssp/0.3.3/src/cli/main.ts",
+      "/Users/me/dev/claude-code-super-statusline/src/cli/main.ts",
+    ]) {
+      expect(isOurStatusLine({ command: launcherCommand(entry, "/usr/bin/bun") })).toBe(true);
+    }
+    expect(isOurStatusLine({ command: 'bun "/x/not-ssp-tool/src/cli/main.ts" render' })).toBe(false);
+  });
+});
+
+describe("a statusline parked by 0.3.x (under the old key name)", () => {
+  test("planInstall reports it, install moves it to the new key, uninstall restores it", () => {
+    seed({ statusLine: OLD_PLUGIN, [LEGACY_PREVIOUS_KEY]: HUD });
+    expect(planInstall({ command: OURS_NEW }).savedPrevious).toEqual(HUD);
+    install({ command: OURS_NEW });
+    expect(settings()[PREVIOUS_KEY]).toEqual(HUD);
+    expect(settings()[LEGACY_PREVIOUS_KEY]).toBeUndefined();
+    expect(uninstall()).toMatchObject({ removed: true, restored: HUD });
+  });
+
+  test("uninstall restores it straight from the old key and drops the key", () => {
+    seed({ statusLine: OLD_PLUGIN, [LEGACY_PREVIOUS_KEY]: HUD, theme: "dark" });
+    expect(uninstall()).toMatchObject({ removed: true, restored: HUD });
+    expect(settings()).toEqual({ statusLine: HUD, theme: "dark" });
+  });
+
+  test("an otherwise identical entry is still rewritten, so the key moves", () => {
+    seed({ statusLine: { ...OURS_OLD }, [LEGACY_PREVIOUS_KEY]: HUD });
+    expect(install({ command: OURS_OLD.command }).unchanged).toBe(false);
+    expect(settings()[PREVIOUS_KEY]).toEqual(HUD);
+  });
+});
+
+describe("adoptLegacyStatusLine", () => {
+  test("points the old ssp plugin's statusLine at the new plugin, keeping tweaks and the parked original", () => {
+    seed({ statusLine: OLD_PLUGIN, [LEGACY_PREVIOUS_KEY]: HUD });
+    expect(adoptLegacyStatusLine(NEW_PLUGIN_ENTRY)?.unchanged).toBe(false);
+    expect(settings().statusLine).toEqual({ ...OLD_PLUGIN, command: launcherCommand(NEW_PLUGIN_ENTRY) });
+    expect(settings()[PREVIOUS_KEY]).toEqual(HUD);
+    expect(adoptLegacyStatusLine(NEW_PLUGIN_ENTRY)).toBeNull(); // once: the command no longer runs the old plugin
+  });
+
+  test("leaves everything else alone: someone else's statusline, a checkout, the new plugin", () => {
+    for (const statusLine of [HUD, OURS_OLD, { type: "command", command: launcherCommand(NEW_PLUGIN_ENTRY) }]) {
+      seed({ statusLine });
+      expect(adoptLegacyStatusLine(NEW_PLUGIN_ENTRY)).toBeNull();
+      expect(settings().statusLine).toEqual(statusLine);
+    }
+  });
+
+  test("only a plugin install takes over, never a checkout", () => {
+    seed({ statusLine: OLD_PLUGIN });
+    expect(adoptLegacyStatusLine("/Users/me/dev/claude-code-super-statusline/src/cli/main.ts")).toBeNull();
+    expect(settings().statusLine).toEqual(OLD_PLUGIN);
   });
 });
 

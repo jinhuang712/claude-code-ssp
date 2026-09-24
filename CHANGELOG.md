@@ -12,6 +12,10 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
   and its widgets `.claude/claude-code-super-statusline/widgets/`. A project that has the old
   `claude-code-ssp` file or folder keeps using it (reads and saves go there): those may be committed, so they are
   never moved. *Save as project config* names the file it will write.
+- **The statusline setting follows the rename.** Opening the configurator from the new plugin points a statusLine that
+  still runs the old `ssp` plugin at the new one, keeping your tweaks to it. The statusline it replaced (claude-hud, a
+  script…) stays parked, now under `statusLine.previous.claude-code-super-statusline`, and *Stop using this statusline*
+  still brings it back. A statusLine aimed at a checkout is left alone.
 
 ## 0.3.3 — 2026-09-24
 
