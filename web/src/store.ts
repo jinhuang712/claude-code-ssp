@@ -29,8 +29,10 @@ export type Scope = "user" | "project";
 
 /** Preset layouts. Names and blurbs are UI copy and live in the locale files (`presets.<id>`). */
 export const PRESETS: Record<PresetId, { lines: LineConfig[] }> = {
+  // Context usage without its bar prints what context.value did (`ctx 32%`); that widget is no
+  // longer offered, so the preset doesn't hand out one the tray won't.
   minimal: {
-    lines: [{ left: [{ widget: "project.path" }, { widget: "git.branch" }], right: [{ widget: "model.badge" }, { widget: "context.value" }] }],
+    lines: [{ left: [{ widget: "project.path" }, { widget: "git.branch" }], right: [{ widget: "model.badge" }, { widget: "context.bar", label: "ctx", options: { showBar: false } }] }],
   },
   standard: {
     lines: [

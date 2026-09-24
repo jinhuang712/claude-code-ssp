@@ -10,6 +10,8 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
   off. Lines that already use it keep working and can still be edited.
 - "Context bar" is now called **Context usage** (上下文用量): with "Show bar" off it is the percentage alone, so
   "bar" undersold it. Its id, `context.bar`, is unchanged.
+- The **Minimal** preset shows its context figure with Context usage (bar off) instead of Context value. It prints
+  the same `ctx 32%`; a layout picked from the old Minimal now shows as Custom.
 
 ## 0.3.0 — 2026-09-23
 
