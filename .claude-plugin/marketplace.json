@@ -1,5 +1,5 @@
 {
-  "name": "claude-code-ssp",
+  "name": "claude-code-super-statusline",
   "owner": {
     "name": "Jin Huang"
   },
@@ -9,9 +9,9 @@
   },
   "plugins": [
     {
-      "name": "ssp",
+      "name": "super-statusline",
       "source": "./",
-      "description": "Statusline + web configurator: /ssp:config, /ssp:reset",
+      "description": "Statusline + web configurator: /super-statusline:config, /super-statusline:reset",
       "category": "monitoring",
       "tags": [
         "statusline",

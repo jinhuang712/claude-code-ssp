@@ -205,7 +205,7 @@ export function zoneOf(line: LineConfig, zone: Zone): WidgetInstance[] {
 }
 
 /**
- * The Claude Code session this page belongs to: /ssp:config opens it with `?session=<id>` (the id
+ * The Claude Code session this page belongs to: /super-statusline:config opens it with `?session=<id>` (the id
  * Claude Code exports to the slash command's shell). Null when the page was opened some other way.
  */
 function sessionFromUrl(): string | null {
@@ -217,7 +217,7 @@ function sessionFromUrl(): string | null {
 }
 
 /**
- * What the preview shows — there is no picker: the session /ssp:config was run from; if it hasn't
+ * What the preview shows — there is no picker: the session /super-statusline:config was run from; if it hasn't
  * rendered (and so been captured) yet, the most recent live session; with none at all, the first
  * bundled sample. The server lists live samples newest first.
  */

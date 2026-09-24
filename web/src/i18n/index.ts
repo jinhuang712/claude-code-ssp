@@ -13,6 +13,7 @@ export type { Messages };
 export type Lang = "en" | "zh";
 
 export const LANGS: Record<Lang, Messages> = { en, zh };
+// The pre-0.4.0 name, kept so the saved language survives the rename (see PREF_KEY in theme.ts).
 const STORAGE_KEY = "ssp.lang";
 
 function isLang(v: unknown): v is Lang {

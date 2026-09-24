@@ -1,4 +1,4 @@
-# claude-code-ssp — Design
+# claude-code-super-statusline — Design
 
 A Claude Code statusline that is configured from a **localhost web UI**, built around a
 **widget registry** and **user plugins**, with a **zone-based layout** (left / center / right per line).
@@ -18,12 +18,12 @@ Claude Code ≥ 2.1.251 now ships `rate_limits`, `prompt_cache`, `effort`, `cost
 
 | Command | Purpose |
 |---|---|
-| `claude-code-ssp render` | stdin JSON → ANSI lines on stdout. Hot path. Imports only `core` + `widgets` + `data`. |
-| `claude-code-ssp serve [--port 4877] [--open]` | Bun.serve on 127.0.0.1 serving `web/dist` + JSON API. Lazy-imported. |
-| `claude-code-ssp serve --sandbox` | Same on `:4878` against temp copies of config, samples and statusLine (for UI work and automation). |
-| `claude-code-ssp install [--replace]` / `uninstall` | Atomic merge into `~/.claude/settings.json` (`.bak.<ts>` backup). Replacing a statusLine that isn't ours needs `--replace` (the panel asks); it is parked under `statusLine.previous.claude-code-super-statusline` (`…claude-code-ssp` before 0.4.0: still read, moved on the next install) and `uninstall` restores it. `uninstall` never touches a statusLine that isn't ours. |
-| `claude-code-ssp reset [--session ID]` | Baseline the session counters; `/ssp:reset` passes `$CLAUDE_CODE_SESSION_ID` so the right session is reset. |
-| `claude-code-ssp doctor` | Shows effective config, layer provenance, last captured payload, render timing. |
+| `claude-code-super-statusline render` | stdin JSON → ANSI lines on stdout. Hot path. Imports only `core` + `widgets` + `data`. |
+| `claude-code-super-statusline serve [--port 4877] [--open]` | Bun.serve on 127.0.0.1 serving `web/dist` + JSON API. Lazy-imported. |
+| `claude-code-super-statusline serve --sandbox` | Same on `:4878` against temp copies of config, samples and statusLine (for UI work and automation). |
+| `claude-code-super-statusline install [--replace]` / `uninstall` | Atomic merge into `~/.claude/settings.json` (`.bak.<ts>` backup). Replacing a statusLine that isn't ours needs `--replace` (the panel asks); it is parked under `statusLine.previous.claude-code-super-statusline` (`…claude-code-ssp` before 0.4.0: still read, moved on the next install) and `uninstall` restores it. `uninstall` never touches a statusLine that isn't ours. |
+| `claude-code-super-statusline reset [--session ID]` | Baseline the session counters; `/super-statusline:reset` passes `$CLAUDE_CODE_SESSION_ID` so the right session is reset. |
+| `claude-code-super-statusline doctor` | Shows effective config, layer provenance, last captured payload, render timing. |
 
 ## Layout model
 
@@ -92,7 +92,7 @@ you just cloned can't trust itself or point at other folders). Skipped folders a
 
 ## Config layering
 
-`defaults` → `~/.config/claude-code-super-statusline/config.json` (or `$CLAUDE_CODE_SSP_CONFIG`) → `<cwd>/.claude/claude-code-super-statusline.json`.
+`defaults` → `~/.config/claude-code-super-statusline/config.json` (or `$CLAUDE_CODE_SUPER_STATUSLINE_CONFIG`) → `<cwd>/.claude/claude-code-super-statusline.json`.
 A project that only has the pre-0.4.0 `.claude/claude-code-ssp.json` reads and saves that one (`newOrLegacy`): project
 files may be committed, so they are never moved.
 Objects deep-merge; `lines` replaces wholesale. The web UI shows which layer set each value and lets you edit either.
@@ -141,7 +141,7 @@ user file. The project is the previewed session's directory (`?cwd=`, accepted o
   compactions preview as if live.
   Plus **live captures**: `render` persists the last stdin payload per `session_id` to `<data>/samples/` (throttled), so
   you preview against your real session. Live samples are shown exactly as captured — no synthetic values.
-  There is no data picker: `/ssp:config` opens the page as `?session=$CLAUDE_CODE_SESSION_ID`, and the preview
+  There is no data picker: `/super-statusline:config` opens the page as `?session=$CLAUDE_CODE_SESSION_ID`, and the preview
   shows that session; if it hasn't been captured yet, the most recent live session; with none, the first fixture
   (`pickSample` in `web/src/store.ts`).
 * **Tray**: every widget not in the layout sits under it, one group per row. Groups gather related categories

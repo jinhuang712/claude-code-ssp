@@ -1,13 +1,13 @@
 {
-  "name": "ssp",
-  "description": "Claude Code statusline with a localhost web configurator: /ssp:config opens it, /ssp:reset zeroes the session counters",
+  "name": "super-statusline",
+  "description": "Claude Code statusline with a localhost web configurator: /super-statusline:config opens it, /super-statusline:reset zeroes the session counters",
   "version": "0.3.3",
   "author": {
     "name": "Jin Huang",
     "url": "https://github.com/jinhuang712"
   },
-  "homepage": "https://github.com/jinhuang712/claude-code-ssp",
-  "repository": "https://github.com/jinhuang712/claude-code-ssp",
+  "homepage": "https://github.com/jinhuang712/claude-code-super-statusline",
+  "repository": "https://github.com/jinhuang712/claude-code-super-statusline",
   "license": "MIT",
   "keywords": [
     "statusline",

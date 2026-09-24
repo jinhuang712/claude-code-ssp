@@ -29,7 +29,7 @@ function hydrateTimes(p: Record<string, any>, now: number): void {
 
 /** Write `src` (relative-time JSONL) as a real transcript next to the OS temp dir; returns its path. */
 function materializeTranscript(src: string, now: number): string | null {
-  const dir = path.join(os.tmpdir(), "claude-code-ssp-fixtures");
+  const dir = path.join(os.tmpdir(), "claude-code-super-statusline-fixtures");
   const out = path.join(dir, path.basename(src));
   try {
     if (now - fs.statSync(out).mtimeMs < REFRESH_MS) return out;

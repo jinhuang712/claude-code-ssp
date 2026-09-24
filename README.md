@@ -1,11 +1,12 @@
-# claude-code-ssp
+# claude-code-super-statusline
 
-A Claude Code statusline you configure in your browser.
+A Claude Code statusline you configure in your browser. (Called claude-code-ssp before 0.4.0 — see
+[Upgrading from claude-code-ssp](#upgrading-from-claude-code-ssp).)
 
 * **Web configurator** on `127.0.0.1:4877` — start from a preset (Minimal, Standard, Full) or build your
   own: arrange widgets in left / right zones by drag or keyboard, add them from the tray of unused widgets,
   and edit a widget's options right under its line. The preview draws your **real** session — the one you
-  ran `/ssp:config` from — and hovering a preset, theme, bar style or separator tries it on before you
+  ran `/super-statusline:config` from — and hovering a preset, theme, bar style or separator tries it on before you
   apply it. English and 简体中文, light and dark.
 * **Widget registry** — 42 built-ins (model, git, PR, context, rate limits, tokens, cost, agents, todos, tools, MCP…).
 * **User plugins** — drop a `.ts`/`.js` file in `~/.config/claude-code-super-statusline/widgets/`; a broken plugin shows `⚠`
@@ -21,15 +22,15 @@ Requires Claude Code ≥ 2.1.251 (for `rate_limits`, `prompt_cache`, `effort` on
 ## Quick start
 
 ```bash
-claude plugin marketplace add jinhuang712/claude-code-ssp
-claude plugin install ssp@claude-code-ssp
+claude plugin marketplace add jinhuang712/claude-code-super-statusline
+claude plugin install super-statusline@claude-code-super-statusline
 ```
 
 Then, inside Claude Code:
 
 ```
-/ssp:config     # opens the configurator on this session's data (starts the local server if needed)
-/ssp:reset      # zero this session's cost / tokens / API calls / lines-changed counters
+/super-statusline:config     # opens the configurator on this session's data (starts the local server if needed)
+/super-statusline:reset      # zero this session's cost / tokens / API calls / lines-changed counters
 ```
 
 Your first edit in the panel applies the statusline to `~/.claude/settings.json` (a backup is kept).
@@ -37,10 +38,30 @@ Your first edit in the panel applies the statusline to `~/.claude/settings.json`
 *⋯ menu → Stop using this statusline* puts it back at any time. Every later edit saves
 automatically and shows on the next refresh.
 
+### Upgrading from claude-code-ssp
+
+Up to 0.3.x the plugin was `ssp@claude-code-ssp` with `/ssp:config`. The rename can't carry an install over by
+itself: once your `claude-code-ssp` marketplace updates, `ssp` shows as disabled and `/ssp:*` is gone, while the
+statusline keeps showing 0.3.3. Switch once:
+
+```bash
+claude plugin marketplace add jinhuang712/claude-code-super-statusline
+claude plugin install super-statusline@claude-code-super-statusline
+```
+
+Then run `/super-statusline:config` in Claude Code: it points your statusline at the new plugin (keeping your
+tweaks, and the statusline it replaced for *Stop using this statusline*), and your config, widgets, snapshots and
+counter resets move to the new folder names. After that, remove the old plugin:
+
+```bash
+claude plugin uninstall ssp@claude-code-ssp
+claude plugin marketplace remove claude-code-ssp
+```
+
 From a terminal, using a local checkout:
 
 ```bash
-git clone https://github.com/jinhuang712/claude-code-ssp && cd claude-code-ssp && bun install
+git clone https://github.com/jinhuang712/claude-code-super-statusline && cd claude-code-super-statusline && bun install
 
 bun run serve -- --open           # configurator at http://127.0.0.1:4877
 bun src/cli/main.ts install       # add the statusLine to ~/.claude/settings.json (backup kept)
@@ -56,7 +77,7 @@ COLUMNS=120 bun src/cli/main.ts render --fixture src/fixtures/basic.json   # pre
 | `serve --sandbox` | the same on `:4878`, editing throwaway copies of your config, samples and statusLine |
 | `install [--dry-run] [--replace]` | add our `statusLine` to settings.json; `--replace` is required when another statusline is set (it is kept for `uninstall`) |
 | `uninstall` | remove our `statusLine` and restore the one it replaced (never touches a statusline that isn't ours) |
-| `reset [--session ID] [--undo]` | zero the session counters from now on (`/ssp:reset` passes the current session) |
+| `reset [--session ID] [--undo]` | zero the session counters from now on (`/super-statusline:reset` passes the current session) |
 | `doctor` | the panel's *Diagnostics*, for terminals without a browser |
 
 ## Config

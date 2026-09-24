@@ -153,7 +153,7 @@ function HeaderMenu({ close, openDiagnostics }: { close: () => void; openDiagnos
         {t.doctor.title}
       </button>
       {s.installed === true && <RestoreItem close={close} />}
-      <a className="menu-item menu-link" href="https://github.com/jinhuang712/claude-code-ssp" target="_blank" rel="noreferrer">
+      <a className="menu-item menu-link" href="https://github.com/jinhuang712/claude-code-super-statusline" target="_blank" rel="noreferrer">
         <span className="inline-flex items-center gap-1.5">
           {t.prefs.source}
           <Icon name="external" size={13} />

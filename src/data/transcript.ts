@@ -90,7 +90,7 @@ interface ContentBlock {
 interface TranscriptFileState {
   mtimeMs: number;
   size: number;
-  /** claude-code-ssp: file identity, so an incremental parse never resumes into a different file. */
+  /** claude-code-super-statusline: file identity, so an incremental parse never resumes into a different file. */
   dev?: number;
   ino?: number;
 }
@@ -127,7 +127,7 @@ interface SerializedTranscriptData {
 }
 
 /**
- * claude-code-ssp: the parser's full working state at a line boundary.
+ * claude-code-super-statusline: the parser's full working state at a line boundary.
  *
  * A live session appends to its transcript on every message, so the mtime+size cache above missed
  * on every render and the whole file was re-read: ~75 ms at 18 MB, ~235 ms at 110 MB — far over the
@@ -168,7 +168,7 @@ interface SerializedResumeState {
   lastAssistantModel?: string;
 }
 
-/** claude-code-ssp: SerializedResumeState with Dates, Maps and Sets restored, ready to seed the parse loop. */
+/** claude-code-super-statusline: SerializedResumeState with Dates, Maps and Sets restored, ready to seed the parse loop. */
 interface ResumeState {
   offset: number;
   toolMap: Map<string, ToolEntry>;
@@ -204,14 +204,14 @@ interface TranscriptCacheFile {
   transcriptPath: string;
   transcriptState: TranscriptFileState;
   data: SerializedTranscriptData;
-  /** claude-code-ssp: absent when the parse could not end on a clean line boundary. */
+  /** claude-code-super-statusline: absent when the parse could not end on a clean line boundary. */
   resume?: SerializedResumeState;
 }
 
-// claude-code-ssp: 19 adds `resume` (incremental parsing); older caches are simply re-parsed once.
+// claude-code-super-statusline: 19 adds `resume` (incremental parsing); older caches are simply re-parsed once.
 const TRANSCRIPT_CACHE_VERSION = 19;
 /*
-  claude-code-ssp: caps for what the resume snapshot keeps. Only the newest 20 tools and 10 agents
+  claude-code-super-statusline: caps for what the resume snapshot keeps. Only the newest 20 tools and 10 agents
   are ever shown, so older entries only matter if a late tool_result refers to them — which would
   update an entry that is no longer displayed anyway. Message-id dedup only has to bridge the few
   duplicate records Claude Code writes next to each other, not the whole session.
@@ -520,7 +520,7 @@ function deserializeTranscriptData(data: SerializedTranscriptData): TranscriptDa
 }
 
 /**
- * claude-code-ssp: read the cache file once and answer both questions from it — "is the transcript
+ * claude-code-super-statusline: read the cache file once and answer both questions from it — "is the transcript
  * unchanged?" (return the cached data) and "was it only appended to?" (return the resume state).
  */
 function readTranscriptCache(
@@ -551,7 +551,7 @@ function readTranscriptCache(
 }
 
 /**
- * claude-code-ssp: accept a saved resume point only if the file is provably the same file with bytes
+ * claude-code-super-statusline: accept a saved resume point only if the file is provably the same file with bytes
  * appended: same device+inode, not shorter than the offset, and the byte before the offset is still
  * the newline that ended the last consumed line. Anything else (rotation, rewrite, truncation, a
  * corrupt snapshot) returns null and the caller does a full parse.
@@ -572,7 +572,7 @@ function resumableState(
   }
 }
 
-/** claude-code-ssp: one byte of a file, or null when it cannot be read. */
+/** claude-code-super-statusline: one byte of a file, or null when it cannot be read. */
 function readByteAt(file: string, position: number): number | null {
   let fd: number | undefined;
   try {
@@ -671,7 +671,7 @@ function serializeResumeState(r: ResumeState, state: TranscriptFileState): Seria
 }
 
 /**
- * claude-code-ssp: yield only newline-terminated lines. While Claude Code is writing, the final line
+ * claude-code-super-statusline: yield only newline-terminated lines. While Claude Code is writing, the final line
  * can be half a JSON record; consuming it would lose that record (it fails to parse now, and the
  * resume offset would then point into its middle). Instead its byte length goes to `onTail` so the
  * offset stops before it and the next parse reads the finished line.
@@ -753,7 +753,7 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
     return cached;
   }
 
-  // claude-code-ssp: every piece of parser state below starts from the resume snapshot when the file
+  // claude-code-super-statusline: every piece of parser state below starts from the resume snapshot when the file
   // was only appended to (see SerializedResumeState), and from empty otherwise — so the loop body is
   // unchanged and an incremental parse ends in exactly the state a full parse would.
   const r = resume;
@@ -795,7 +795,7 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
   result.lastAssistantModel = r?.lastAssistantModel;
 
   let parsedCleanly = false;
-  // claude-code-ssp: read [startOffset, size) of the stat snapshot only. Bytes appended while we read
+  // claude-code-super-statusline: read [startOffset, size) of the stat snapshot only. Bytes appended while we read
   // belong to the next parse; stopping at `size` keeps the saved offset consistent with the state.
   const startOffset = r?.offset ?? 0;
   let unterminatedTailBytes = 0;
@@ -1044,7 +1044,7 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
     : promptCacheAnchorAt;
   result.promptCacheTtlSeconds = promptCacheTtlSeconds;
   if (parsedCleanly) {
-    // claude-code-ssp: snapshot the full parser state (not the display slices above) so the next
+    // claude-code-super-statusline: snapshot the full parser state (not the display slices above) so the next
     // parse can resume right after the last complete line.
     const snapshot = serializeResumeState({
       offset: transcriptState.size - unterminatedTailBytes,

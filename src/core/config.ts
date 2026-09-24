@@ -17,7 +17,7 @@ export function userConfigDir(env: NodeJS.ProcessEnv = process.env, homeDir = os
 }
 
 export function userConfigPath(env: NodeJS.ProcessEnv = process.env, homeDir = os.homedir()): string {
-  const explicit = env.CLAUDE_CODE_SSP_CONFIG?.trim();
+  const explicit = env.CLAUDE_CODE_SUPER_STATUSLINE_CONFIG?.trim();
   if (explicit) return path.resolve(explicit.replace(/^~(?=$|[\\/])/, homeDir));
   return path.join(userConfigDir(env, homeDir), "config.json");
 }
@@ -153,7 +153,7 @@ export function writeUserConfig(config: Partial<FooterConfig>, env: NodeJS.Proce
   const target = userConfigPath(env);
   fs.mkdirSync(path.dirname(target), { recursive: true, mode: 0o700 });
   const tmp = `${target}.${process.pid}.${Date.now()}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify({ $schema: "https://github.com/jinhuang712/claude-code-ssp/schema/config.json", ...config }, null, 2) + "\n", { mode: 0o600 });
+  fs.writeFileSync(tmp, JSON.stringify({ $schema: "https://github.com/jinhuang712/claude-code-super-statusline/schema/config.json", ...config }, null, 2) + "\n", { mode: 0o600 });
   fs.renameSync(tmp, target);
   return target;
 }

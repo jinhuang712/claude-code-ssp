@@ -1,6 +1,6 @@
 /**
  * Counter baselines. Claude Code's cost / token / line totals only ever grow within a session;
- * `/ssp:reset` records their current values and the widgets show what accumulated since.
+ * `/super-statusline:reset` records their current values and the widgets show what accumulated since.
  * One JSON file per session id under the data root, 0600 like the samples.
  */
 import * as fs from "node:fs";

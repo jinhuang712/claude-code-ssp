@@ -4,6 +4,13 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
 
 ## Unreleased
 
+- **Renamed: claude-code-ssp is now claude-code-super-statusline.** The plugin is `super-statusline@claude-code-super-statusline`,
+  the commands are `/super-statusline:config` and `/super-statusline:reset`, and the repo moved to
+  `github.com/jinhuang712/claude-code-super-statusline` (the old URL redirects). An installed `ssp` plugin doesn't turn
+  into the new one by itself: see *Upgrading from claude-code-ssp* in the README (install the new plugin, run
+  `/super-statusline:config` once, remove the old one). Environment variables are renamed too
+  (`CLAUDE_CODE_SUPER_STATUSLINE_CONFIG`, `CLAUDE_CODE_SUPER_STATUSLINE_DEBUG`, `SUPER_STATUSLINE_PORT`); the old
+  names are no longer read.
 - **Your folders move to the new name.** `~/.config/claude-code-ssp/` (config, your widgets) and
   `~/.claude/plugins/claude-code-ssp/` (session snapshots, counter resets, caches) become
   `…/claude-code-super-statusline/` the first time the new version runs. If the move can't happen, the old folder

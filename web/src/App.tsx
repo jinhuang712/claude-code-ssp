@@ -103,7 +103,7 @@ export default function App() {
         <p style={{ color: "var(--danger)" }}>{t.app.unreachable(error ?? "")}</p>
         <p className="mt-2 opacity-70">
           {a}
-          <code className="mono">/ssp:config</code>
+          <code className="mono">/super-statusline:config</code>
           {b}
           <code className="mono">bun run serve</code>
           {c}

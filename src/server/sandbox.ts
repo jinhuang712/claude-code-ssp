@@ -2,7 +2,7 @@
  * `serve --sandbox`: run the configurator against throwaway copies of the user's state, so browser
  * automation (or a curious click) can't change the real statusline.
  *
- * Every path the server writes is derived lazily from the environment — CLAUDE_CODE_SSP_CONFIG (user
+ * Every path the server writes is derived lazily from the environment — CLAUDE_CODE_SUPER_STATUSLINE_CONFIG (user
  * config), CLAUDE_CONFIG_DIR (settings.json, samples, caches, reset baselines), XDG_CONFIG_HOME (user
  * widgets dir) and the process cwd (project layer) — so pointing those at a temp root before the first
  * request is enough. The real files are only ever *read*, once, to seed the copies.
@@ -51,7 +51,7 @@ export function enterServeSandbox(): { root: string; seeded: string[] } {
   // pre-0.4.0 folder to its new name: the real files are only read here.
   freezeLegacyDirs();
   const real = { samples: samplesDir(), userConfig: userConfigPath(), settings: settingsPath() };
-  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "claude-code-ssp-sandbox-")));
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "claude-code-super-statusline-sandbox-")));
   const claudeDir = path.join(root, "claude");
   const seeded: string[] = [];
 
@@ -71,7 +71,7 @@ export function enterServeSandbox(): { root: string; seeded: string[] } {
     /* no settings yet — the sandbox starts like a fresh install */
   }
 
-  process.env.CLAUDE_CODE_SSP_CONFIG = path.join(root, "config.json");
+  process.env.CLAUDE_CODE_SUPER_STATUSLINE_CONFIG = path.join(root, "config.json");
   process.env.CLAUDE_CONFIG_DIR = claudeDir;
   process.env.XDG_CONFIG_HOME = path.join(root, "xdg");
   const project = path.join(root, "project");

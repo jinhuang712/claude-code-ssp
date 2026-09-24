@@ -223,7 +223,7 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
       return json({ ok: true, path: written, config: normalized });
     }
     case "GET /api/health":
-      // ssp.sh uses this to tell a server from another checkout (or one started before a pull) from this one.
+      // super-statusline.sh uses this to tell a server from another checkout (or one started before a pull) from this one.
       return json({
         ok: true,
         root: ROOT,
@@ -231,7 +231,7 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
         startedAt: STARTED_AT,
         codeChanged: fs.existsSync(SRC_DIR) ? changedSince(SRC_DIR, STARTED_AT) : true,
         webBuilt: fs.existsSync(path.join(WEB_DIST, "index.html")),
-        // A sandbox server edits throwaway copies; ssp.sh must not mistake it for the real configurator.
+        // A sandbox server edits throwaway copies; super-statusline.sh must not mistake it for the real configurator.
         sandbox: currentSandbox() !== null,
       });
     case "GET /api/widgets":
@@ -394,7 +394,7 @@ export async function serve(opts: { port: number; open?: boolean; sandbox?: bool
     fetch: (req, srv) => handleRequest(req, srv.port ?? opts.port),
   });
   const address = `http://127.0.0.1:${server.port}`;
-  console.log(`claude-code-ssp configurator → ${address}`);
+  console.log(`claude-code-super-statusline configurator → ${address}`);
   if (plugins.errors.length) for (const e of plugins.errors) console.error(`plugin error ${e.file}: ${e.message}`);
   for (const s of plugins.skipped) console.error(`plugin dir skipped ${s.dir}: ${s.reason}`);
   if (opts.open) openBrowser(address);

@@ -347,7 +347,7 @@ export function Preview() {
         */}
         {tryOn && <span className="term-tryon">{t.preview.tryingOn(tryOn.label)}</span>}
         {/*
-          No data picker: the preview shows the session /ssp:config was run from (see pickSample in
+          No data picker: the preview shows the session /super-statusline:config was run from (see pickSample in
           store.ts). Choosing among every captured session and bundled sample was more than anyone needed.
         */}
         <div className="term-controls">

@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * claude-code-ssp CLI. The `render` path must stay lean: no server or UI imports here.
+ * claude-code-super-statusline CLI. The `render` path must stay lean: no server or UI imports here.
  */
 import { captureSample } from "../core/capture.js";
 import { prepareFixture } from "../core/fixtures.js";
@@ -25,13 +25,13 @@ async function cmdRender(argv: string[]): Promise<void> {
   // A fixture gets live-looking times and its bundled sample transcript (src/core/fixtures.ts).
   let stdin = fixture ? prepareFixture(JSON.parse(await Bun.file(fixture).text()) as Awaited<ReturnType<typeof readStdin>>, fixture) : await readStdin();
   if (!stdin) {
-    console.log("claude-code-ssp: waiting for Claude Code statusline JSON on stdin (or pass --fixture <file>)");
+    console.log("claude-code-super-statusline: waiting for Claude Code statusline JSON on stdin (or pass --fixture <file>)");
     return;
   }
   const cwd = stdin!.workspace?.current_dir ?? stdin!.cwd;
   const { config } = loadEffectiveConfig(cwd);
-  // Fixture renders (README preview, tests, `ssp.sh render-test`) are not a real session: capturing
-  // them would put a fake "live" session at the top of the list, which `/ssp:reset` and the web
+  // Fixture renders (README preview, tests, `super-statusline.sh render-test`) are not a real session: capturing
+  // them would put a fake "live" session at the top of the list, which `/super-statusline:reset` and the web
   // preview then pick as "the latest session".
   if (config.captureSamples && !fixture) captureSample(stdin);
   await loadPlugins(config, cwd);
@@ -41,8 +41,8 @@ async function cmdRender(argv: string[]): Promise<void> {
   // One write, awaited until flushed: main() exits right after this returns, and a pipe write
   // still sitting in a buffer would be cut off.
   await writeFully(process.stdout, result.lines.map((line) => `${line}\n`).join(""));
-  if (process.env.CLAUDE_CODE_SSP_DEBUG) {
-    const debug = [`[claude-code-ssp] render ${result.ms.toFixed(1)}ms total ${(performance.now() - started).toFixed(1)}ms`, ...result.errors.map((e) => `[claude-code-ssp] ${e.widget}: ${e.message}`)];
+  if (process.env.CLAUDE_CODE_SUPER_STATUSLINE_DEBUG) {
+    const debug = [`[claude-code-super-statusline] render ${result.ms.toFixed(1)}ms total ${(performance.now() - started).toFixed(1)}ms`, ...result.errors.map((e) => `[claude-code-super-statusline] ${e.widget}: ${e.message}`)];
     await writeFully(process.stderr, debug.map((l) => `${l}\n`).join(""));
   }
 }
@@ -68,7 +68,7 @@ async function main(): Promise<void> {
     case "serve": {
       const { serve } = await import("../server/serve.js");
       const sandbox = argv.includes("--sandbox");
-      // A sandbox gets its own default port so it never answers where /ssp:config expects the real one.
+      // A sandbox gets its own default port so it never answers where /super-statusline:config expects the real one.
       return serve({ port: Number(arg("port", argv) ?? (sandbox ? 4878 : 4877)), open: argv.includes("--open"), sandbox });
     }
     case "install": {
@@ -85,7 +85,7 @@ async function main(): Promise<void> {
         if (!(err instanceof NeedsConfirmError)) throw err;
         const cmdText = (err.current as { command?: unknown } | null)?.command;
         console.log(`settings.json already has another statusLine${typeof cmdText === "string" ? `: ${cmdText}` : ""}`);
-        console.log("re-run with --replace to use claude-code-ssp instead; `uninstall` puts the old one back");
+        console.log("re-run with --replace to use claude-code-super-statusline instead; `uninstall` puts the old one back");
         process.exitCode = 1;
       }
       return;
@@ -93,13 +93,13 @@ async function main(): Promise<void> {
     case "uninstall": {
       const { uninstall } = await import("../server/install.js");
       const r = uninstall();
-      if (!r.removed) console.log(`the statusLine in ${r.settingsFile} isn't claude-code-ssp's — left untouched`);
+      if (!r.removed) console.log(`the statusLine in ${r.settingsFile} isn't claude-code-super-statusline's — left untouched`);
       else console.log(`statusLine ${r.restored ? "restored to the previous one" : "removed"} in ${r.settingsFile}${r.backup ? ` (backup: ${r.backup})` : ""}`);
       return;
     }
     case "reset": {
       const { resetLatestSession, undoReset } = await import("../server/reset.js");
-      // `--session` comes from ssp.sh, which forwards the id of the Claude session running /ssp:reset.
+      // `--session` comes from super-statusline.sh, which forwards the id of the Claude session running /super-statusline:reset.
       // Without it (run by hand in a terminal) both paths fall back to the most recent session.
       if (argv.includes("--undo")) {
         const { listLiveSamples } = await import("../core/capture.js");
@@ -125,7 +125,7 @@ async function main(): Promise<void> {
     case "--help":
     case "-h":
     case "help":
-      console.log(`claude-code-ssp <command>
+      console.log(`claude-code-super-statusline <command>
 
   render            read Claude Code statusline JSON on stdin, print the status line (default)
   serve [--port N] [--open]   start the local web configurator (127.0.0.1:4877)
@@ -145,6 +145,6 @@ async function main(): Promise<void> {
 
 main().catch((err) => {
   // Never blank the statusline silently: print a one-line marker.
-  console.log(`[claude-code-ssp] error: ${err instanceof Error ? err.message : String(err)}`);
+  console.log(`[claude-code-super-statusline] error: ${err instanceof Error ? err.message : String(err)}`);
   process.exit(0);
 });

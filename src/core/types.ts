@@ -120,7 +120,7 @@ export interface Ctx extends DataContext {
   columns: number;
   now: number;
   theme: ThemeDef;
-  /** Counter baseline recorded by `/ssp:reset` for this session, if any. */
+  /** Counter baseline recorded by `/super-statusline:reset` for this session, if any. */
   reset: ResetBaseline | null;
   /** Output speed of the latest long-enough response, from the transcript tail (see response-speed.ts). */
   responseSpeed?: ResponseSpeed | null;

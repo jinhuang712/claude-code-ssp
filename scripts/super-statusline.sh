@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Helper used by the /ssp:* slash commands. Usage: ssp.sh <config|reset|install|render-test>
+# Helper used by the /super-statusline:* slash commands. Usage: super-statusline.sh <config|reset|install|render-test>
 set -euo pipefail
 
 ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-PORT="${SSP_PORT:-4877}"
+PORT="${SUPER_STATUSLINE_PORT:-4877}"
 URL="http://127.0.0.1:${PORT}"
 BUN="$(command -v bun || true)"
 [ -n "$BUN" ] || { echo "bun not found in PATH — install from https://bun.sh"; exit 1; }
 
-# Opens the configurator bound to the session that ran /ssp:config: Claude Code exports that
-# session's id to the slash command's shell (as for /ssp:reset), and the page previews that
+# Opens the configurator bound to the session that ran /super-statusline:config: Claude Code exports
+# that session's id to the slash command's shell (as for /super-statusline:reset), and the page previews that
 # session's data. The panel has no data picker; without the id it shows the latest live session.
 open_url() {
   local target="$URL/"
@@ -51,9 +51,10 @@ check_running() {
 stop_server() {
   local pid="$1" cmd
   cmd="$(ps -o command= -p "$pid" 2>/dev/null || true)"
+  # Ours, including a pre-0.4.0 server (then called claude-code-ssp) still holding the port after an upgrade.
   case "$cmd" in
-    *main.ts\ serve*|*claude-code-ssp*serve*) ;;
-    *) echo "port $PORT is held by another program (pid $pid: ${cmd:-unknown}) — set SSP_PORT"; exit 1 ;;
+    *main.ts\ serve*|*claude-code-super-statusline*serve*|*claude-code-ssp*serve*) ;;
+    *) echo "port $PORT is held by another program (pid $pid: ${cmd:-unknown}) — set SUPER_STATUSLINE_PORT"; exit 1 ;;
   esac
   kill "$pid" 2>/dev/null || true
   for _ in $(seq 1 30); do kill -0 "$pid" 2>/dev/null || return 0; nap; done
@@ -74,8 +75,8 @@ case "${1:-config}" in
   config)
     ROOT_REAL="$(cd "$ROOT" && pwd -P)"
     TMP="${TMPDIR:-/tmp}"
-    LOG="${TMP%/}/claude-code-ssp-serve.log"
-    BUILD_LOG="${TMP%/}/claude-code-ssp-build.log"
+    LOG="${TMP%/}/claude-code-super-statusline-serve.log"
+    BUILD_LOG="${TMP%/}/claude-code-super-statusline-build.log"
     built=""
     if web_stale; then
       if { [ -d "$ROOT/web/node_modules" ] || "$BUN" install --cwd "$ROOT/web"; } >"$BUILD_LOG" 2>&1 \
@@ -105,7 +106,7 @@ case "${1:-config}" in
     "$BUN" "$ROOT/src/cli/main.ts" install "${@:2}"
     ;;
   reset)
-    # Claude Code exports the id of the session running /ssp:reset to its Bash tool calls, so reset
+    # Claude Code exports the id of the session running /super-statusline:reset to its Bash tool calls, so reset
     # that exact session instead of "whichever one rendered last" (wrong with several sessions open).
     # Run by hand without it, main.ts falls back to the most recently rendered session.
     session_args=()
@@ -117,5 +118,5 @@ case "${1:-config}" in
     COLUMNS="${COLUMNS:-120}" "$BUN" "$ROOT/src/cli/main.ts" render --fixture "$ROOT/src/fixtures/basic.json"
     ;;
   *)
-    echo "usage: ssp.sh <config|reset|install|render-test>"; exit 2 ;;
+    echo "usage: super-statusline.sh <config|reset|install|render-test>"; exit 2 ;;
 esac

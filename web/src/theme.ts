@@ -14,6 +14,9 @@ export type ThemePref = "system" | "light" | "dark";
 export type TermBg = "auto" | "light" | "dark";
 export type Scheme = "light" | "dark";
 
+// Browser-storage keys keep the product's pre-0.4.0 name (ssp): the page is still served from
+// 127.0.0.1:4877, so the same keys carry everyone's saved choices across the rename. Same for
+// ssp.lang, ssp.columns, ssp.columnsMode and ssp.welcomed.
 const PREF_KEY = "ssp.theme";
 const TERM_KEY = "ssp.termBg";
 

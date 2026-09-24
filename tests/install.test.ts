@@ -18,7 +18,7 @@ import { enterSandbox, type Sandbox } from "./server-sandbox.ts";
 
 const HUD = { type: "command", command: "bash -c 'exec bun ~/.claude/plugins/cache/claude-hud/claude-hud/1.2.0/src/index.ts'", refreshInterval: 5 };
 const OURS_OLD = { type: "command", command: '/opt/homebrew/bin/bun "/Users/me/dev/claude-code-ssp/src/cli/main.ts" render', padding: 0 };
-const OURS_NEW = '/opt/homebrew/bin/bun "/Users/me/elsewhere/claude-code-ssp/src/cli/main.ts" render';
+const OURS_NEW = '/opt/homebrew/bin/bun "/Users/me/elsewhere/claude-code-super-statusline/src/cli/main.ts" render';
 /** What a 0.3.x plugin install left in settings.json (the plugin was called `ssp` then), with a user tweak. */
 const OLD_PLUGIN = { type: "command", command: launcherCommand("/h/.claude/plugins/cache/claude-code-ssp/ssp/0.3.3/src/cli/main.ts", "/usr/bin/bun"), padding: 0, refreshInterval: 3 };
 const NEW_PLUGIN_ENTRY = "/h/.claude/plugins/cache/claude-code-super-statusline/super-statusline/0.4.0/src/cli/main.ts";
@@ -186,7 +186,7 @@ describe("uninstall", () => {
 
 describe("launcher command", () => {
   test("a checkout path is used as is, with the given bun", () => {
-    expect(launcherCommand("/Users/me/claude-code-ssp/src/cli/main.ts", "/opt/homebrew/bin/bun")).toBe('/opt/homebrew/bin/bun "/Users/me/claude-code-ssp/src/cli/main.ts" render');
+    expect(launcherCommand("/Users/me/claude-code-super-statusline/src/cli/main.ts", "/opt/homebrew/bin/bun")).toBe('/opt/homebrew/bin/bun "/Users/me/claude-code-super-statusline/src/cli/main.ts" render');
   });
 
   test("the default command never bakes in a versioned Homebrew Cellar path", () => {
@@ -196,7 +196,7 @@ describe("launcher command", () => {
   });
 
   test("from the plugin cache it runs the newest installed version, surviving plugin updates", () => {
-    const base = path.join(sb.root, "cache with space", "plugins", "cache", "claude-code-ssp", "ssp");
+    const base = path.join(sb.root, "cache with space", "plugins", "cache", "claude-code-super-statusline", "super-statusline");
     for (const v of ["0.9.0", "0.10.0", "0.2.0"]) {
       fs.mkdirSync(path.join(base, v, "src", "cli"), { recursive: true });
       fs.writeFileSync(path.join(base, v, "src", "cli", "main.ts"), `console.log("version ${v}", process.argv[2]);`);

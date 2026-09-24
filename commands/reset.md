@@ -1,18 +1,18 @@
 ---
 description: Reset the statusline's cumulative counters (cost, tokens, API calls, lines changed) for the current session
-allowed-tools: Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/ssp.sh:*)
+allowed-tools: Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/super-statusline.sh:*)
 ---
 
 If the user passed `--undo` (arguments: $ARGUMENTS), run:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/ssp.sh" reset --undo
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/super-statusline.sh" reset --undo
 ```
 
 Otherwise run:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/ssp.sh" reset
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/super-statusline.sh" reset
 ```
 
 Report its one-line output verbatim. The counters shown in the statusline (Cost, Tokens, API calls, lines changed) restart
