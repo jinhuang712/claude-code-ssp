@@ -2,7 +2,9 @@
 
 Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace installs update when it changes.
 
-## Unreleased
+## 0.3.1 — 2026-09-24
+
+The viewer's own settings in the header, fewer duplicate widgets, and two page-feel fixes.
 
 - **Language switch in the header:** EN / 中文, beside the ⋯ menu. It leaves the menu, where it was a dropdown
   you had to read the current language to find.
