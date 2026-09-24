@@ -126,6 +126,15 @@
   --chip: var(--panel);
 }
 
+/*
+  No rubber-band past the ends of the page (macOS trackpads, iOS): the pinned header and preview
+  were dragged down with it, leaving a gap above them that read as the page coming apart. On the
+  root scroller, so it covers the document itself; CSS can't keep the bottom bounce alone.
+*/
+html {
+  overscroll-behavior-y: none;
+}
+
 body {
   margin: 0;
   background: var(--bg);
