@@ -420,6 +420,7 @@ export const zh: Messages = {
       showRecached: "未命中重新缓存的 tokens（+310k）",
       showTtl: "带上缓存寿命（42m/1h）",
       showRecache: "缓存变冷后要重新缓存多少（↻45k）",
+      dir: "目录",
     },
     fieldHints: {
       name: "必填，比如 AWS_PROFILE；不填就不显示",
@@ -461,6 +462,7 @@ export const zh: Messages = {
       "model.badge.joiner": { space: "空格", dot: "圆点 ·" },
       "context.bar.value": { percent: "已用 %", remaining: "剩余 %" },
       "git.linesChanged.source": { session: "本会话改过的", worktree: "工作区未提交的" },
+      "project.path.dir": { current: "当前目录", launch: "启动 Claude Code 的目录" },
     },
   },
 };

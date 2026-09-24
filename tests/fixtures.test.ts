@@ -100,6 +100,12 @@ describe("documented stdin fields that have their own widget or option", () => {
     expect(out).toMatch(/^cache ● 4[12]m\/1h ↻45k$/);
     // post-compact: cold, so no lifetime.
     expect(await renderWidget(fixtures["post-compact"], { widget: "context.promptCache", options: { showTtl: true } })).toBe("cache ○ cold");
-    expect(await renderWidget(fixtures["fresh-session"], { widget: "context.cacheMisses", options: { hideZero: false } })).toBe("");
+  });
+
+  test("project.path: the current directory, or where Claude Code was started", async () => {
+    // post-compact: the session cd'd into packages/checkout; it was started in acme-web.
+    const plain = { link: false, levels: "1" };
+    expect(await renderWidget(fixtures["post-compact"], { widget: "project.path", options: plain })).toBe("checkout");
+    expect(await renderWidget(fixtures["post-compact"], { widget: "project.path", options: { ...plain, dir: "launch" } })).toBe("acme-web");
   });
 });

@@ -14,6 +14,8 @@ Everything Claude Code documents for the statusline now has a widget or an optio
   last one — `miss 2/14 (tools changed)` — and, if you like, the tokens they re-cached. Hidden while there are none.
 - **Prompt cache** can show the lifetime its countdown runs from (`● 42m/1h`) and what a cold cache would
   re-cache on the next request (`↻45k`).
+- **Project path** can name the directory Claude Code was started in instead of the current one, so a session
+  that `cd`s into a subfolder still shows the project.
 
 ## 0.3.1 — 2026-09-24
 

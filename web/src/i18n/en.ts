@@ -341,6 +341,7 @@ export const en = {
       "model.badge.joiner": { space: "Space", dot: "Dot ·" },
       "context.bar.value": { percent: "Used %", remaining: "Remaining %" },
       "git.linesChanged.source": { session: "Edited this session", worktree: "Uncommitted in the worktree" },
+      "project.path.dir": { current: "Current directory", launch: "Where Claude Code started" },
     } as Record<string, Record<string, string>>,
   },
 };

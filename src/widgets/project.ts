@@ -14,7 +14,7 @@ function formatPath(cwd: string, levels: "1" | "2" | "3" | "full" | "tilde"): st
   return segs.slice(-Number(levels)).join("/") || safe;
 }
 
-export const projectPath = defineWidget<{ levels: "1" | "2" | "3" | "full" | "tilde"; link: boolean; icon: string }>({
+export const projectPath = defineWidget<{ dir: "current" | "launch"; levels: "1" | "2" | "3" | "full" | "tilde"; link: boolean; icon: string }>({
   id: "project.path",
   name: "Project path",
   description: "Working directory, as basename, N trailing segments, ~-relative or full path.",
@@ -23,15 +23,19 @@ export const projectPath = defineWidget<{ levels: "1" | "2" | "3" | "full" | "ti
   schema: {
     type: "object",
     properties: {
+      // workspace.project_dir is where Claude Code was launched; it stays put when the session cd's
+      // into a subfolder, so "launch" names the project rather than wherever the shell wandered.
+      dir: { type: "string", enum: ["current", "launch"], default: "current", title: "Directory" },
       levels: { type: "string", enum: ["1", "2", "3", "tilde", "full"], default: "1", title: "Path depth" },
       link: { type: "boolean", default: true, title: "Clickable (OSC 8 file link)" },
       icon: { type: "string", default: "", title: "Icon prefix" },
     },
   },
-  defaults: { levels: "1", link: true, icon: "" },
+  defaults: { dir: "current", levels: "1", link: true, icon: "" },
   render(ctx, o, api) {
     const s = stdin(ctx);
-    const cwd = s.workspace?.current_dir ?? s.cwd;
+    const current = s.workspace?.current_dir ?? s.cwd;
+    const cwd = o.dir === "launch" ? (s.workspace?.project_dir ?? current) : current;
     if (!cwd) return null;
     const text = `${o.icon ? `${o.icon} ` : ""}${formatPath(cwd, o.levels)}`;
     const seg = api.seg(text, { fg: "project" });
