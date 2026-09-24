@@ -19,9 +19,15 @@ export interface StdinExtras {
     requests?: number;
     misses?: number;
     hit_ratio?: number | null;
+    /** Tokens written to the cache by the requests counted as misses. */
+    miss_recache_tokens?: number;
+    /** Likely cause of the last miss (≥ 2.1.260); null until the first one, or when unknown. */
+    last_miss_cause?: { causes?: string[] } | null;
+    /** Tokens the next request re-caches if the cache has gone cold by then; null right after a compaction. */
+    recache_tokens_if_cold?: number | null;
   } | null;
   pr?: { number?: number; url?: string; review_state?: string; kind?: string } | null;
-  worktree?: { name?: string; path?: string; branch?: string } | null;
+  worktree?: { name?: string; path?: string; branch?: string; original_cwd?: string; original_branch?: string } | null;
   workspace?: StdinData["workspace"] & {
     repo?: { host?: string; owner?: string; name?: string } | null;
   };

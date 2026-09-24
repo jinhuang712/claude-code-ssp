@@ -280,6 +280,7 @@ export const zh: Messages = {
       "session.apiCalls": "API 调用次数",
       "session.vimMode": "Vim 模式",
       "session.agent": "Agent 名",
+      "session.id": "会话 ID",
       "cost.session": "费用",
       "cost.apiTime": "API 耗时",
       "activity.agents": "运行中的 Agents",
@@ -321,6 +322,7 @@ export const zh: Messages = {
       "session.apiCalls": "本次会话调了多少次模型 API，一轮回复算一次，流式分片不重复计。",
       "session.vimMode": "当前 vim 模式。",
       "session.agent": "用 --agent 启动时的 agent 名。",
+      "session.id": "本会话的 ID：前 8 位，或完整 ID（claude --resume 用的就是完整的）。",
       "cost.session": "本次会话费用，Claude Code 自己的统计，缺失时按价目表估算。",
       "cost.apiTime": "本次会话等待 API 的总时长。",
       "activity.agents": "正在运行的子 agent。",
@@ -408,6 +410,7 @@ export const zh: Messages = {
       showHooks: "统计 hooks",
       showMcp: "统计 MCP",
       showRules: "统计规则",
+      full: "显示完整 ID",
     },
     fieldHints: {
       name: "必填，比如 AWS_PROFILE；不填就不显示",

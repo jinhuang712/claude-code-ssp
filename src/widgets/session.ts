@@ -1,5 +1,6 @@
 import { defineWidget } from "../core/types.js";
 import { netTokens } from "../core/reset.js";
+import { sanitizeDisplayText } from "../data/utils/sanitize.js";
 import { labelSchema, stdin, withLabel } from "./_shared.js";
 
 function pad2(n: number): string {
@@ -50,6 +51,30 @@ export const sessionStarted = defineWidget<{ label: string | null; format: "date
     const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
     const text = o.format === "time" ? time : `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${time}`;
     const label = withLabel(o.label, "Started:");
+    return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), api.seg(text)];
+  },
+});
+
+export const sessionId = defineWidget<{ label: string | null; full: boolean }>({
+  id: "session.id",
+  name: "Session ID",
+  description: "This session's id: its first 8 characters, or all of it (the form `claude --resume` takes).",
+  category: "session",
+  sample: "id 0d42a403",
+  schema: {
+    type: "object",
+    properties: {
+      label: { ...labelSchema, default: "id" },
+      full: { type: "boolean", default: false, title: "Show the full id" },
+    },
+  },
+  defaults: { label: "id", full: false },
+  render(ctx, o, api) {
+    const id = stdin(ctx).session_id;
+    if (!id) return null;
+    // 8 characters tell sessions apart on screen (a UUID's first group); the whole id is for copying.
+    const text = sanitizeDisplayText(o.full ? id : id.slice(0, 8));
+    const label = withLabel(o.label, "id");
     return [...(label ? [api.seg(`${label} `, { fg: "muted" })] : []), api.seg(text)];
   },
 });

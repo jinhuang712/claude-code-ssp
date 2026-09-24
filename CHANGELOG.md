@@ -2,6 +2,13 @@
 
 Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace installs update when it changes.
 
+## Unreleased
+
+Everything Claude Code documents for the statusline now has a widget or an option.
+
+- **Session ID** (`session.id`): the first 8 characters of the session's id, or the whole id — the one
+  `claude --resume` takes.
+
 ## 0.3.1 — 2026-09-24
 
 The viewer's own settings in the header, fewer duplicate widgets, and two page-feel fixes.

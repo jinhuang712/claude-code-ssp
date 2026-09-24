@@ -69,3 +69,11 @@ describe("fixture scenarios render what they are meant to show", () => {
     expect(await renderWidget(fixtures["vim-mode"], { widget: "model.badge" })).toContain("⚡");
   });
 });
+
+// Fields the statusline docs list that had no widget or option until now, one test per addition.
+describe("documented stdin fields that have their own widget or option", () => {
+  test("session.id: the first 8 characters, or the whole id", async () => {
+    expect(await renderWidget(fixtures.basic, { widget: "session.id" })).toBe("id fixture-");
+    expect(await renderWidget(fixtures.basic, { widget: "session.id", options: { full: true } })).toBe("id fixture-basic");
+  });
+});
