@@ -421,6 +421,21 @@ input[type="checkbox"] {
   color: var(--fg);
   box-shadow: 0 1px 2px var(--shadow);
 }
+/*
+  On the page itself (the header's language switch) the control follows the page's fill language
+  instead: a row-filled track, the current option a raised chip, no outline. The outlined .seg stays
+  for the menu, where it sits on a panel of the same fill.
+*/
+.seg-fill {
+  border: 0;
+  background: var(--row);
+}
+.seg-fill > button {
+  min-height: 1.75rem;
+}
+.seg-fill > button[aria-pressed="true"] {
+  background: var(--chip);
+}
 
 /*
   Choice tiles (themes, bar glyphs, separators): a wrapping row of options. The current one gets a

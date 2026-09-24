@@ -6,6 +6,7 @@ import type { Messages } from "./en";
  */
 export const zh: Messages = {
   langName: "简体中文",
+  langShort: "中文",
 
   app: {
     loading: "加载中…",

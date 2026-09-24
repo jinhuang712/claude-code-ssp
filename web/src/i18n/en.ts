@@ -11,6 +11,8 @@
  */
 export const en = {
   langName: "English",
+  /** The language's own short name, for the header's language switch (always shown untranslated). */
+  langShort: "EN",
 
   app: {
     loading: "Loading…",
