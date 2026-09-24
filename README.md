@@ -1,7 +1,16 @@
 # claude-code-super-statusline
 
-A Claude Code statusline you configure in your browser. (Called claude-code-ssp before 0.4.0 — see
-[Upgrading from claude-code-ssp](#upgrading-from-claude-code-ssp).)
+**❯ super-statusline** — a Claude Code statusline you design in your browser, against your real session.
+(Called claude-code-ssp before 0.4.0 — see [Upgrading from claude-code-ssp](#upgrading-from-claude-code-ssp).)
+
+```text
+Project ~/dev/webapp │ statusline-design                                          [Sonnet 5 (xhigh)]
+Git acme/webapp │ git:(feat/login*) !1 ?1 │ +5 -1                    Context 64k/200k ███░░░░░░░ 32%
+Usage 5h █░░░░░░░ 9% (18:56) │ 7d ░░░░░░░░ 4% (9/29 17:15)                           cache ● 41m 91%
+Cost $1.27 │ Tokens 339k (↓48 ↑4k ↻335k)                                                   120 tok/s
+```
+
+*The Full preset at 104 columns, on the bundled sample session (`src/fixtures/basic.json`), colours left out.*
 
 * **Web configurator** on `127.0.0.1:4877` — start from a preset (Minimal, Standard, Full) or build your
   own: arrange widgets in left / right zones by drag or keyboard, add them from the tray of unused widgets,
@@ -38,7 +47,17 @@ Your first edit in the panel applies the statusline to `~/.claude/settings.json`
 *⋯ menu → Stop using this statusline* puts it back at any time. Every later edit saves
 automatically and shows on the next refresh.
 
-### Upgrading from claude-code-ssp
+From a terminal, using a local checkout:
+
+```bash
+git clone https://github.com/jinhuang712/claude-code-super-statusline && cd claude-code-super-statusline && bun install
+
+bun run serve -- --open           # configurator at http://127.0.0.1:4877
+bun src/cli/main.ts install       # add the statusLine to ~/.claude/settings.json (backup kept)
+COLUMNS=120 bun src/cli/main.ts render --fixture src/fixtures/basic.json   # preview in the terminal
+```
+
+## Upgrading from claude-code-ssp
 
 Up to 0.3.x the plugin was `ssp@claude-code-ssp` with `/ssp:config`. The rename can't carry an install over by
 itself: once your `claude-code-ssp` marketplace updates, `ssp` shows as disabled and `/ssp:*` is gone, while the
@@ -56,16 +75,6 @@ counter resets move to the new folder names. After that, remove the old plugin:
 ```bash
 claude plugin uninstall ssp@claude-code-ssp
 claude plugin marketplace remove claude-code-ssp
-```
-
-From a terminal, using a local checkout:
-
-```bash
-git clone https://github.com/jinhuang712/claude-code-super-statusline && cd claude-code-super-statusline && bun install
-
-bun run serve -- --open           # configurator at http://127.0.0.1:4877
-bun src/cli/main.ts install       # add the statusLine to ~/.claude/settings.json (backup kept)
-COLUMNS=120 bun src/cli/main.ts render --fixture src/fixtures/basic.json   # preview in the terminal
 ```
 
 ## Commands
