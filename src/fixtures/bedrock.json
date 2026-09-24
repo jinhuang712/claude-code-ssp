@@ -41,8 +41,9 @@
     "ttl": "1h",
     "expires_at": 0,
     "requests": 14,
-    "misses": 2,
-    "hit_ratio": 0.91
+    "misses": 0,
+    "hit_ratio": 0.91,
+    "last_miss_cause": null
   },
   "fast_mode": false,
   "effort": {

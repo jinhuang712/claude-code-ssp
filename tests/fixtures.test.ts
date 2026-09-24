@@ -81,4 +81,14 @@ describe("documented stdin fields that have their own widget or option", () => {
     expect(await renderWidget(fixtures["context-1m"], { widget: "context.over200k" })).toBe("200k+");
     expect(await renderWidget(fixtures.basic, { widget: "context.over200k" })).toBe("");
   });
+
+  test("context.cacheMisses: misses out of requests, the last cause, re-cached tokens on request", async () => {
+    expect(await renderWidget(fixtures.basic, { widget: "context.cacheMisses" })).toBe("miss 2/14 (tools changed)");
+    expect(await renderWidget(fixtures.basic, { widget: "context.cacheMisses", options: { showRecached: true, showCause: false } })).toBe("miss 2/14 +310k");
+    // Bedrock sample: cache on, no misses — hidden by default, "0/14" when asked for.
+    expect(await renderWidget(fixtures.bedrock, { widget: "context.cacheMisses" })).toBe("");
+    expect(await renderWidget(fixtures.bedrock, { widget: "context.cacheMisses", options: { hideZero: false } })).toBe("miss 0/14");
+    // Caching never observed (fresh session): nothing to count either way.
+    expect(await renderWidget(fixtures["fresh-session"], { widget: "context.cacheMisses", options: { hideZero: false } })).toBe("");
+  });
 });

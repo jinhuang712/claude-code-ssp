@@ -40,7 +40,10 @@
     "expires_at": 0,
     "requests": 14,
     "misses": 2,
-    "hit_ratio": 0.91
+    "hit_ratio": 0.91,
+    "miss_recache_tokens": 310200,
+    "last_miss_cause": { "causes": ["tools_changed"], "tools_added": 2, "tools_removed": 0 },
+    "recache_tokens_if_cold": 45000
   },
   "fast_mode": false,
   "effort": { "level": "xhigh" },

@@ -10,6 +10,8 @@ Everything Claude Code documents for the statusline now has a widget or an optio
   `claude --resume` takes.
 - **Over 200k tokens** (`context.over200k`): a `200k+` flag while the last request carried more than 200k tokens.
   The line is fixed, so on a 1M window it shows well before the context bar looks full.
+- **Cache misses** (`context.cacheMisses`): prompt cache misses out of all requests, with the likely cause of the
+  last one — `miss 2/14 (tools changed)` — and, if you like, the tokens they re-cached. Hidden while there are none.
 
 ## 0.3.1 — 2026-09-24
 

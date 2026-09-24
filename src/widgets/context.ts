@@ -1,6 +1,7 @@
 import { defineWidget } from "../core/types.js";
 import { getContextPercent, getTotalTokens } from "../data/stdin.js";
 import { formatTokens } from "../core/api.js";
+import { sanitizeDisplayText } from "../data/utils/sanitize.js";
 import { labelPrefix, labelSchema, pctColor, stdin, thresholdSchema, withLabel, type ColorMode } from "./_shared.js";
 
 type ValueMode = "percent" | "tokens" | "remaining" | "both";
@@ -160,5 +161,59 @@ export const promptCache = defineWidget<{ label: string | null; showHitRatio: bo
     const remaining = anchor.getTime() + ttl - ctx.now;
     if (remaining <= 0) return [...segs, api.seg("○ cold", { fg: "muted" })];
     return [...segs, api.seg("●", { fg: remaining < 60_000 ? "warn" : "ok" }), api.seg(` ${api.duration(remaining)}`)];
+  },
+});
+
+/**
+ * Plain words for prompt_cache.last_miss_cause names. The docs give these as examples, not a closed
+ * list, so any other name is shown with its underscores as spaces.
+ */
+const MISS_CAUSES: Record<string, string> = {
+  tools_changed: "tools changed",
+  system_prompt_changed: "system prompt changed",
+  ttl_expired_5m: "5m TTL expired",
+  likely_server_side: "server side",
+};
+
+/*
+  prompt_cache misses: requests that re-processed what the cache already held (Claude Code counts
+  one when > 5% and ≥ 2k tokens of what could have been read from cache wasn't, with no compaction
+  to explain it). Each one costs a full re-cache, so the count and its likely cause are the part of
+  the cache story worth a glance; warm/cold and the hit ratio stay with Prompt cache.
+*/
+export const cacheMisses = defineWidget<{ label: string | null; showRequests: boolean; showCause: boolean; showRecached: boolean; hideZero: boolean }>({
+  id: "context.cacheMisses",
+  name: "Cache misses",
+  description: "Prompt cache misses this session, out of all requests, with the likely cause of the last one.",
+  category: "context",
+  sample: "miss 2/14 (tools changed)",
+  schema: {
+    type: "object",
+    properties: {
+      label: { ...labelSchema, default: "miss" },
+      showRequests: { type: "boolean", default: true, title: "Out of all requests (2/14)" },
+      showCause: { type: "boolean", default: true, title: "Likely cause of the last miss" },
+      showRecached: { type: "boolean", default: false, title: "Tokens the misses re-cached (+310k)" },
+      hideZero: { type: "boolean", default: true, title: "Hide while there are no misses" },
+    },
+  },
+  defaults: { label: "miss", showRequests: true, showCause: true, showRecached: false, hideZero: true },
+  render(ctx, o, api) {
+    const pc = stdin(ctx).prompt_cache;
+    // No cache tokens seen at all: caching is off or the provider doesn't report it — nothing to count.
+    if (!pc?.caching_observed) return null;
+    const misses = pc.misses ?? 0;
+    if (misses === 0 && o.hideZero) return null;
+    const label = withLabel(o.label, "miss");
+    const segs = label ? [api.seg(`${label} `, { fg: "muted" })] : [];
+    segs.push(api.seg(String(misses), { fg: misses > 0 ? "warn" : "fg" }));
+    if (o.showRequests && typeof pc.requests === "number") segs.push(api.seg(`/${pc.requests}`, { fg: "muted" }));
+    if (o.showRecached && pc.miss_recache_tokens) segs.push(api.seg(` +${api.tokens(pc.miss_recache_tokens)}`, { fg: "muted" }));
+    const causes = pc.last_miss_cause?.causes ?? [];
+    if (o.showCause && causes.length) {
+      const words = causes.map((c) => MISS_CAUSES[c] ?? sanitizeDisplayText(c.replace(/_/g, " "))).join(", ");
+      segs.push(api.seg(` (${words})`, { fg: "muted" }));
+    }
+    return segs;
   },
 });
