@@ -3,14 +3,12 @@
 **❯ super-statusline** — a Claude Code statusline you design in your browser, against your real session.
 (Called claude-code-ssp before 0.4.0 — see [Upgrading from claude-code-ssp](#upgrading-from-claude-code-ssp).)
 
-```text
-Project ~/dev/webapp │ statusline-design                                          [Sonnet 5 (xhigh)]
-Git acme/webapp │ git:(feat/login*) !1 ?1 │ +5 -1                    Context 64k/200k ███░░░░░░░ 32%
-Usage 5h █░░░░░░░ 9% (18:56) │ 7d ░░░░░░░░ 4% (9/29 17:15)                           cache ● 41m 91%
-Cost $1.27 │ Tokens 339k (↓48 ↑4k ↻335k)                                                   120 tok/s
-```
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/statusline-light.png">
+  <img alt="The Full preset: project, session name, model; repo, branch, lines changed, context bar; rate-limit windows, prompt cache; cost, tokens, output speed" src="docs/images/statusline-dark.png">
+</picture>
 
-*The Full preset at 104 columns, on the bundled sample session (`src/fixtures/basic.json`), colours left out.*
+*The Full preset with gradient bars, on the bundled sample session (`src/fixtures/basic.json`).*
 
 * **Web configurator** on `127.0.0.1:4877` — start from a preset (Minimal, Standard, Full) or build your
   own: arrange widgets in left / right zones by drag or keyboard, add them from the tray of unused widgets,
@@ -25,6 +23,13 @@ Cost $1.27 │ Tokens 339k (↓48 ↑4k ↻335k)                                
 * **Fast & local** — ~20 ms per render including Bun startup, even on 100 MB transcripts (parsed incrementally);
   slow git never blocks the line. No network, no credential scraping. Data layer derived from
   [claude-hud](https://github.com/jarrodwatts/claude-hud) (MIT).
+
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/configurator-light.png">
+  <img alt="The configurator: a live preview of the statusline, Style (theme, bar glyphs, progress bar mode, separator) and Layout presets" src="docs/images/configurator-dark.png">
+</picture>
+
+<img alt="A widget's options opened under its line: label, percentage, bar width, text colour, thresholds and toggles" src="docs/images/options-dark.png">
 
 Requires Claude Code ≥ 2.1.251 (for `rate_limits`, `prompt_cache`, `effort` on stdin) and [Bun](https://bun.sh) on `PATH`.
 
