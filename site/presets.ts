@@ -12,6 +12,7 @@ import { render } from "../src/core/layout.ts";
 import type { Ctx } from "../src/core/types.ts";
 import { registerBuiltinWidgets } from "../src/widgets/index.ts";
 import { en } from "../web/src/i18n/en.ts";
+import { zh } from "../web/src/i18n/zh.ts";
 import { PRESETS } from "../web/src/store.ts";
 
 const [file, colsArg] = process.argv.slice(2);
@@ -116,17 +117,22 @@ const groups = (["minimal", "standard", "full"] as const).map((id) => {
   // Name, line count and blurb are the configurator's own preset copy, so page and app never
   // disagree. The blurb reads "Two lines: adds usage limits"; the label keeps what follows
   // the colon, since the line count is already there.
-  const preset = en.presets[id];
-  const adds = preset.blurb.split(": ").slice(1).join(": ") || preset.blurb;
+  // The Chinese label rides along in data-zh; site/landing.ts swaps it in when the page is in 中文.
+  const label = (m: typeof en) => {
+    const preset = m.presets[id];
+    // "Two lines: adds usage limits" / "两行：加上用量上限": the label keeps what follows the colon.
+    const adds = preset.blurb.split(/: |：/).slice(1).join(": ") || preset.blurb;
+    return `<b>${escapeHtml(preset.name)}</b> · ${escapeHtml(m.presets.lines(r.lines.length))} · ${escapeHtml(adds)}`;
+  };
   const rows = r.lines.map((l) => `<span class="lp-row">${ansiToHtml(l)}</span>`).join("\n");
   return `<div class="lp-preset">
-  <div class="lp-preset-label"><i style="background: ${DOT[id]}"></i><span><b>${escapeHtml(preset.name)}</b> · ${escapeHtml(en.presets.lines(r.lines.length))} · ${escapeHtml(adds)}</span><i class="lp-rule"></i></div>
+  <div class="lp-preset-label"><i style="background: ${DOT[id]}"></i><span data-zh="${escapeHtml(label(zh))}">${label(en)}</span><i class="lp-rule"></i></div>
   <pre class="lp-rows">${rows}</pre>
 </div>`;
 });
 // One terminal, all three presets (hero option B): each group is a labelled render at `columns`.
-process.stdout.write(`<div class="lp-term" role="img" aria-label="The three presets rendered on a sample session: Minimal on one line, Standard on two, Full on four">
-<div class="lp-term-bar" aria-hidden="true"><span>three presets · one session</span><span class="lp-desk">~/dev/webapp — claude</span><span class="lp-phone">swipe →</span></div>
+process.stdout.write(`<div class="lp-term" role="img" aria-label="The three presets rendered on a sample session: Minimal on one line, Standard on two, Full on four" data-i18n-aria="term.aria">
+<div class="lp-term-bar" aria-hidden="true"><span data-i18n="term.bar">three presets · one session</span><span class="lp-desk">~/dev/webapp — claude</span><span class="lp-phone" data-i18n="term.swipe">swipe →</span></div>
 <div class="lp-term-body">
 ${groups.join("\n")}
 </div>

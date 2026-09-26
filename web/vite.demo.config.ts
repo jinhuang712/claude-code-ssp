@@ -27,8 +27,16 @@ const ENTRY_ID = "/@demo-entry";
 /** The sample session site/build.ts precomputes; a virtual module, so no source imports a build artefact by path. */
 const CONTEXT_ID = "virtual:demo-context";
 const CONTEXT_FILE = path.join(SITE, ".build/demo-context.json");
-/** The app's entry, by a name the site's sources can import without type-checking JSX. */
-const APP_ID = "virtual:app-main";
+/**
+ * App modules by names the site's sources can import without type-checking the app: its entry,
+ * and its language and appearance stores. They resolve to the app's own files, so the page gets
+ * the very module instances the app uses (one store each, not a copy).
+ */
+const APP_MODULES: Record<string, string> = {
+  "virtual:app-main": "src/main.tsx",
+  "virtual:app-lang": "src/i18n/index.ts",
+  "virtual:app-theme": "src/theme.ts",
+};
 
 function welcomePage(): Plugin {
   return {
@@ -37,7 +45,7 @@ function welcomePage(): Plugin {
     resolveId: (id) => {
       if (id === ENTRY_ID) return path.join(SITE, "demo/entry.ts");
       if (id === CONTEXT_ID) return `\0${CONTEXT_ID}`;
-      if (id === APP_ID) return path.resolve(import.meta.dirname, "src/main.tsx");
+      if (APP_MODULES[id]) return path.resolve(import.meta.dirname, APP_MODULES[id]);
       return null;
     },
     load: (id) => (id === `\0${CONTEXT_ID}` ? `export default ${fs.readFileSync(CONTEXT_FILE, "utf8")};` : null),

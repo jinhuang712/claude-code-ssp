@@ -8,20 +8,35 @@
     <meta name="description" content="A Claude Code statusline you design in your browser: start from a preset, drag widgets into place, and try the real configurator right on this page." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script>
-      // The configurator's own rule (web/index.html, src/theme.ts), before first paint: the page and
-      // the configurator embedded in it share one scheme, and its appearance switch changes both.
+      // The configurator's own rules (web/index.html, src/theme.ts, src/i18n), before first paint:
+      // the page and the configurator embedded in it share one scheme and one language, and either
+      // one's switches change both. site/landing.ts takes over from here.
       (function () {
         var pref = "system";
+        var lang = null;
         try {
           pref = localStorage.getItem("ssp.theme") || "system";
+          lang = localStorage.getItem("ssp.lang");
         } catch (e) {}
         var light = pref === "light" || (pref !== "dark" && window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches);
         document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
+        if (lang !== "en" && lang !== "zh") {
+          var prefs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ""];
+          lang = "en";
+          for (var i = 0; i < prefs.length; i++) {
+            var base = String(prefs[i]).toLowerCase().split("-")[0];
+            if (base === "zh" || base === "en") {
+              lang = base;
+              break;
+            }
+          }
+        }
+        document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
       })();
     </script>
   </head>
   <body>
-    <a class="lp lp-skip" href="#presets">Skip to content</a>
+    <a class="lp lp-skip" href="#presets" data-i18n="skip">Skip to content</a>
 
     <header class="lp lp-top lp-wrap">
       <a class="lp-brand" href="#presets" aria-label="super-statusline">
@@ -32,70 +47,82 @@
           <span class="lp-hairline" aria-hidden="true"><i style="width: 2.6em; background: #e0af68"></i><i style="width: 1.3em; background: #bb9af7"></i><i style="width: 0.8em; background: #7dcfff"></i><i class="lp-gap"></i><i style="width: 1.75em; background: #9ece6a"></i></span>
         </span>
       </a>
-      <nav class="lp-nav" aria-label="Site">
-        <a class="lp-desk" href="#presets">Presets</a>
-        <a class="lp-desk" href="#arrange">Drag &amp; drop</a>
-        <a class="lp-desk" href="#try">Try it</a>
+      <nav class="lp-nav" aria-label="Site" data-i18n-aria="nav.aria">
+        <a class="lp-desk lp-nav-section" href="#presets" data-i18n="nav.presets">Presets</a>
+        <a class="lp-desk lp-nav-section" href="#arrange" data-i18n="nav.arrange">Drag &amp; drop</a>
+        <a class="lp-desk lp-nav-section" href="#try" data-i18n="nav.try">Try it</a>
         <a href="https://github.com/jinhuang712/claude-code-super-statusline">GitHub<svg class="lp-ext" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2h6v6M10 2 2.5 9.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
-        <a class="lp-btn" href="#install">Install</a>
+        <!-- Language and appearance: the configurator's own switches (Header.tsx), in the header on a desktop. -->
+        <span class="lp-prefs lp-desk">
+          <span class="lp-seg" role="group" aria-label="Language" data-i18n-aria="pref.language">
+            <button type="button" data-lang="en" lang="en" aria-pressed="true" aria-label="English" title="English">EN</button>
+            <button type="button" data-lang="zh" lang="zh-CN" aria-pressed="false" aria-label="简体中文" title="简体中文">中文</button>
+          </span>
+          <span class="lp-seg lp-seg-icons" role="group" aria-label="Appearance" data-i18n-aria="pref.appearance">
+            <button type="button" data-theme-pref="system" aria-pressed="true" aria-label="System" title="System" data-i18n-aria="pref.system" data-i18n-title="pref.system"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11v7.5h-11ZM6 13.5h4M8 11v2.5" /></svg></button>
+            <button type="button" data-theme-pref="light" aria-pressed="false" aria-label="Light" title="Light" data-i18n-aria="pref.light" data-i18n-title="pref.light"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 5.25a2.75 2.75 0 1 0 0 5.5a2.75 2.75 0 1 0 0-5.5M8 1.75v1.5M8 12.75v1.5M1.75 8h1.5M12.75 8h1.5M3.6 3.6l1 1M11.4 11.4l1 1M3.6 12.4l1-1M11.4 4.6l1-1" /></svg></button>
+            <button type="button" data-theme-pref="dark" aria-pressed="false" aria-label="Dark" title="Dark" data-i18n-aria="pref.dark" data-i18n-title="pref.dark"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.25 9.6A5.5 5.5 0 1 1 6.4 2.75a4.4 4.4 0 0 0 6.85 6.85Z" /></svg></button>
+          </span>
+        </span>
+        <a class="lp-btn" href="#install" data-i18n="nav.install">Install</a>
       </nav>
     </header>
 
     <main>
       <section id="presets" class="lp lp-hero lp-wrap" aria-labelledby="hero-title">
-        <p class="lp-kicker">A Claude Code plugin · open source, MIT</p>
-        <h1 id="hero-title" class="lp-h1">Design your Claude Code<br class="lp-desk" /> statusline <em>in the browser.</em></h1>
-        <p class="lp-lead">Pick a preset, drag widgets where you want them, and watch the real statusline redraw against your own session — no JSON to hand-edit.</p>
+        <p class="lp-kicker" data-i18n="hero.kicker">A Claude Code plugin · open source, MIT</p>
+        <h1 id="hero-title" class="lp-h1" data-i18n="hero.title">Design your Claude Code<br class="lp-desk" /> statusline <em>in the browser.</em></h1>
+        <p class="lp-lead" data-i18n="hero.lead">Pick a preset, drag widgets where you want them, and watch the real statusline redraw against your own session — no JSON to hand-edit.</p>
         <div class="lp-cta">
-          <a class="lp-btn lp-btn-primary lp-btn-lg lp-desk" href="#try">Try the configurator<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2v10M2.5 7.5 7 12l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
-          <a class="lp-btn lp-btn-lg lp-install-cta" href="#install">Install</a>
-          <a class="lp-btn lp-btn-lg lp-phone" href="#arrange">See it in action</a>
+          <a class="lp-btn lp-btn-primary lp-btn-lg lp-desk" href="#try"><span data-i18n="hero.try">Try the configurator</span><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2v10M2.5 7.5 7 12l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
+          <a class="lp-btn lp-btn-lg lp-install-cta" href="#install" data-i18n="nav.install">Install</a>
+          <a class="lp-btn lp-btn-lg lp-phone" href="#arrange" data-i18n="hero.see">See it in action</a>
         </div>
 
         <div class="lp-label-row">
-          <p class="lp-label"><i style="background: #e0af68"></i>01 · Start from a preset</p>
-          <p class="lp-label lp-desk">real engine output · sample session</p>
+          <p class="lp-label"><i style="background: #e0af68"></i><span data-i18n="hero.label">01 · Start from a preset</span></p>
+          <p class="lp-label lp-desk" data-i18n="hero.engine">real engine output · sample session</p>
         </div>
         <!-- The three presets, rendered by the real engine at build time (site/presets.ts). -->
 <!-- PRESETS -->
-        <p class="lp-note lp-phone">Real engine output at 100 columns. A statusline never wraps, so it scrolls sideways here.</p>
+        <p class="lp-note lp-phone" data-i18n="hero.note">Real engine output at 100 columns. A statusline never wraps, so it scrolls sideways here.</p>
       </section>
 
       <section id="arrange" class="lp lp-section lp-wrap" aria-labelledby="arrange-title">
         <div class="lp-head">
           <div class="lp-head-title">
-            <p class="lp-label"><i style="background: #bb9af7"></i>02 · Arrange</p>
-            <h2 id="arrange-title" class="lp-h2">Then drag it into shape.</h2>
+            <p class="lp-label"><i style="background: #bb9af7"></i><span data-i18n="arrange.label">02 · Arrange</span></p>
+            <h2 id="arrange-title" class="lp-h2" data-i18n="arrange.title">Then drag it into shape.</h2>
           </div>
-          <p class="lp-head-text">Every widget is a chip. Drag chips between lines and zones — the preview redraws on every drop.</p>
+          <p class="lp-head-text" data-i18n="arrange.text">Every widget is a chip. Drag chips between lines and zones — the preview redraws on every drop.</p>
         </div>
         <div class="lp-arrange">
           <ol class="lp-steps">
             <li>
               <span class="lp-step-n" style="color: #e0af68">01</span>
-              <h3>Drag from the tray</h3>
-              <p>Pull any of the 39 widgets onto a line, into its left or right zone.</p>
+              <h3 data-i18n="step1.title">Drag from the tray</h3>
+              <p data-i18n="step1.text">Pull any of the 39 widgets onto a line, into its left or right zone.</p>
             </li>
             <li>
               <span class="lp-step-n" style="color: #bb9af7">02</span>
-              <h3>Drag to rearrange</h3>
-              <p>Reorder within a line or move to another. From the keyboard: focus a chip, then <kbd>Alt</kbd> + arrow keys.</p>
+              <h3 data-i18n="step2.title">Drag to rearrange</h3>
+              <p data-i18n="step2.text">Reorder within a line or move to another. From the keyboard: focus a chip, then <kbd>Alt</kbd> + arrow keys.</p>
             </li>
             <li>
               <span class="lp-step-n" style="color: #7dcfff">03</span>
-              <h3>Drag back to remove</h3>
-              <p>Drop it on the tray and it leaves the statusline.</p>
+              <h3 data-i18n="step3.title">Drag back to remove</h3>
+              <p data-i18n="step3.text">Drop it on the tray and it leaves the statusline.</p>
             </li>
           </ol>
           <figure class="lp-video">
             <!-- src and poster are set by site/landing.ts: the recording that matches the page's scheme. -->
-            <video muted loop playsinline autoplay preload="metadata" data-dark="images/dnd-dark.mp4" data-light="images/dnd-light.mp4" data-dark-poster="images/dnd-dark-poster.jpg" data-light-poster="images/dnd-light-poster.jpg" aria-label="Recording of the configurator: Lines changed dragged from the tray onto line 1, Session cost moved to line 2, Last reply dragged back to the tray, the statusline preview redrawing after each drop"></video>
-            <figcaption class="lp-desk">recorded from the configurator below</figcaption>
+            <video muted loop playsinline autoplay preload="metadata" data-dark="images/dnd-dark.mp4" data-light="images/dnd-light.mp4" data-dark-poster="images/dnd-dark-poster.jpg" data-light-poster="images/dnd-light-poster.jpg" data-i18n-aria="video.aria" aria-label="Recording of the configurator: Lines changed dragged from the tray onto line 1, Session cost moved to line 2, Last reply dragged back to the tray, the statusline preview redrawing after each drop"></video>
+            <figcaption class="lp-desk" data-i18n="video.caption">recorded from the configurator below</figcaption>
           </figure>
         </div>
         <p class="lp-callout lp-phone">
           <svg viewBox="0 0 18 18" aria-hidden="true"><rect x="2" y="3" width="14" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4" /><path d="M6.5 16h5M9 13v3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" /></svg>
-          <span>The live configurator is on the desktop version of this page — open it on a larger screen to try it.</span>
+          <span data-i18n="callout">The live configurator is on the desktop version of this page — open it on a larger screen to try it.</span>
         </p>
       </section>
 
@@ -103,12 +130,12 @@
       <section id="try" class="lp-try" aria-labelledby="try-title">
         <div class="lp lp-head lp-wrap">
           <div class="lp-head-title">
-            <p class="lp-label"><i style="background: #7dcfff"></i>03 · Try it</p>
-            <h2 id="try-title" class="lp-h2">This is the real configurator.</h2>
+            <p class="lp-label"><i style="background: #7dcfff"></i><span data-i18n="try.label">03 · Try it</span></p>
+            <h2 id="try-title" class="lp-h2" data-i18n="try.title">This is the real configurator.</h2>
           </div>
-          <p class="lp-head-text">It runs right here, on a sample session — keep scrolling to go through it. Your changes stay in this browser.</p>
+          <p class="lp-head-text" data-i18n="try.text">It runs right here, on a sample session — keep scrolling to go through it. Your changes stay in this browser.</p>
         </div>
-        <div class="lp lp-live"><p class="lp-live-tag"><i></i>LIVE DEMO · SAMPLE SESSION</p></div>
+        <div class="lp lp-live"><p class="lp-live-tag"><i></i><span data-i18n="try.tag">LIVE DEMO · SAMPLE SESSION</span></p></div>
         <!-- The configurator itself (web/), mounted here: one page, one scroll. -->
         <div id="root"></div>
       </section>
@@ -116,20 +143,20 @@
       <section id="install" class="lp lp-section lp-wrap" aria-labelledby="install-title">
         <div class="lp-head">
           <div class="lp-head-title">
-            <p class="lp-label"><i style="background: #9ece6a"></i><span class="lp-desk">04</span><span class="lp-phone">03</span> · Install</p>
-            <h2 id="install-title" class="lp-h2">One command. Then it’s yours.</h2>
+            <p class="lp-label"><i style="background: #9ece6a"></i><span class="lp-desk">04</span><span class="lp-phone">03</span> · <span data-i18n="install.label">Install</span></p>
+            <h2 id="install-title" class="lp-h2" data-i18n="install.title">One command. Then it’s yours.</h2>
           </div>
-          <p class="lp-head-text">It checks Claude Code (2.1.251 or later) and <a href="https://bun.sh">Bun</a> — offering to install Bun if it’s missing — then installs the plugin. Run it again any time to update.</p>
+          <p class="lp-head-text" data-i18n="install.text">It checks Claude Code (2.1.251 or later) and <a href="https://bun.sh">Bun</a> — offering to install Bun if it’s missing — then installs the plugin. Run it again any time to update.</p>
         </div>
         <div class="lp-install-body">
           <div class="lp-code">
             <div class="lp-code-bar">
-              <span>TERMINAL</span>
-              <button class="lp-copy" type="button" data-copy="lp-cmd" aria-label="Copy the install command">Copy</button>
+              <span data-i18n="install.terminal">TERMINAL</span>
+              <button class="lp-copy" type="button" data-copy="lp-cmd" aria-label="Copy the install command" data-i18n-aria="copy.aria">Copy</button>
             </div>
             <pre id="lp-cmd"><span class="lp-dollar" aria-hidden="true">$ </span>curl -fsSL https://raw.githubusercontent.com/jinhuang712/claude-code-super-statusline/main/install.sh | bash</pre>
           </div>
-          <p class="lp-then">Then run <code>/super-statusline:config</code> in Claude Code and pick a layout. Rather do it by hand, or read the script first? See <a href="https://github.com/jinhuang712/claude-code-super-statusline/blob/main/INSTALL.md">INSTALL.md</a>.</p>
+          <p class="lp-then" data-i18n="install.then">Then run <code>/super-statusline:config</code> in Claude Code and pick a layout. Rather do it by hand, or read the script first? See <a href="https://github.com/jinhuang712/claude-code-super-statusline/blob/main/INSTALL.md">INSTALL.md</a>.</p>
         </div>
       </section>
     </main>
@@ -139,12 +166,24 @@
         <svg class="lp-prompt" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.2 1.6 7.8 6l-5.6 4.4" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
         <span><span class="lp-super">super</span>-statusline</span>
       </span>
-      <nav class="lp-foot-links" aria-label="Project">
+      <nav class="lp-foot-links" aria-label="Project" data-i18n-aria="foot.aria">
         <a href="https://github.com/jinhuang712/claude-code-super-statusline/blob/main/INSTALL.md">INSTALL.md</a>
         <a href="https://github.com/jinhuang712/claude-code-super-statusline#readme">README</a>
         <a href="https://github.com/jinhuang712/claude-code-super-statusline">GitHub</a>
       </nav>
-      <p class="lp-foot-credit">MIT · data layer derived from <a href="https://github.com/jarrodwatts/claude-hud">claude-hud</a></p>
+      <p class="lp-foot-credit" data-i18n="foot.credit">MIT · data layer derived from <a href="https://github.com/jarrodwatts/claude-hud">claude-hud</a></p>
+      <!-- On a phone the header has no room for them: the same two switches, here. -->
+      <span class="lp-prefs lp-phone">
+        <span class="lp-seg" role="group" aria-label="Language" data-i18n-aria="pref.language">
+          <button type="button" data-lang="en" lang="en" aria-pressed="true" aria-label="English" title="English">EN</button>
+          <button type="button" data-lang="zh" lang="zh-CN" aria-pressed="false" aria-label="简体中文" title="简体中文">中文</button>
+        </span>
+        <span class="lp-seg lp-seg-icons" role="group" aria-label="Appearance" data-i18n-aria="pref.appearance">
+          <button type="button" data-theme-pref="system" aria-pressed="true" aria-label="System" title="System" data-i18n-aria="pref.system" data-i18n-title="pref.system"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11v7.5h-11ZM6 13.5h4M8 11v2.5" /></svg></button>
+          <button type="button" data-theme-pref="light" aria-pressed="false" aria-label="Light" title="Light" data-i18n-aria="pref.light" data-i18n-title="pref.light"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 5.25a2.75 2.75 0 1 0 0 5.5a2.75 2.75 0 1 0 0-5.5M8 1.75v1.5M8 12.75v1.5M1.75 8h1.5M12.75 8h1.5M3.6 3.6l1 1M11.4 11.4l1 1M3.6 12.4l1-1M11.4 4.6l1-1" /></svg></button>
+          <button type="button" data-theme-pref="dark" aria-pressed="false" aria-label="Dark" title="Dark" data-i18n-aria="pref.dark" data-i18n-title="pref.dark"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.25 9.6A5.5 5.5 0 1 1 6.4 2.75a4.4 4.4 0 0 0 6.85 6.85Z" /></svg></button>
+        </span>
+      </span>
     </footer>
 
     <script type="module" src="/@demo-entry"></script>

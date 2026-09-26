@@ -215,6 +215,61 @@ body {
   width: 0.7rem;
   height: 0.7rem;
 }
+/* Between phone and wide desktop the section links would crowd the switches; they're in the page anyway. */
+@media (max-width: 64rem) {
+  .lp-nav .lp-nav-section {
+    display: none;
+  }
+}
+
+/* ---- language and appearance: the configurator's .seg / .seg-icons (web/src/index.css) */
+.lp-prefs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.lp-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--lp-r-1);
+  background: var(--lp-row);
+  font-size: 0.75rem;
+}
+.lp-seg > button {
+  min-height: 1.75rem;
+  padding: 0 0.625rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--lp-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.lp-seg > button:hover {
+  color: var(--lp-fg);
+}
+.lp-seg > button[aria-pressed="true"] {
+  background: var(--lp-chip);
+  color: var(--lp-fg);
+  box-shadow: 0 1px 2px var(--lp-shadow);
+}
+.lp-seg-icons > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0 0.375rem;
+}
+.lp-seg-icons svg {
+  width: 0.9375rem;
+  height: 0.9375rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 /* ---- buttons: the configurator's .btn / .btn-primary, one size up */
 .lp .lp-btn {
@@ -288,6 +343,9 @@ body {
 }
 .lp-h1 em {
   color: var(--lp-accent);
+}
+.lp-nowrap {
+  white-space: nowrap;
 }
 .lp-lead {
   max-width: 36rem;
@@ -605,7 +663,9 @@ body {
   font-size: 0.9375rem;
   color: var(--lp-fg-2);
 }
+/* A command is one unit: "/super-statusline:config" broke at its hyphen on a phone. */
 .lp code {
+  white-space: nowrap;
   padding: 0.1em 0.4em;
   border-radius: var(--lp-r-1);
   background: var(--lp-row);
@@ -744,5 +804,15 @@ body {
   .lp-foot-credit {
     justify-self: start;
     text-align: left;
+  }
+  /* Touch-sized on a phone (2.5rem = 44px). */
+  .lp-foot .lp-seg > button {
+    min-height: 2.5rem;
+    min-width: 2.5rem;
+    font-size: 0.8125rem;
+  }
+  .lp-foot .lp-seg-icons svg {
+    width: 1.1rem;
+    height: 1.1rem;
   }
 }

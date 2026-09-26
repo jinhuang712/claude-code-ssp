@@ -8,7 +8,7 @@
  * later, the configurator loads then.
  */
 import "../site.css";
-import "../landing";
+import { connectApp } from "../landing";
 
 /** Same breakpoint as site.css's desktop/phone split. */
 const wide = matchMedia("(min-width: 50rem)");
@@ -20,6 +20,15 @@ async function startConfigurator(): Promise<void> {
   // The API first: it replaces fetch for /api/*, and the app fetches as soon as it mounts.
   await import("./api");
   await import("virtual:app-main");
+  // The app's own language and appearance stores — the same module instances the app uses
+  // (web/vite.demo.config.ts resolves these names to its files) — joined to the page's switches.
+  const [{ useLang }, { useTheme }] = await Promise.all([import("virtual:app-lang"), import("virtual:app-theme")]);
+  connectApp({
+    setLang: (l) => useLang.getState().setLang(l),
+    setTheme: (p) => useTheme.getState().setPref(p),
+    onLang: (cb) => useLang.subscribe((s) => cb(s.lang)),
+    onTheme: (cb) => useTheme.subscribe((s) => cb(s.pref)),
+  });
 }
 
 void startConfigurator();
