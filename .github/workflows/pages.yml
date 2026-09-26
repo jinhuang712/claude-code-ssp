@@ -1,0 +1,53 @@
+# The GitHub Pages site (site/, built by site/build.ts into site/dist), rebuilt and published on every
+# push to main. It renders the presets and the embedded configurator's sample session with the real
+# engine at build time, so any change to src/, web/ or the recordings can change the page; hence no
+# path filter.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# The deploy step needs to write to Pages and prove who it is (OIDC); nothing else writes.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time. A newer push queues behind a running one rather than cancelling it,
+# so a deployment is never cut off half-way.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          # The version the site was built and checked with locally.
+          bun-version: 1.4.0
+      # The root holds the engine (and string-width for the browser's Bun.stringWidth); web/ holds
+      # Vite, React and Tailwind, which site/build.ts runs from there.
+      - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile
+        working-directory: web
+      # Needs git on the runner: the sample session's branch and changes come from a throwaway repo.
+      - run: bun site/build.ts
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
