@@ -22,6 +22,10 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
   (the panel now shows it as Custom).
 - **`/super-statusline:config` finds a Bun installed mid-session** in `~/.bun/bin`, instead of saying "bun not found"
   until Claude Code is restarted.
+- **A website: [jinhuang712.github.io/claude-code-super-statusline](https://jinhuang712.github.io/claude-code-super-statusline/).**
+  The three presets rendered by the real engine, the drag and drop, the install command, and the real configurator
+  running in the page on a sample session (desktop only; your changes stay in that browser). In English and 中文,
+  light and dark. The README links to it.
 
 ## 0.4.1 — 2026-09-24
 
