@@ -84,4 +84,8 @@ bun run serve:sandbox     # the configurator against throwaway copies of your se
 bun run dev:web           # Vite on :5178, proxying /api → :4877 (run `bun run serve` alongside)
 bun run build:web         # rebuild web/dist — it is committed, so installs need no build
 scripts/ui-smoke.sh       # headless browser check of the configurator (playwright-cli)
+bun run site              # build the GitHub Pages site into site/dist and serve it on :4880
 ```
+
+The site is a welcome page plus `/demo/`: the real configurator, built by `web/vite.demo.config.ts` with its API
+running in the browser (`site/demo/api.ts`) against a sample session precomputed by `site/build.ts`.

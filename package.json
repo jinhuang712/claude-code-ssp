@@ -5,7 +5,9 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "engines": { "bun": ">=1.1" },
+  "engines": {
+    "bun": ">=1.1"
+  },
   "scripts": {
     "render": "bun run src/cli/main.ts render",
     "serve": "bun run src/cli/main.ts serve",
@@ -13,11 +15,14 @@
     "dev:web": "bun run --cwd web dev",
     "build:web": "bun run --cwd web build && bun scripts/web-hash.ts --write",
     "build": "bun run build:web",
+    "build:site": "bun site/build.ts",
+    "site": "bun site/build.ts --serve",
     "test": "bun test",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p site/tsconfig.json"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "string-width": "^8.3.0",
     "typescript": "^5.6.0"
   }
 }

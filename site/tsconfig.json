@@ -1,0 +1,9 @@
+{
+  // The site's build script (Bun) and the demo's in-browser API (DOM). Run by `bun run typecheck`.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "resolveJsonModule": true
+  },
+  "include": ["build.ts", "demo"]
+}

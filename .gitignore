@@ -4,3 +4,6 @@ web/node_modules
 .DS_Store
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+# GitHub Pages site: build output and the precomputed demo session (bun run build:site)
+site/dist/
+site/.build/
