@@ -5,25 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark light" />
     <title>super-statusline — a Claude Code statusline you design in your browser</title>
-    <meta name="description" content="A Claude Code statusline you design in your browser, against your real session. 39 widgets, 7 themes, presets or your own layout." />
+    <meta name="description" content="A Claude Code statusline you design in your browser: pick a preset, then drag widgets into place. Try the real configurator right on this page." />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="stylesheet" href="site.css" />
   </head>
   <body>
-    <a class="skip" href="#main">Skip to content</a>
+    <a class="skip" href="#try">Skip to the configurator</a>
     <header class="top">
       <a class="brand mono" href="./" aria-label="super-statusline home">
         <svg class="brand-prompt" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.2 1.6 7.8 6l-5.6 4.4" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
         <span><span class="brand-super">super</span>-statusline</span>
       </a>
       <nav aria-label="Site">
-        <a href="demo/">Demo</a>
-        <a href="#install">Install</a>
+        <a href="#try">Try it</a>
+        <a href="https://github.com/jinhuang712/claude-code-super-statusline/blob/main/INSTALL.md">Install</a>
         <a href="https://github.com/jinhuang712/claude-code-super-statusline">GitHub</a>
       </nav>
     </header>
 
-    <main id="main">
+    <main>
       <section class="hero" aria-labelledby="hero-title">
         <h1 id="hero-title" class="wordmark mono">
           <svg class="brand-prompt" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.2 1.6 7.8 6l-5.6 4.4" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -33,66 +33,41 @@
             <span class="hairline" aria-hidden="true"><i style="width: 2.6em; background: #e0af68"></i><i style="width: 1.3em; background: #bb9af7"></i><i style="width: 0.8em; background: #7dcfff"></i><i class="gap"></i><i style="width: 1.75em; background: #9ece6a"></i></span>
           </span>
         </h1>
-        <p class="tagline">A Claude Code statusline you design in your browser, against your real session.</p>
-        <div class="cta">
-          <a class="btn btn-primary" href="demo/">Try the live demo</a>
-          <a class="btn" href="#install">Install</a>
-        </div>
-        <figure class="terminal">
-          <picture>
-            <source media="(prefers-color-scheme: light)" srcset="images/statusline-light.png" />
-            <img src="images/statusline-dark.png" width="1110" height="122" alt="The Full preset: project, session name and model; repository, branch, lines changed and context bar; rate-limit windows and prompt cache; cost, tokens and output speed" />
-          </picture>
-          <figcaption>The <em>Full</em> preset on a sample session.</figcaption>
-        </figure>
-      </section>
+        <p class="tagline">A Claude Code statusline you design in your browser. Start from a preset, then drag widgets where you want them.</p>
 
-      <section id="install" aria-labelledby="install-title">
-        <h2 id="install-title">Install</h2>
-        <ol class="steps">
-          <li>
-            <p>Add the plugin in a terminal:</p>
-            <div class="code">
-              <pre><code id="cmd-install">claude plugin marketplace add jinhuang712/claude-code-super-statusline
+        <div class="install">
+          <div class="code">
+            <pre><code id="cmd-install">claude plugin marketplace add jinhuang712/claude-code-super-statusline
 claude plugin install super-statusline@claude-code-super-statusline</code></pre>
-              <button class="copy" type="button" data-copy="cmd-install" aria-label="Copy the install commands">Copy</button>
-            </div>
-          </li>
-          <li>
-            <p>In Claude Code, run:</p>
-            <div class="code">
-              <pre><code id="cmd-config">/super-statusline:config</code></pre>
-              <button class="copy" type="button" data-copy="cmd-config" aria-label="Copy the command">Copy</button>
-            </div>
-          </li>
-          <li><p>Pick a layout in the page that opens. Every change saves by itself.</p></li>
-        </ol>
-        <p class="note">Needs Claude Code 2.1.251+ and <a href="https://bun.sh">Bun</a>. More in <a href="https://github.com/jinhuang712/claude-code-super-statusline/blob/main/INSTALL.md">INSTALL.md</a>.</p>
+            <button class="copy" type="button" data-copy="cmd-install" aria-label="Copy the install commands">Copy</button>
+          </div>
+          <p class="note">Then run <code>/super-statusline:config</code> in Claude Code. Needs <a href="https://bun.sh">Bun</a>.</p>
+        </div>
+
+        <!-- The three presets, rendered by the real engine at build time (site/presets.ts). -->
+<!-- PRESETS -->
+        <a class="scroll-cue" href="#try">Try it below <span aria-hidden="true">↓</span></a>
       </section>
 
-      <section aria-labelledby="change-title">
-        <h2 id="change-title">What you can change</h2>
-        <ul class="features">
-          <li><h3>Layout</h3><p>Minimal, Standard or Full — or Custom, to build your own lines.</p></li>
-          <li><h3>Color theme</h3><p>default, nord, dracula, gruvbox, tokyo-night, catppuccin, mono.</p></li>
-          <li><h3>Progress bars</h3><p>Eight bar styles, coloured by thresholds or a smooth gradient.</p></li>
-          <li><h3>Separator</h3><p><code>│</code> <code>·</code> <code>•</code> <code>/</code> <code>❯</code> — or your own.</p></li>
-          <li><h3>Every widget</h3><p>Label, colour and its own options, right under its line.</p></li>
-          <li><h3>Your own widgets</h3><p>Drop a <code>.ts</code> file in a folder; it shows up in the page.</p></li>
-        </ul>
-        <figure class="shot">
-          <picture>
-            <source media="(prefers-color-scheme: light)" srcset="images/configurator-light.png" />
-            <img src="images/configurator-dark.png" width="1200" height="735" loading="lazy" alt="The configurator: a live preview of the statusline, the Style row (theme, bar glyphs, progress bar mode, separator) and the Layout presets" />
-          </picture>
-        </figure>
-        <p class="cta cta-center"><a class="btn btn-primary" href="demo/">Open the configurator demo</a></p>
-      </section>
-
-      <section aria-labelledby="widgets-title">
-        <h2 id="widgets-title"><!-- WIDGET_COUNT --> widgets</h2>
-        <p class="lead">Put any of them on any line, left or right.</p>
-        <!-- WIDGETS -->
+      <section id="try" class="try" aria-labelledby="try-title">
+        <div class="try-head">
+          <div>
+            <h2 id="try-title">Try it — this is the real configurator</h2>
+            <ul class="dnd" aria-label="Drag and drop">
+              <li><b>Drag a widget</b> from <em>Unused widgets</em> onto any line, left or right.</li>
+              <li><b>Drag it again</b> to reorder, or move it to another line — or focus it and press <kbd>Alt</kbd> + arrow keys.</li>
+              <li><b>Drag it back</b> to the tray to remove it.</li>
+            </ul>
+          </div>
+          <!-- A recording of the demo below (one per scheme; the CSS shows the matching one). -->
+          <figure class="dnd-video">
+            <video class="dark-only" src="images/dnd-dark.mp4" muted loop playsinline autoplay aria-label="Recording: three widgets dragged — onto line 1, to line 2, and back to the tray — while the preview updates"></video>
+            <video class="light-only" src="images/dnd-light.mp4" muted loop playsinline autoplay aria-label="Recording: three widgets dragged — onto line 1, to line 2, and back to the tray — while the preview updates"></video>
+          </figure>
+        </div>
+        <!-- Same origin: the demo keeps your edits in this browser's localStorage. -->
+        <iframe class="app" src="demo/" title="The super-statusline configurator, running on a sample session"></iframe>
+        <p class="note try-note">A sample session — your edits stay in this browser. <a href="https://github.com/jinhuang712/claude-code-super-statusline/blob/main/INSTALL.md">Install it</a> to design yours against your real Claude Code session.</p>
       </section>
     </main>
 
@@ -101,6 +76,33 @@ claude plugin install super-statusline@claude-code-super-statusline</code></pre>
     </footer>
 
     <script>
+      // On a screen narrower than a preset's rows, shrink them to fit its box (the box is as wide as
+      // its rows otherwise — see .presets). Between 11 and 15px; below that the box scrolls
+      // sideways (a wrapped statusline would be misleading).
+      function fitTerms() {
+        for (const term of document.querySelectorAll(".term")) {
+          term.style.fontSize = "";
+          const style = getComputedStyle(term);
+          const avail = term.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+          const widest = Math.max(...[...term.querySelectorAll(".row")].map((r) => r.getBoundingClientRect().width));
+          if (!(widest > 0)) continue;
+          const size = (parseFloat(style.fontSize) * avail) / widest;
+          term.style.fontSize = `${Math.min(15, Math.max(11, Math.floor(size * 10) / 10))}px`;
+        }
+      }
+      // Reduced motion: the recordings don't play by themselves; controls let the viewer start them.
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        for (const v of document.querySelectorAll(".dnd-video video")) {
+          v.removeAttribute("autoplay");
+          v.pause();
+          v.controls = true;
+        }
+      }
+
+      // Measure with the real font, not the fallback it replaces.
+      document.fonts.ready.then(fitTerms);
+      addEventListener("resize", fitTerms);
+
       // Copy buttons. Clipboard access can be refused (insecure context, permissions): then the
       // command is selected instead, so a manual copy is one keystroke.
       for (const btn of document.querySelectorAll("button[data-copy]")) {

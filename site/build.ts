@@ -1,6 +1,7 @@
 /**
  * Builds the GitHub Pages site into site/dist:
- *   /        the welcome page (site/index.html + site/site.css, the README's images)
+ *   /        the welcome page (site/index.html + site/site.css): the three presets rendered by the real
+ *            engine, then the configurator itself, embedded
  *   /demo/   the real configurator (web/), built with web/vite.demo.config.ts so its API runs in the
  *            browser (site/demo/api.ts) against one precomputed sample session
  *
@@ -23,7 +24,11 @@ const BUILD = path.join(SITE, ".build");
 /** Where the sample session claims to live; node-shims.ts reports the same home to the widgets. */
 const DEMO_HOME = "/Users/you";
 const DEMO_PROJECT = `${DEMO_HOME}/dev/webapp`;
+/** Width the presets are laid out at on the welcome page: a common terminal, and it fits the hero. */
+const PRESET_COLUMNS = 100;
 
+// The builder's real home, read before HOME is pointed elsewhere: the leak check below needs it.
+const REAL_HOME = os.homedir();
 const tmp = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "super-statusline-site-")));
 process.env.HOME = path.join(tmp, "home");
 process.env.CLAUDE_CONFIG_DIR = path.join(tmp, "claude");
@@ -52,8 +57,11 @@ function demoRepo(): string {
   return dir;
 }
 
-/** The precomputed data context, Dates as { $date } (JSON has no Date), temp paths rewritten. */
-async function demoContext(): Promise<void> {
+/**
+ * The precomputed data context, written for the demo and the presets (Dates as { $date }, temp
+ * paths rewritten to ~/dev/webapp). Returns the file it wrote.
+ */
+async function demoContext(): Promise<string> {
   // Imported after HOME is set: some modules resolve their directories on first use.
   const { prepareFixture } = await import("../src/core/fixtures.ts");
   const { buildContext } = await import("../src/core/context.ts");
@@ -79,53 +87,18 @@ async function demoContext(): Promise<void> {
     .split(repo).join(DEMO_PROJECT)
     .split(tmp).join(DEMO_HOME)
     .split(os.tmpdir()).join("/tmp");
-  if (encoded.includes(os.homedir())) throw new Error("demo context still mentions the real home directory");
+  if (encoded.includes(REAL_HOME)) throw new Error("demo context mentions the builder's home directory");
   fs.mkdirSync(BUILD, { recursive: true });
-  fs.writeFileSync(path.join(BUILD, "demo-context.json"), encoded);
+  const out = path.join(BUILD, "demo-context.json");
+  fs.writeFileSync(out, encoded);
+  return out;
 }
 
-/** The tray's category colours (web/src/colors.ts CAT_COLOR), keyed by the README's group headings. */
-const GROUP_DOT: Record<string, string> = {
-  "Project · Git": "#e0af68",
-  "Model · Context": "#9ece6a",
-  "Usage · Cost": "#7dcfff",
-  Session: "#c0caf5",
-  Activity: "#ff9e64",
-  Environment: "#73daca",
-  Other: "#9aa5ce",
-};
-
-const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-/** The README's cells use `code` spans; everything else is plain text. */
-const cellHtml = (s: string) => escapeHtml(s).replace(/`([^`]+)`/g, "<code>$1</code>");
-
-/**
- * The welcome page's widget list, from the README's "## Widgets" tables — one source, and
- * tests/readme-widgets.test.ts already keeps those tables equal to what the tray offers.
- */
-function widgetsHtml(): { html: string; count: number } {
-  const readme = fs.readFileSync(path.join(ROOT, "README.md"), "utf8");
-  const section = readme.split(/^## Widgets\s*$/m)[1]?.split(/^## /m)[0] ?? "";
-  const groups: Array<{ name: string; rows: Array<[string, string]> }> = [];
-  for (const line of section.split("\n")) {
-    const heading = /^\*\*(.+)\*\*\s*$/.exec(line);
-    if (heading) groups.push({ name: heading[1]!, rows: [] });
-    else if (line.startsWith("| ") && !line.startsWith("| Widget ") && groups.length) {
-      const [, name, shows] = line.split("|").map((c) => c.trim());
-      groups[groups.length - 1]!.rows.push([name!, shows!]);
-    }
-  }
-  const count = groups.reduce((n, g) => n + g.rows.length, 0);
-  if (count < 30) throw new Error(`README widget tables: found only ${count} widgets — did the format change?`);
-  const html = `<div class="groups">\n${groups
-    .map(
-      (g) =>
-        `  <div class="group" style="--dot: ${GROUP_DOT[g.name] ?? "#9aa5ce"}">\n    <h3>${escapeHtml(g.name)}</h3>\n    <dl class="widgets">\n${g.rows
-          .map(([n, s]) => `      <div><dt>${escapeHtml(n)}</dt><dd>${cellHtml(s)}</dd></div>`)
-          .join("\n")}\n    </dl>\n  </div>`,
-    )
-    .join("\n")}\n</div>`;
-  return { html, count };
+/** The presets' HTML, from site/presets.ts in a process whose home is the demo's (see that file). */
+function presetsHtml(contextFile: string): string {
+  const r = Bun.spawnSync({ cmd: ["bun", path.join(SITE, "presets.ts"), contextFile, String(PRESET_COLUMNS)], cwd: ROOT, env: { ...process.env, HOME: DEMO_HOME }, stdout: "pipe", stderr: "inherit" });
+  if (r.exitCode !== 0) throw new Error(`site/presets.ts failed (${r.exitCode})`);
+  return r.stdout.toString();
 }
 
 function copyDir(from: string, to: string): void {
@@ -135,11 +108,11 @@ function copyDir(from: string, to: string): void {
 
 async function main(): Promise<void> {
   try {
-    await demoContext();
+    const presets = presetsHtml(await demoContext());
     fs.rmSync(OUT, { recursive: true, force: true });
     run(["bun", "x", "vite", "build", "--config", "vite.demo.config.ts", "--logLevel", "warn"], path.join(ROOT, "web"));
-    const widgets = widgetsHtml();
-    const page = fs.readFileSync(path.join(SITE, "index.html"), "utf8").replace("<!-- WIDGETS -->", widgets.html).replace("<!-- WIDGET_COUNT -->", String(widgets.count));
+    const page = fs.readFileSync(path.join(SITE, "index.html"), "utf8").replace("<!-- PRESETS -->", presets);
+    if (page.includes(REAL_HOME)) throw new Error("welcome page mentions the builder's home directory");
     fs.writeFileSync(path.join(OUT, "index.html"), page);
     fs.copyFileSync(path.join(SITE, "site.css"), path.join(OUT, "site.css"));
     fs.copyFileSync(path.join(ROOT, "web/public/favicon.svg"), path.join(OUT, "favicon.svg"));

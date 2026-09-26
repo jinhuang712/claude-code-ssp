@@ -1,12 +1,12 @@
 /*
   The welcome page. Same design language as the configurator (web/src/index.css): warm neutrals,
-  one clay accent, serif titles, mono for anything that mirrors the terminal. The colour values are
-  that file's tokens, copied — this page is plain HTML and doesn't build against the app's CSS.
+  one clay accent, serif titles, mono for anything that mirrors the terminal. The values are that
+  file's tokens and web/src/theme.ts's terminal palettes, copied — this page is plain HTML and
+  doesn't build against the app's CSS.
 */
 :root {
   color-scheme: dark;
   --bg: #1f1e1c;
-  --bg-deep: #181715;
   --panel: #262523;
   --line: #34332f;
   --line-strong: #45443f;
@@ -16,18 +16,22 @@
   --clay: #d97757;
   --accent: #e08a6d;
   --on-clay: #1f1e1c;
+  /* The preview terminal (TERM_THEMES.dark): ground, default foreground, xterm's ANSI palette. */
+  --term-bg: #262523;
+  --term-fg: #e8e6dc;
+  --ansi-0: #2e3436; --ansi-1: #cc0000; --ansi-2: #4e9a06; --ansi-3: #c4a000; --ansi-4: #3465a4; --ansi-5: #75507b; --ansi-6: #06989a; --ansi-7: #d3d7cf;
+  --ansi-8: #555753; --ansi-9: #ef2929; --ansi-10: #8ae234; --ansi-11: #fce94f; --ansi-12: #729fcf; --ansi-13: #ad7fa8; --ansi-14: #34e2e2; --ansi-15: #eeeeec;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "PingFang SC", "Segoe UI", Roboto, sans-serif;
   --font-serif: ui-serif, "Iowan Old Style", Charter, Georgia, "Songti SC", serif;
   --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
   --r-1: 0.5rem;
   --r-2: 0.875rem;
-  --wrap: 68rem;
+  --wrap: 72rem;
 }
 @media (prefers-color-scheme: light) {
   :root {
     color-scheme: light;
     --bg: #faf9f5;
-    --bg-deep: #f0eee6;
     --panel: #ffffff;
     --line: #e8e6dc;
     --line-strong: #d6d3c6;
@@ -36,6 +40,11 @@
     --muted: #6b6962;
     --accent: #ad4f2c;
     --on-clay: #141413;
+    /* TERM_THEMES.light: macOS Terminal "Basic" — light terminals ship darker ANSI colours. */
+    --term-bg: #f0eee6;
+    --term-fg: #1f1e1d;
+    --ansi-0: #000000; --ansi-1: #990000; --ansi-2: #00a600; --ansi-3: #999900; --ansi-4: #0000b2; --ansi-5: #b200b2; --ansi-6: #00a6b2; --ansi-7: #bfbfbf;
+    --ansi-8: #666666; --ansi-9: #e50000; --ansi-10: #00d900; --ansi-11: #e5e500; --ansi-12: #0000ff; --ansi-13: #e500e5; --ansi-14: #00e5e5; --ansi-15: #e5e5e5;
   }
 }
 
@@ -61,30 +70,34 @@ a {
   color: var(--accent);
 }
 a:focus-visible,
-button:focus-visible {
+button:focus-visible,
+iframe:focus-visible {
   outline: 2px solid var(--clay);
   outline-offset: 3px;
   border-radius: 0.25rem;
 }
 code,
+kbd,
 .mono {
   font-family: var(--font-mono);
 }
-code {
+code,
+kbd {
   font-size: 0.9em;
 }
+kbd {
+  padding: 0.05em 0.35em;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 0.3rem;
+}
 h1,
-h2,
-h3 {
+h2 {
   margin: 0;
 }
-h2 {
-  font: 400 2rem/1.2 var(--font-serif);
-  margin-bottom: 1.25rem;
-}
-h3 {
-  font-size: 1rem;
-  font-weight: 600;
+figure,
+pre {
+  margin: 0;
 }
 
 .skip {
@@ -140,26 +153,19 @@ h3 {
   color: var(--fg);
 }
 
-main > section {
-  max-width: var(--wrap);
-  margin: 0 auto;
-  padding: 4rem 1rem;
-}
-main > section + section {
-  border-top: 1px solid var(--line);
-}
-
 /* ---- hero: the header's wordmark, set large */
 .hero {
+  max-width: var(--wrap);
+  margin: 0 auto;
+  padding: 2.5rem 1rem 3rem;
   text-align: center;
-  padding-top: 3rem;
 }
 .wordmark {
   display: inline-flex;
   align-items: baseline;
   gap: 0.6em;
   /* 7.5vw keeps "❯ super-statusline▮" (~19 cells) inside a 390px phone with its 16px gutters. */
-  font-size: clamp(1.5rem, 7.5vw, 4.5rem);
+  font-size: clamp(1.5rem, 7.5vw, 4.25rem);
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.01em;
@@ -203,88 +209,28 @@ main > section + section {
   flex: 1;
 }
 .tagline {
-  margin: 1.75rem auto 0;
-  max-width: 40rem;
+  margin: 1.5rem auto 0;
+  max-width: 38rem;
   color: var(--fg-2);
-  font: 400 clamp(1.125rem, 2.4vw, 1.5rem)/1.4 var(--font-serif);
-}
-.cta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.75rem;
-  margin: 2rem 0 0;
-}
-.btn {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  padding: 0 1.25rem;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-1);
-  color: var(--fg);
-  font-weight: 500;
-  text-decoration: none;
-  transition: border-color 0.12s, background 0.12s;
-}
-.btn:hover {
-  border-color: var(--muted);
-}
-.btn-primary {
-  border-color: var(--clay);
-  background: var(--clay);
-  color: var(--on-clay);
-}
-.btn-primary:hover {
-  background: color-mix(in srgb, var(--clay) 88%, white);
-}
-
-/* ---- images */
-figure {
-  margin: 0;
-}
-.terminal {
-  margin-top: 3rem;
-}
-.terminal img,
-.shot img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: var(--r-2);
-  box-shadow: 0 0 0 1px var(--line), 0 24px 60px -30px rgb(0 0 0 / 0.6);
-}
-figcaption {
-  margin-top: 0.75rem;
-  color: var(--muted);
-  font-size: 0.875rem;
-}
-.shot {
-  margin-top: 2.5rem;
+  font: 400 clamp(1.125rem, 2.3vw, 1.4rem)/1.45 var(--font-serif);
 }
 
 /* ---- install */
-.steps {
-  margin: 0;
-  padding-left: 1.5rem;
-}
-.steps li + li {
-  margin-top: 1rem;
-}
-.steps p {
-  margin: 0 0 0.5rem;
+.install {
+  max-width: 44rem;
+  margin: 2rem auto 0;
+  text-align: left;
 }
 .code {
   position: relative;
 }
-pre {
-  margin: 0;
-  padding: 1rem 5.5rem 1rem 1rem;
+.code pre {
+  padding: 0.875rem 5.5rem 0.875rem 1rem;
   overflow-x: auto;
   border-radius: var(--r-1);
   background: var(--panel);
   box-shadow: inset 0 0 0 1px var(--line);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   line-height: 1.7;
 }
 .copy {
@@ -303,87 +249,164 @@ pre {
 .copy:hover {
   color: var(--fg);
 }
-.note,
-.lead {
-  color: var(--muted);
-}
 .note {
-  margin: 1.5rem 0 0;
-}
-.lead {
-  margin: -0.5rem 0 1.5rem;
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+  font-size: 0.9375rem;
 }
 
-/* ---- features */
-.features {
+/* ---- the three presets, rendered by the engine (site/presets.ts) */
+/*
+  As wide as its rows (fit-content), so each row fills its box to the right edge — the right-aligned
+  zone ends where a terminal's would. On a narrow screen it stops at 100% and the fit script in
+  index.html shrinks the text; without the script the box scrolls sideways.
+*/
+.presets {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1.25rem;
+  width: fit-content;
+  max-width: 100%;
+  margin: 3rem auto 0;
+  text-align: left;
+}
+/* A grid item's min-width defaults to its content: without this, the rows widened the page. */
+.preset {
+  min-width: 0;
+}
+.preset figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.preset figcaption b {
+  font-weight: 600;
+}
+.preset figcaption span {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+/* Rows never wrap: a wrapped statusline would misrepresent the right-aligned zone. */
+.term {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.125rem;
+  overflow-x: auto;
+  border-radius: var(--r-2);
+  background: var(--term-bg);
+  color: var(--term-fg);
+  box-shadow: 0 0 0 1px var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+/* Rows keep their own width (not the box's), so the fit script in index.html can measure them. */
+.term {
+  align-items: flex-start;
+}
+.term .row {
+  white-space: pre;
+}
+.scroll-cue {
+  display: inline-block;
+  margin-top: 2.5rem;
+  color: var(--fg-2);
+  text-decoration: none;
+}
+.scroll-cue:hover {
+  color: var(--fg);
+}
+
+/* ---- the embedded configurator */
+.try {
+  padding: 3rem 0 2rem;
+  border-top: 1px solid var(--line);
+}
+.try-head {
+  max-width: var(--wrap);
+  margin: 0 auto 1.5rem;
+  padding: 0 1rem;
+}
+/* Heading and tips beside the recording; stacked on narrow screens. */
+.try-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 26rem);
+  gap: 2rem;
+  align-items: start;
+}
+@media (max-width: 56rem) {
+  .try-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.try-head .dnd {
+  grid-template-columns: 1fr;
+}
+.dnd-video video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 880 / 724;
+  border-radius: var(--r-2);
+  box-shadow: 0 0 0 1px var(--line);
+  background: var(--panel);
+}
+/* One recording per scheme; only the matching one is shown (and fetched lazily by the browser). */
+.light-only {
+  display: none !important;
+}
+@media (prefers-color-scheme: light) {
+  .light-only {
+    display: block !important;
+  }
+  .dark-only {
+    display: none !important;
+  }
+}
+.try-head h2 {
+  font: 400 clamp(1.625rem, 3.2vw, 2.25rem)/1.2 var(--font-serif);
+}
+.dnd {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
   gap: 0.75rem;
-  margin: 0;
+  margin: 1.25rem 0 0;
   padding: 0;
   list-style: none;
 }
-.features li {
-  padding: 1.25rem;
-  border-radius: var(--r-2);
+.dnd li {
+  padding: 0.875rem 1rem;
+  border-radius: var(--r-1);
   background: var(--panel);
   box-shadow: inset 0 0 0 1px var(--line);
-}
-.features p {
-  margin: 0.375rem 0 0;
   color: var(--fg-2);
   font-size: 0.9375rem;
 }
-.cta-center {
-  margin-top: 2rem;
+.dnd b {
+  color: var(--fg);
+  font-weight: 600;
 }
-
-/* ---- widgets (filled in by site/build.ts) */
-.groups {
-  display: grid;
-  gap: 1.5rem;
-}
-.group h3 {
-  margin-bottom: 0.625rem;
-  color: var(--muted);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-.widgets {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
-  gap: 0.5rem 1.5rem;
-  margin: 0;
-}
-.widgets > div {
-  padding: 0.5rem 0;
+/* Tall enough to use without scrolling the page; the app scrolls inside it. */
+.app {
+  display: block;
+  width: 100%;
+  height: min(58rem, calc(100vh - 2rem));
+  border: 0;
+  border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
+  background: var(--bg);
 }
-.widgets dt {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font: 500 0.9375rem var(--font-mono);
-}
-.widgets dt::before {
-  content: "";
-  flex: none;
-  width: 0.4375rem;
-  height: 0.4375rem;
-  border-radius: 50%;
-  background: var(--dot);
-}
-.widgets dd {
-  margin: 0.125rem 0 0 0.9375rem;
-  color: var(--fg-2);
-  font-size: 0.875rem;
+.try-note {
+  max-width: var(--wrap);
+  margin: 1rem auto 0;
+  padding: 0 1rem;
 }
 
 .foot {
   max-width: var(--wrap);
   margin: 0 auto;
   padding: 2rem 1rem 3rem;
-  border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.875rem;
   text-align: center;
@@ -393,10 +416,15 @@ pre {
   .top nav {
     gap: 0.875rem;
   }
-  main > section {
-    padding: 3rem 1rem;
+  /* On a phone the commands scroll sideways; a Copy button on top of them hid the text. */
+  .code pre {
+    padding-right: 1rem;
   }
-  h2 {
-    font-size: 1.625rem;
+  .copy {
+    position: static;
+    margin-top: 0.5rem;
+  }
+  .hero {
+    padding-top: 1.5rem;
   }
 }
