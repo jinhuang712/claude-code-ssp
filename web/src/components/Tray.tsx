@@ -3,6 +3,7 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "re
 import { api, type WidgetInstance, type WidgetManifest } from "../api";
 import { CAT_COLOR } from "../colors";
 import { TRAY_DROP_ID, TRAY_PREFIX } from "../collision";
+import { RETIRED } from "../retired";
 import { useT, widgetDesc, widgetName } from "../i18n";
 import { useStore } from "../store";
 
@@ -37,18 +38,6 @@ const REPEATABLE = (id: string) => id.startsWith("custom.");
  * badge's "Show effort level") and the stand-alone widget is back in the tray.
  */
 const COVERED: Array<{ widget: string; by: string; option: string }> = [{ widget: "model.effort", by: "model.badge", option: "showEffort" }];
-
-/**
- * Widgets no longer offered at all, because another widget does the same with its own options. They
- * stay registered, so a line that already uses one keeps rendering and its chip stays editable;
- * removing the widget would turn it into ⚠ on those lines.
- * - usage.single ("Single rate-limit window"): "Rate-limit windows" with 7d and spend off, the label
- *   and reset time hidden prints the same `5h 23%`.
- * - context.value ("Context value") and tokens.current ("Current context tokens"): Context usage
- *   (context.bar) with its bar off gives the percentage, and "Show used/total tokens" the tokens.
- *   Lost: the tokens alone without the window size or the percentage — not worth two more widgets.
- */
-const RETIRED = new Set(["usage.single", "context.value", "tokens.current"]);
 
 /** Is `id` already shown by some placed widget (see COVERED)? */
 function coveredBy(id: string, placed: WidgetInstance[], widgets: WidgetManifest[]): boolean {
