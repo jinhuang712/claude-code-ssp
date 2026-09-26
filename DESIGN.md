@@ -32,7 +32,9 @@ Claude Code ≥ 2.1.251 now ships `rate_limits`, `prompt_cache`, `effort`, `cost
   "version": 1,
   "theme": "default",            // name or inline theme object
   "colorLevel": "auto",           // auto | truecolor | 256 | 16 | none
+  "colorMode": "thresholds",      // thresholds | gradient — every bar and percentage (Style → Progress bar mode)
   "separator": " │ ",             // between widgets inside a zone
+  "columnsOffset": 4,             // cells left free for Claude Code's own footer padding
   "lines": [
     { "left":  [{ "widget": "project.path", "options": { "levels": "full" } }, { "widget": "git.branch" }],
       "right": [{ "widget": "model.badge" }] },
@@ -72,12 +74,17 @@ An option schema may carry `"x-requires": { sibling: value }` when it only affec
 another option has that value (cacheGlyph needs `style: "arrows"`, barWidth needs `bar: true`). The panel dims
 it and names the requirement; `tests/option-sweep.test.ts` renders every value of every option — requirements
 met — against every built-in sample and fails when an option can never change the output.
+`"x-requires-config": { key: value }` does the same for a top-level config key: warnAt needs
+`{ colorMode: "thresholds" }`, since the gradient ignores it.
 
 `Segment = { text, style?: { fg, bg, bold, dim, italic, underline }, link? }`. Colors are theme tokens
 (`fg muted accent ok warn crit model project git usage context`), literals (`#rrggbb`, `208`, `red`) or `default`
 (no colour code: the terminal's own foreground). Every theme maps `fg` to `default`, so plain values stay readable on
 light terminals; only accents are coloured.
-`api.level(pct, warnAt, critAt)` returns `ok | warn | crit` so every numeric widget gets consistent thresholds.
+`api.level(pct, warnAt, critAt)` returns `ok | warn | crit` so every numeric widget gets consistent thresholds, and
+`api.levelColor(pct, level, okToken)` turns that into a colour under the user's `colorMode` (the gradient hex, or
+`okToken` / `warn` / `crit`). Up to 0.4.1 `colorMode` was a per-widget option; such configs are read as `gradient` if
+any widget used it (`liftLegacyColorMode`, config.ts).
 
 ## Plugins
 

@@ -10,142 +10,201 @@
   <img alt="The Full preset: project, session name, model; repo, branch, lines changed, context bar; rate-limit windows, prompt cache; cost, tokens, output speed" src="docs/images/statusline-dark.png">
 </picture>
 
-*The Full preset with gradient bars, on the bundled sample session (`src/fixtures/basic.json`).*
+## Install
 
-* **Web configurator** — presets or your own layout, drag or keyboard, options under each widget; the preview
-  draws your real session and tries a theme, bar or separator on before you apply it. English and 简体中文.
-* **42 widgets** — model, git, PR, context, rate limits, cache, tokens, cost, agents, todos, tools, MCP…, plus your
-  own `.ts`/`.js` plugins.
-* **Fast & local** — ~20 ms per render, even on 100 MB transcripts; slow git never blocks the line; no network.
+You need Claude Code 2.1.251 or later and [Bun](https://bun.sh).
 
-Requires Claude Code ≥ 2.1.251 and [Bun](https://bun.sh) on `PATH`.
+1. Add the marketplace:
+   ```bash
+   claude plugin marketplace add jinhuang712/claude-code-super-statusline
+   ```
+2. Install the plugin:
+   ```bash
+   claude plugin install super-statusline@claude-code-super-statusline
+   ```
+3. In Claude Code, run:
+   ```
+   /super-statusline:config
+   ```
+4. Pick a layout in the page that opens. Done — every change saves by itself.
 
-## Quick start
+Already using another statusline? You're asked before it's replaced, and *⋯ → Stop using this statusline* brings it back.
 
-```bash
-claude plugin marketplace add jinhuang712/claude-code-super-statusline
-claude plugin install super-statusline@claude-code-super-statusline
-```
-
-Then run `/super-statusline:config` in Claude Code. It opens the configurator on `127.0.0.1:4877`, previewing that
-session. Your first edit applies the statusline to `~/.claude/settings.json` (a backup is kept); if you already use
-another statusline, the panel asks first, and *⋯ → Stop using this statusline* puts it back. Later edits save
-automatically and show on the next refresh.
+## What you can change
 
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="docs/images/configurator-light.png">
   <img alt="The configurator: a live preview of the statusline, Style (theme, bar glyphs, progress bar mode, separator) and Layout presets" src="docs/images/configurator-dark.png">
 </picture>
 
-Pick *Custom* to edit the lines: click a widget to open its options right under it.
+* **Layout** — *Minimal*, *Standard* or *Full*, or *Custom* to build your own lines.
+* **Color theme** — default, nord, dracula, gruvbox, tokyo-night, catppuccin, mono.
+* **Progress bars** — the bar glyphs: full block, tall, low, half, slanted, squares, line, dots.
+* **Progress bar mode** — thresholds (green → yellow → red) or a smooth gradient.
+* **Separator** — `│` `·` `•` `/` `|` `❯`, or your own.
+* **Each widget** — in *Custom*, click a widget to change its label, colour and options:
 
 <img alt="A widget's options opened under its line: label, percentage, bar width, text colour, thresholds and toggles" src="docs/images/options-dark.png">
 
+The preview shows your real session; hover a choice to try it before you click. English and 简体中文.
+
+## Widgets
+
+**Project · Git**
+
+| Widget | Shows |
+|---|---|
+| Project path | The working directory — name only, last few folders, `~/…` or the full path |
+| Worktree | The active git worktree, and the branch it came from |
+| Added directories | Folders added with `/add-dir` |
+| Repository | `owner/name` of the repo |
+| Git branch | Branch, uncommitted changes, ahead/behind |
+| Lines changed | Lines added / removed, by this session or uncommitted |
+| Pull request | The branch's open PR and its review state |
+
+**Model · Context**
+
+| Widget | Shows |
+|---|---|
+| Model badge | The model, with effort level, provider and fast mode if you like |
+| Effort level | Reasoning effort as a symbol and/or word |
+| Context usage | How full the context window is: bar, percentage, tokens |
+| Prompt cache | Whether the prompt cache is warm, and when it expires |
+| Cache misses | Cache misses out of all requests, and why the last one happened |
+| Compactions | How many times the session was compacted |
+| Over 200k tokens | A flag while the last request was over 200k tokens |
+
+**Usage · Cost**
+
+| Widget | Shows |
+|---|---|
+| Rate-limit windows | 5-hour, 7-day and spend-limit usage (Pro/Max), with reset times |
+| Session tokens | Tokens used this session, with an in/out/cache breakdown |
+| Output speed | Tokens per second of the latest reply |
+| Session cost | What the session has cost |
+| API time | Time spent waiting on the API |
+
+**Session**
+
+| Widget | Shows |
+|---|---|
+| Session name | The session's title |
+| Session duration | Time since the session started |
+| Session start | When the session started |
+| Last reply | How long ago Claude last replied |
+| API calls | Number of model turns |
+| Session ID | The session id (short, or the full one `claude --resume` takes) |
+| Agent name | The agent, when running with `--agent` |
+| Vim mode | The current vim mode |
+
+**Activity**
+
+| Widget | Shows |
+|---|---|
+| Running agents | Subagents running right now |
+| Todo progress | Todos done out of total, and the current one |
+| Tool activity | The latest tool calls and how they went |
+| MCP servers used | MCP servers called this session, failing ones flagged |
+
+**Environment**
+
+| Widget | Shows |
+|---|---|
+| Config counts | CLAUDE.md files, rules, MCP servers and hooks in effect |
+| Output style | The output style, when it isn't the default |
+| Thinking indicator | 💭 while extended thinking is on |
+| Claude Code version | The Claude Code version |
+
+**Other**
+
+| Widget | Shows |
+|---|---|
+| Static text | Any text or symbol you type |
+| Link | Clickable text |
+| Environment variable | The value of a variable, e.g. `AWS_PROFILE` |
+| Clock | The current time |
+
+Missing one? [Write your own](#your-own-widgets).
+
 <details>
-<summary>Upgrading from claude-code-ssp (≤ 0.3.x, <code>/ssp:config</code>)</summary>
+<summary><b>Upgrading from claude-code-ssp</b> (0.3.x and older)</summary>
 
-The rename can't carry an install over by itself. Install the new plugin (above), run `/super-statusline:config` once —
-it repoints your statusline and moves `~/.config/claude-code-ssp/` and `~/.claude/plugins/claude-code-ssp/` to the new
-names — then remove the old one:
+1. Install the new plugin (steps 1–2 above).
+2. Run `/super-statusline:config` once — it moves your settings over.
+3. Remove the old plugin:
+   ```bash
+   claude plugin uninstall ssp@claude-code-ssp
+   claude plugin marketplace remove claude-code-ssp
+   ```
 
-```bash
-claude plugin uninstall ssp@claude-code-ssp
-claude plugin marketplace remove claude-code-ssp
-```
-
-Project files are never moved (they may be committed): `.claude/claude-code-ssp.json` and
-`.claude/claude-code-ssp/widgets/` keep working where they are.
+A project's `.claude/claude-code-ssp.json` or `.claude/claude-code-ssp/widgets/` keeps working where it is.
 </details>
 
-## Commands
+## For power users
 
-`bun src/cli/main.ts <command>` from a checkout:
+### Config file
 
-| Command | Purpose |
-|---|---|
-| `render` | stdin JSON → statusline (what Claude Code runs); `--fixture src/fixtures/basic.json` to try it |
-| `serve [--port N] [--open]` | the web configurator |
-| `serve --sandbox` | the same on `:4878`, against throwaway copies of your config, samples and statusLine |
-| `install [--dry-run] [--replace]` / `uninstall` | add or remove our `statusLine` in settings.json (the one it replaced is restored) |
-| `reset [--session ID] [--undo]` | restart a session's cost / tokens / API calls / lines-changed counters from zero (also *⋯ → Reset counters*) |
-| `doctor` | the panel's *Diagnostics*, for terminals without a browser |
-
-## Config
-
-`~/.config/claude-code-super-statusline/config.json`, overlaid by a project's
-`.claude/claude-code-super-statusline.json`. Objects deep-merge, `lines` replaces wholesale, and it is re-read on
-every render. The panel writes only what you changed, to the file you chose in its header.
+The page writes `~/.config/claude-code-super-statusline/config.json`. A project can override it with
+`.claude/claude-code-super-statusline.json`. Both are plain JSON, re-read on every refresh:
 
 ```jsonc
 {
-  "theme": "tokyo-night",       // default | nord | dracula | gruvbox | tokyo-night | catppuccin | mono | {…inline}
-  "colorLevel": "auto",         // auto | truecolor | 256 | 16 | none
-  "colorMode": "thresholds",    // thresholds | gradient — how every bar and percentage is coloured
+  "theme": "tokyo-night",
+  "colorMode": "gradient",          // or "thresholds"
   "separator": " │ ",
-  "columnsOffset": 2,           // cells reserved for Claude Code's own footer padding
   "lines": [
-    { "left":  [{ "widget": "project.path", "options": { "levels": "tilde" } }, { "widget": "git.branch" }],
+    { "left":  [{ "widget": "project.path" }, { "widget": "git.branch" }],
       "right": [{ "widget": "model.badge" }, { "widget": "cost.session" }] },
     { "left":  [{ "widget": "usage.windows", "options": { "bar": true } }],
-      "right": [{ "widget": "context.bar" }], "overflow": "wrap" }
-  ],
-  "git": { "enabled": true, "cacheMs": 2000 },
-  "plugins": { "dirs": [], "trustedProjects": [] },
-  "captureSamples": true
+      "right": [{ "widget": "context.bar" }] }
+  ]
 }
 ```
 
-A widget instance is `{ "widget": "<id>", "options": {…}, "style": { "fg", "bg", "bold", … }, "label": "…" | null }`.
-Colours are theme tokens (`fg muted accent ok warn crit model project git usage context`), literals (`#rrggbb`,
-`208`, `red`) or `default`, the terminal's own colour — which every built-in theme uses for values, so they read on
-light terminals too.
+### Command line
 
-`colorMode` (*Style → Progress bar mode*) applies to every percentage widget: `thresholds` turns a value yellow at
-the widget's *Yellow at %* and red at *Red at %*; `gradient` runs grey → blue → green → yellow → orange → red with the
-percentage (*Red at %* then only makes it bold). Configs from ≤ 0.4.1, where each widget had its own, read as
-`gradient` if any widget used it.
+From a checkout (`bun install` first), `bun src/cli/main.ts <command>`:
 
-## Security
+| Command | Does |
+|---|---|
+| `serve --open` | Opens the configurator |
+| `install` / `uninstall` | Turns the statusline on or off in `~/.claude/settings.json` |
+| `render --fixture src/fixtures/basic.json` | Prints the statusline for a sample session |
+| `reset` | Restarts the session's cost, token and line counters from zero (also *⋯ → Reset counters*) |
+| `doctor` | Shows the same diagnostics as *⋯ → Diagnostics* |
 
-* The configurator listens on `127.0.0.1` and only answers requests whose `Host` and `Origin` are its own, so other
-  pages can't read your sessions or change settings (DNS rebinding included). No CORS.
-* **Project widgets are code**: `<project>/.claude/claude-code-super-statusline/widgets/*` loads only for projects in
-  `plugins.trustedProjects` of your *user* config (*⋯ → Diagnostics → Trust this project*). A project can't trust itself.
-* The preview renders only captured samples and bundled fixtures, never a path a request supplies.
+### Your own widgets
 
-## Writing a widget
+Drop a `.ts` or `.js` file in `~/.config/claude-code-super-statusline/widgets/` and restart the configurator:
 
 ```ts
-// ~/.config/claude-code-super-statusline/widgets/hello.ts
 export default {
-  id: "example.hello", name: "Hello", description: "…", category: "misc",
+  id: "example.hello", name: "Hello", description: "Says hello", category: "misc",
   schema: { type: "object", properties: { name: { type: "string", default: "friend" } } },
   defaults: { name: "friend" },
-  render(ctx, opts, api) {                    // ctx: stdin, transcript, gitStatus, columns, now, theme …
+  render(ctx, opts, api) {
     return [api.seg(`👋 ${opts.name}`, { fg: "accent" })];
   },
 };
 ```
 
-A broken plugin shows `⚠` instead of blanking the line. An option that only matters while another is set can say
-so — `"x-requires": { "bar": true }`, or `"x-requires-config": { "colorMode": "thresholds" }` for a top-level
-key — and the panel dims it. Colour a percentage with `api.levelColor(pct, api.level(pct, warnAt, critAt), "fg")` to
-follow the user's Progress bar mode. See `examples/widgets/`, `src/widgets/` and `DESIGN.md`; restart the configurator
-to see a new widget under *Unused widgets*.
+More in `examples/widgets/`, the built-ins in `src/widgets/`, and the architecture in `DESIGN.md`.
 
-## Development
+### Security
+
+* The configurator only listens on `127.0.0.1` and ignores requests from other websites.
+* A project's own widgets are code, so they only load for projects you trust (*⋯ → Diagnostics → Trust this project*).
+
+### Development
 
 ```bash
 bun install
-bun test                  # layout, config, server security, install, option sweep, web build freshness…
+bun test
 bun run typecheck
-bun run serve:sandbox     # configurator on :4878 against temp copies — safe to click around or automate
-bun run dev:web           # Vite on :5178, proxying /api → :4877 (run `bun run serve` alongside)
-bun run build:web         # rebuild web/dist — committed, so marketplace installs need no build
-scripts/ui-smoke.sh       # headless browser check of the configurator (playwright-cli)
+bun run serve:sandbox     # the configurator against throwaway copies of your settings
+bun run build:web         # rebuild web/dist (committed, so installs need no build)
 ```
 
 ## License
 
-MIT (see `LICENSE`). `src/data/` is derived from [claude-hud](https://github.com/jarrodwatts/claude-hud) © Jarrod
-Watts, MIT — see `licenses/claude-hud.LICENSE`.
+MIT. `src/data/` is derived from [claude-hud](https://github.com/jarrodwatts/claude-hud) © Jarrod Watts, MIT.
