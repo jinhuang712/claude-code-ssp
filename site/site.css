@@ -613,27 +613,46 @@ body {
   font-size: 0.875em;
   color: var(--lp-fg);
 }
-.lp-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  font-size: 0.875rem;
-}
-
-/* ---- footer */
+/* ---- footer: wordmark · the project's links, centred · credit */
 .lp-foot {
-  display: flex;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
   margin-top: 8rem;
   padding-block: 2.5rem 3rem;
-  border-top: 1px solid var(--lp-line);
   font-size: 0.8125rem;
   color: var(--lp-muted);
 }
+/* The rule spans the content, not the gutters (a border would run into the wrap's padding). */
+.lp-foot::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 2rem;
+  right: 2rem;
+  border-top: 1px solid var(--lp-line);
+}
 .lp-brand-sm {
   font-size: 0.875rem;
+}
+.lp-foot-links {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.875rem;
+}
+.lp .lp-foot-links a {
+  color: var(--lp-fg-2);
+  text-decoration: none;
+}
+.lp .lp-foot-links a:hover {
+  color: var(--lp-fg);
+  text-decoration: underline;
+}
+.lp-foot-credit {
+  justify-self: end;
+  text-align: right;
 }
 
 /* ---- phone */
@@ -713,8 +732,17 @@ body {
     font-size: 0.6875rem;
   }
   .lp-foot {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+    gap: 1.125rem;
     margin-top: 6rem;
+  }
+  .lp-foot::before {
+    left: 1rem;
+    right: 1rem;
+  }
+  .lp-foot-credit {
+    justify-self: start;
+    text-align: left;
   }
 }
