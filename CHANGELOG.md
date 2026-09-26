@@ -2,7 +2,7 @@
 
 Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace installs update when it changes.
 
-## Unreleased
+## 0.5.0 — 2026-09-26
 
 - **One colour mode for every progress bar.** Thresholds or gradient used to be picked per widget (*Colour* on
   Context usage, Context value and both rate-limit widgets); it is now a single `colorMode` setting that all of them
