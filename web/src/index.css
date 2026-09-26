@@ -318,7 +318,8 @@ button:disabled {
   background: var(--muted);
 }
 .status[data-state="live"]::before,
-.status[data-state="saved"]::before {
+.status[data-state="saved"]::before,
+.status[data-state="demo"]::before {
   background: var(--ok);
 }
 .status[data-state="dirty"]::before,

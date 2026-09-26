@@ -88,6 +88,8 @@ interface State {
    */
   projectCwd: string | null;
   sandbox: boolean;
+  /** Running as the site's demo: no Claude Code behind the page, so actions that need one are hidden. */
+  demo: boolean;
   widgets: WidgetManifest[];
   themes: ThemeDef[];
   samples: SampleMeta[];
@@ -267,6 +269,7 @@ export const useStore = create<State>((set, get) => {
     scope: "user",
     projectCwd: null,
     sandbox: false,
+    demo: false,
     widgets: [],
     themes: [],
     samples: [],
@@ -302,7 +305,7 @@ export const useStore = create<State>((set, get) => {
         const projectCwd = cwdOf(samples, sampleId);
         // The effective config depends on the project, so it loads after we know which one.
         const eff = await api.config(projectCwd).catch(() => api.config());
-        set({ widgets, themes, samples, sampleId, projectCwd, sandbox: health?.sandbox === true, installed: plan ? plan.currentIsOurs : null, installPlan: plan, loading: false });
+        set({ widgets, themes, samples, sampleId, projectCwd, sandbox: health?.sandbox === true, demo: health?.demo === true, installed: plan ? plan.currentIsOurs : null, installPlan: plan, loading: false });
         adopt(eff, { resetScope: true });
         void get().refreshPreview();
       } catch (err) {
@@ -455,7 +458,8 @@ export const useStore = create<State>((set, get) => {
         // `render` re-reads the config file on every tick, but Claude Code only runs it when
         // settings.json points at us — so the first successful save auto-applies, *unless* that
         // would replace someone else's statusLine: then the header asks first (see `consent`).
-        if (opts.autoApply !== false && get().installed !== true) {
+        // The demo has no Claude Code to apply to.
+        if (opts.autoApply !== false && get().installed !== true && !get().demo) {
           const plan = get().installPlan;
           const foreign = plan !== null && plan.current !== null && plan.current !== undefined && !plan.currentIsOurs;
           if (foreign) {

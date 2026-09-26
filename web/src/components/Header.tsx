@@ -42,7 +42,7 @@ function ConsentBanner() {
   );
 }
 
-type StatusState = "error" | "saving" | "dirty" | "defaults" | "live" | "unapplied" | "saved";
+type StatusState = "error" | "saving" | "dirty" | "defaults" | "live" | "unapplied" | "saved" | "demo";
 
 /**
  * One short, true sentence about where the config stands. Order matters: a failure outranks
@@ -52,6 +52,8 @@ function statusOf(s: ReturnType<typeof useStore.getState>, t: Messages): { state
   if (s.saveError) return { state: "error", text: t.header.saveFailed };
   if (s.saving) return { state: "saving", text: t.header.saving };
   if (isDirty(s)) return { state: "dirty", text: t.header.dirty };
+  // The demo saves to this browser only; "live in Claude Code" would be untrue there.
+  if (s.demo) return { state: "demo", text: t.header.demoSaved };
   const hasFile = s.layers.some((l) => l.name !== "defaults" && l.exists);
   if (!hasFile) return { state: "defaults", text: t.header.defaults };
   if (s.installed === true) return { state: "live", text: t.header.savedLive };
@@ -135,6 +137,8 @@ function HeaderMenu({ close, openDiagnostics }: { close: () => void; openDiagnos
   };
   return (
     <div className="menu">
+      {!s.demo && (
+        <>
       {s.installed === true && (
         <button className="menu-item" onClick={run(() => void s.install())} title={t.header.reapplyTitle}>
           {t.header.reapply}
@@ -154,6 +158,8 @@ function HeaderMenu({ close, openDiagnostics }: { close: () => void; openDiagnos
         {t.doctor.title}
       </button>
       {s.installed === true && <RestoreItem close={close} />}
+        </>
+      )}
       <a className="menu-item menu-link" href="https://github.com/jinhuang712/claude-code-super-statusline" target="_blank" rel="noreferrer">
         <span className="inline-flex items-center gap-1.5">
           {t.prefs.source}
@@ -275,6 +281,11 @@ export function Header() {
             {t.header.sandbox}
           </span>
         )}
+        {s.demo && (
+          <span className="tag tag-warn" title={t.header.demoTitle}>
+            {t.header.demo}
+          </span>
+        )}
         {/* Polite live region: screen readers hear "Saving… / Saved" without focus moving. */}
         <span className="status" data-state={state} role="status" title={s.saveError ? `${t.header.saveFailed}: ${s.saveError}` : t.header.statusDetail}>
           <span className="status-text">{text}</span>
@@ -288,7 +299,7 @@ export function Header() {
       <div className="topbar-actions">
         <ScopeSelect />
         {/* Applying is the one step a first-time user must take, so it stays visible until done; afterwards "Re-apply" is a repair tool and lives in the menu. */}
-        {s.installed !== true && (
+        {s.installed !== true && !s.demo && (
           <button className="btn btn-primary" onClick={() => void s.install()} title={t.header.applyTitle}>
             {t.header.apply}
           </button>

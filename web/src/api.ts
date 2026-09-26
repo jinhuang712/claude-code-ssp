@@ -135,6 +135,8 @@ export interface Health {
   ok: boolean;
   root: string;
   sandbox?: boolean;
+  /** The GitHub Pages demo (site/): an in-browser stand-in for this API, with nothing behind it. */
+  demo?: boolean;
 }
 
 const post = (url: string, body: unknown) => fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
