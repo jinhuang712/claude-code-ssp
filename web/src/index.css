@@ -567,7 +567,7 @@ input[type="checkbox"] {
   color: var(--fg-2);
 }
 
-/* ---- style: three summaries (theme, bar, separator), one opening its choices underneath ---- */
+/* ---- style: four summaries (theme, bar, bar mode, separator), one opening its choices underneath ---- */
 .style-picks {
   display: flex;
   flex-wrap: wrap;
@@ -595,6 +595,8 @@ input[type="checkbox"] {
 }
 .style-pick-label {
   color: var(--muted);
+  /* "Progress bar mode" broke onto two centred lines on a phone; the summary beside it can give way instead. */
+  white-space: nowrap;
 }
 .style-pick-chevron {
   color: var(--muted);
@@ -637,6 +639,18 @@ input[type="checkbox"] {
   display: block;
   height: 100%;
   border-radius: 1px;
+}
+/* Progress bar mode swatch: bar glyphs in the mode's colours, on the same terminal patch as the strip. */
+.level-sample {
+  display: inline-flex;
+  padding: 0 0.375rem;
+  border-radius: 0.25rem;
+  background: var(--term-dark);
+  box-shadow: inset 0 0 0 1px var(--line);
+  line-height: 1.75rem;
+}
+.level-sample[data-scheme="light"] {
+  background: var(--term-light);
 }
 /* The custom separator slot is its text field: no second box around it. */
 .choice-custom {
@@ -1716,7 +1730,7 @@ input[type="checkbox"] {
   .wrap {
     padding: 0 1rem;
   }
-  /* The three style summaries stack full-width, chevron at the right edge. */
+  /* The four style summaries stack full-width, chevron at the right edge. */
   .style-pick {
     flex: 1 1 100%;
   }

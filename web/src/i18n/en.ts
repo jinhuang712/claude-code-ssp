@@ -142,6 +142,17 @@ export const en = {
     },
   },
 
+  /** Style → how every bar and percentage is coloured (config `colorMode`). */
+  levels: {
+    title: "Progress bar mode",
+    names: { thresholds: "Thresholds", gradient: "Gradient" },
+    /** Tooltips: what each mode does, with the widget options it uses. */
+    hints: {
+      thresholds: "Green, yellow from each widget's “Yellow at %”, red from its “Red at %”",
+      gradient: "0% grey → 10% blue → 30% green → 50% yellow → 70% orange → 90% red → 100% deep red; “Yellow at %” is ignored",
+    },
+  },
+
   separators: {
     title: "Separator",
     custom: "Custom",
@@ -201,7 +212,7 @@ export const en = {
     critAt: "Red at %",
     // Under the gradient colour mode the critical threshold no longer turns the value red, only bold.
     critBold: "Bold at %",
-    // "Text color", not "Color": several widgets also have a colour *mode* option right next to it.
+    // "Text color", not "Color": it is the instance's own colour, not the Progress bar mode.
     color: "Text color",
     colors: { "": "Default", fg: "Text", muted: "Muted", accent: "Accent", ok: "Green", warn: "Yellow", crit: "Red" } as Record<string, string>,
     custom: "Custom",
@@ -309,7 +320,6 @@ export const en = {
     fieldHints: {
       name: "Required, e.g. AWS_PROFILE — nothing shows until it is set",
       effortStyle: "Symbols: ○ low · ◔ medium · ◑ high · ◕ xhigh · ● max",
-      colorMode: "Gradient ignores the yellow threshold; the red one still makes the value bold — check the preview above",
     } as Record<string, string>,
     /** Friendly names for enum values, shared by every widget. */
     enums: {
@@ -337,8 +347,6 @@ export const en = {
       "1": "1 level",
       "2": "2 levels",
       "3": "3 levels",
-      thresholds: "Thresholds: green → yellow → red",
-      gradient: "Gradient: 0% grey → 10% blue → 30% green → 50% yellow → 70% orange → 90% red → 100% deep red",
     } as Record<string, string>,
     /** Per-widget wording where the shared words would hide what an option really does. */
     enumsByField: {

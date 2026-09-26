@@ -133,6 +133,15 @@ export const zh: Messages = {
     },
   },
 
+  levels: {
+    title: "进度条模式",
+    names: { thresholds: "阈值", gradient: "渐变" },
+    hints: {
+      thresholds: "绿色；到各组件的「黄色 %」变黄，到「红色 %」变红",
+      gradient: "0% 灰 → 10% 蓝 → 30% 绿 → 50% 黄 → 70% 橙 → 90% 红 → 100% 深红；不看「黄色 %」",
+    },
+  },
+
   separators: {
     title: "分隔符",
     custom: "自定义",
@@ -431,7 +440,6 @@ export const zh: Messages = {
     fieldHints: {
       name: "必填，比如 AWS_PROFILE；不填就不显示",
       effortStyle: "符号对应：○ low · ◔ medium · ◑ high · ◕ xhigh · ● max",
-      colorMode: "选渐变后黄色阈值不再起作用，红色阈值仍会把数值加粗；效果看上方预览",
     },
     enums: {
       full: "完整",
@@ -458,8 +466,6 @@ export const zh: Messages = {
       "1": "1 级",
       "2": "2 级",
       "3": "3 级",
-      thresholds: "按阈值：绿 → 黄 → 红",
-      gradient: "渐变：0% 灰 → 10% 蓝 → 30% 绿 → 50% 黄 → 70% 橙 → 90% 红 → 100% 深红",
     },
     enumsByField: {
       "model.badge.format": { full: "原样", compact: "去掉 (1M context)", short: "再去掉 Claude 前缀" },

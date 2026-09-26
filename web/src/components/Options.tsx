@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef } from "react";
-import type { JsonSchema, Style, WidgetInstance } from "../api";
+import type { FooterConfig, JsonSchema, Style, WidgetInstance } from "../api";
 import { uiColor } from "../colors";
 import { enumLabel, fieldTitle, useT, widgetDesc, widgetName } from "../i18n";
 import { useProbe } from "../probe";
@@ -16,18 +16,30 @@ function typeOf(schema: JsonSchema) {
 }
 
 /**
- * Why an option currently has no effect, from its schema's `x-requires` (e.g. cacheGlyph needs
- * style = arrows): the first unmet requirement as a sentence, or null when it applies.
+ * Why an option currently has no effect: the first unmet requirement as a sentence, or null when it
+ * applies. Sibling options come from the schema's `x-requires` (e.g. cacheGlyph needs style =
+ * arrows); top-level config keys from `x-requires-config` (warnAt needs the thresholds colour mode,
+ * which is set under Style, so the sentence names that control).
  */
-function unmetRequirement(t: ReturnType<typeof useT>, widgetId: string, schema: JsonSchema, inst: WidgetInstance, defaults: Record<string, unknown>, siblings: Record<string, JsonSchema>): string | null {
+function unmetRequirement(t: ReturnType<typeof useT>, ctx: FieldCtx, schema: JsonSchema): string | null {
   const req = schema["x-requires"];
-  if (!req || typeof req !== "object") return null;
-  for (const [k, want] of Object.entries(req as Record<string, unknown>)) {
-    const cur = inst.options?.[k] !== undefined ? inst.options[k] : defaults[k];
-    if (cur === want) continue;
-    // Just the value's name: an enum label may carry an explanation after a colon (see EnumField).
-    const valueLabel = typeof want === "boolean" ? (want ? t.options.on : t.options.off) : enumLabel(t, widgetId, k, String(want)).split(/[:：]/)[0]!.trim();
-    return t.options.needs(fieldTitle(t, k, siblings[k] ?? {}), valueLabel);
+  if (req && typeof req === "object") {
+    for (const [k, want] of Object.entries(req as Record<string, unknown>)) {
+      const cur = ctx.inst.options?.[k] !== undefined ? ctx.inst.options[k] : ctx.defaults[k];
+      if (cur === want) continue;
+      // Just the value's name: an enum label may carry an explanation after a colon (see EnumField).
+      const valueLabel = typeof want === "boolean" ? (want ? t.options.on : t.options.off) : enumLabel(t, ctx.inst.widget, k, String(want)).split(/[:：]/)[0]!.trim();
+      return t.options.needs(fieldTitle(t, k, ctx.props[k] ?? {}), valueLabel);
+    }
+  }
+  const creq = schema["x-requires-config"];
+  if (creq && typeof creq === "object") {
+    for (const [k, want] of Object.entries(creq as Record<string, unknown>)) {
+      if ((ctx.config as unknown as Record<string, unknown>)[k] === want) continue;
+      // colorMode is the only key widgets require today; any other is named as it is spelled.
+      if (k === "colorMode") return t.options.needs(t.levels.title, t.levels.names[want as "thresholds" | "gradient"] ?? String(want));
+      return t.options.needs(k, String(want));
+    }
   }
   return null;
 }
@@ -99,6 +111,8 @@ interface FieldCtx {
   defaults: Record<string, unknown>;
   props: Record<string, JsonSchema>;
   setOption: SetOption;
+  /** The config being edited, for options that depend on a top-level key (x-requires-config). */
+  config: FooterConfig;
 }
 
 /** The value an option has right now: the instance's own, else the widget default, else the schema's. */
@@ -167,7 +181,7 @@ function TogglesField({ ctx, names, bold, setBold }: { ctx: FieldCtx; names: str
         {names.map((name) => {
           const on = Boolean(current(ctx, name));
           const title = fieldTitle(t, name, ctx.props[name]!);
-          const needs = unmetRequirement(t, ctx.inst.widget, ctx.props[name]!, ctx.inst, ctx.defaults, ctx.props);
+          const needs = unmetRequirement(t, ctx, ctx.props[name]!);
           return (
             <button
               key={name}
@@ -192,7 +206,7 @@ function TogglesField({ ctx, names, bold, setBold }: { ctx: FieldCtx; names: str
 
 /**
  * warnAt + critAt as one band: green up to the first, yellow up to the second, red after. Each
- * number follows its own x-requires: under the gradient colour mode warnAt does nothing (dimmed),
+ * number follows its own requirement: under the gradient (Style → Progress bar mode) warnAt does nothing (dimmed),
  * while critAt usually still bolds the value — so the band, which describes threshold colours,
  * only shows while those colours apply.
  */
@@ -204,8 +218,8 @@ function ThresholdField({ ctx }: { ctx: FieldCtx }) {
   const crit = Number(current(ctx, "critAt") ?? 85);
   const lo = Math.max(0, Math.min(100, Math.min(warn, crit)));
   const hi = Math.max(lo, Math.min(100, Math.max(warn, crit)));
-  const warnNeeds = unmetRequirement(t, ctx.inst.widget, ctx.props.warnAt!, ctx.inst, ctx.defaults, ctx.props);
-  const critNeeds = unmetRequirement(t, ctx.inst.widget, ctx.props.critAt!, ctx.inst, ctx.defaults, ctx.props);
+  const warnNeeds = unmetRequirement(t, ctx, ctx.props.warnAt!);
+  const critNeeds = unmetRequirement(t, ctx, ctx.props.critAt!);
   const num = (id: string, name: "warnAt" | "critAt", value: number) => (
     <input
       id={id}
@@ -258,7 +272,7 @@ function ValueField({ ctx, name }: { ctx: FieldCtx; name: string }) {
   const { base, nullable } = typeOf(schema);
   const title = fieldTitle(t, name, schema);
   const value = current(ctx, name);
-  const needs = unmetRequirement(t, ctx.inst.widget, schema, ctx.inst, ctx.defaults, ctx.props);
+  const needs = unmetRequirement(t, ctx, schema);
   return (
     <div className="opt-field" data-inactive={needs !== null}>
       <label className="opt-title" htmlFor={id}>
@@ -329,7 +343,7 @@ export function OptionsPanel() {
       if (v === (defaults[name] ?? props[name]?.default)) delete inst.options[name];
       if (Object.keys(inst.options).length === 0) delete inst.options;
     });
-  const ctx: FieldCtx = { inst: w, sel, defaults, props, setOption };
+  const ctx: FieldCtx = { inst: w, sel, defaults, props, setOption, config: s.config! };
 
   const style: Style = w.style ?? {};
   const setStyle = (patch: Partial<Style>) =>

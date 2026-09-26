@@ -1,6 +1,6 @@
 import { useId, useState, type ReactNode } from "react";
 import type { FooterConfig, ThemeDef } from "../api";
-import { uiColor } from "../colors";
+import { gradientColor, uiColor } from "../colors";
 import { useT, type Messages } from "../i18n";
 import { useStore } from "../store";
 import { termScheme, useTheme } from "../theme";
@@ -131,6 +131,67 @@ function BarChoices() {
   );
 }
 
+type LevelMode = FooterConfig["colorMode"];
+const LEVEL_MODES: LevelMode[] = ["thresholds", "gradient"];
+/* Cells in a level swatch. Under thresholds, at the default 70/85: six green, two yellow, two red. */
+const LEVEL_CELLS = 10;
+
+/**
+ * A full bar in the user's own filled glyph, each cell coloured as `mode` colours that percentage:
+ * the swatch is the mode's whole range at a glance. Drawn on the preview's terminal ground, like the
+ * theme strip, because these colours are made for a terminal.
+ */
+function LevelSample({ mode, theme, filled }: { mode: LevelMode; theme: ThemeDef | undefined; filled: string }) {
+  const ground = useTheme(termScheme);
+  const tokens = theme?.tokens ?? {};
+  const cells = Array.from({ length: LEVEL_CELLS }, (_, i) => {
+    if (mode === "gradient") return gradientColor((i * 100) / (LEVEL_CELLS - 1));
+    // The same test as api.level() with the widgets' usual thresholds, 70 and 85.
+    const pct = ((i + 1) * 100) / LEVEL_CELLS;
+    return uiColor(tokens[pct >= 85 ? "crit" : pct >= 70 ? "warn" : "ok"]);
+  });
+  return (
+    <span className="level-sample mono glyphs" data-scheme={ground} aria-hidden="true">
+      {cells.map((c, i) => (
+        <span key={i} style={{ color: c }}>
+          {filled}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function LevelChoices({ theme, filled }: { theme: ThemeDef | undefined; filled: string }) {
+  const t = useT();
+  const mode = useStore((s) => s.config!.colorMode);
+  const setConfig = useStore((s) => s.setConfig);
+  const setTryOn = useStore((s) => s.setTryOn);
+  const tryOn = useTryOn();
+  return (
+    <>
+      {LEVEL_MODES.map((m) => (
+        <button
+          key={m}
+          className="choice"
+          data-active={mode === m}
+          aria-pressed={mode === m}
+          title={t.levels.hints[m]}
+          {...tryOn({ colorMode: m }, t.levels.names[m])}
+          onClick={() => {
+            setConfig((c) => {
+              c.colorMode = m;
+            });
+            setTryOn(null);
+          }}
+        >
+          <LevelSample mode={m} theme={theme} filled={filled} />
+          <small>{t.levels.names[m]}</small>
+        </button>
+      ))}
+    </>
+  );
+}
+
 /** Common separators. Each chip shows it between two words so the spacing is visible. */
 const SEPARATORS = [" │ ", " · ", " • ", " / ", " | ", " ❯ ", "  "];
 /** Spaces are invisible in a text field; ␣ makes a leading/trailing/double space readable. */
@@ -171,11 +232,11 @@ function SeparatorChoices() {
   );
 }
 
-type Part = "theme" | "bar" | "separator";
+type Part = "theme" | "bar" | "levels" | "separator";
 
 /**
- * How the statusline looks, as one row of three summaries — the current theme, bar and separator —
- * each opening its choices in place underneath. It used to lay out all 24 choices at once; most
+ * How the statusline looks, as one row of four summaries — the current theme, bar glyphs, progress
+ * bar mode and separator — each opening its choices in place underneath. It used to lay out all 24 choices at once; most
  * visits change none of them, and the one that does only needs one group at a time.
  */
 export function Style() {
@@ -200,7 +261,7 @@ export function Style() {
       <Icon name="chevron" size={12} className="style-pick-chevron" />
     </button>
   );
-  const titles: Record<Part, string> = { theme: t.themes.title, bar: t.bars.title, separator: t.separators.title };
+  const titles: Record<Part, string> = { theme: t.themes.title, bar: t.bars.title, levels: t.levels.title, separator: t.separators.title };
 
   return (
     <section className="section" aria-labelledby="style-title">
@@ -212,6 +273,7 @@ export function Style() {
       <div className="style-picks">
         {pick("theme", t.themes.title, <><Strip theme={theme} scale={0.6} /><span>{themeName}</span></>)}
         {pick("bar", t.bars.title, <><span className="mono glyphs">{drawBar(glyphs.filled, glyphs.empty)}</span><span>{barId === "custom" ? t.separators.custom : t.bars.names[barId]}</span></>)}
+        {pick("levels", t.levels.title, <><LevelSample mode={config.colorMode} theme={theme} filled={glyphs.filled} /><span>{t.levels.names[config.colorMode]}</span></>)}
         {pick(
           "separator",
           t.separators.title,
@@ -238,6 +300,7 @@ export function Style() {
           <div className="choices">
             {open === "theme" && <ThemeChoices />}
             {open === "bar" && <BarChoices />}
+            {open === "levels" && <LevelChoices theme={theme} filled={glyphs.filled} />}
             {open === "separator" && <SeparatorChoices />}
           </div>
         </div>

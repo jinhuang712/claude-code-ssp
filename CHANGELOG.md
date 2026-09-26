@@ -9,6 +9,9 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
   follow. Existing configs carry over: if any widget was set to the gradient, the whole statusline is (so a config that
   mixed the two becomes all-gradient), otherwise it stays on thresholds. The Full preset no longer turns the gradient
   on by itself. Plugins can colour a percentage the same way with `api.levelColor`.
+- **Style → Progress bar mode.** The setting sits next to the bar glyphs, drawn as a bar in each mode's colours,
+  and tries itself on in the preview like the theme and separator do. Under the gradient a widget's *Yellow at %*
+  is dimmed and says it needs Thresholds.
 
 ## 0.4.1 — 2026-09-24
 

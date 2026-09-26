@@ -44,7 +44,7 @@ export function level(pct: number, warnAt = 70, critAt = 85): "ok" | "warn" | "c
  * `tests/gradient.test.ts` checks all 101 values. The old pastel stops (0% was #ffffff) were
  * 1.0–2.2:1 on white from 0 to 70%, so a low usage bar simply vanished on a light terminal.
  */
-const GRADIENT: Array<[number, string]> = [
+export const GRADIENT: Array<[number, string]> = [
   [0, "#8a8a8a"],
   [10, "#3d8fe0"],
   [30, "#2f9e44"],
