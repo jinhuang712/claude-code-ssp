@@ -6,7 +6,10 @@ ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 PORT="${SUPER_STATUSLINE_PORT:-4877}"
 URL="http://127.0.0.1:${PORT}"
 BUN="$(command -v bun || true)"
-[ -n "$BUN" ] || { echo "bun not found in PATH — install from https://bun.sh"; exit 1; }
+# Not on PATH: maybe installed after this Claude Code session started (install.sh offers to), in
+# Bun's default place, which only new shells have on their PATH.
+if [ -z "$BUN" ] && [ -x "${BUN_INSTALL:-$HOME/.bun}/bin/bun" ]; then BUN="${BUN_INSTALL:-$HOME/.bun}/bin/bun"; fi
+[ -n "$BUN" ] || { echo "bun not found in PATH — install from https://bun.sh (or run install.sh)"; exit 1; }
 
 # Opens the configurator bound to the session that ran /super-statusline:config: Claude Code exports
 # that session's id to the slash command's shell, and the page previews that
