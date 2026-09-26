@@ -12,23 +12,13 @@
 
 ## Install
 
-You need Claude Code 2.1.251 or later and [Bun](https://bun.sh).
+```bash
+claude plugin marketplace add jinhuang712/claude-code-super-statusline
+claude plugin install super-statusline@claude-code-super-statusline
+```
 
-1. Add the marketplace:
-   ```bash
-   claude plugin marketplace add jinhuang712/claude-code-super-statusline
-   ```
-2. Install the plugin:
-   ```bash
-   claude plugin install super-statusline@claude-code-super-statusline
-   ```
-3. In Claude Code, run:
-   ```
-   /super-statusline:config
-   ```
-4. Pick a layout in the page that opens. Done — every change saves by itself.
-
-Already using another statusline? You're asked before it's replaced, and *⋯ → Stop using this statusline* brings it back.
+Then run `/super-statusline:config` in Claude Code and pick a layout. Needs [Bun](https://bun.sh);
+see [INSTALL.md](INSTALL.md) for details, uninstalling and upgrading.
 
 ## What you can change
 
@@ -124,86 +114,12 @@ The preview shows your real session; hover a choice to try it before you click. 
 | Environment variable | The value of a variable, e.g. `AWS_PROFILE` |
 | Clock | The current time |
 
-Missing one? [Write your own](#your-own-widgets).
+## More
 
-<details>
-<summary><b>Upgrading from claude-code-ssp</b> (0.3.x and older)</summary>
-
-1. Install the new plugin (steps 1–2 above).
-2. Run `/super-statusline:config` once — it moves your settings over.
-3. Remove the old plugin:
-   ```bash
-   claude plugin uninstall ssp@claude-code-ssp
-   claude plugin marketplace remove claude-code-ssp
-   ```
-
-A project's `.claude/claude-code-ssp.json` or `.claude/claude-code-ssp/widgets/` keeps working where it is.
-</details>
-
-## For power users
-
-### Config file
-
-The page writes `~/.config/claude-code-super-statusline/config.json`. A project can override it with
-`.claude/claude-code-super-statusline.json`. Both are plain JSON, re-read on every refresh:
-
-```jsonc
-{
-  "theme": "tokyo-night",
-  "colorMode": "gradient",          // or "thresholds"
-  "separator": " │ ",
-  "lines": [
-    { "left":  [{ "widget": "project.path" }, { "widget": "git.branch" }],
-      "right": [{ "widget": "model.badge" }, { "widget": "cost.session" }] },
-    { "left":  [{ "widget": "usage.windows", "options": { "bar": true } }],
-      "right": [{ "widget": "context.bar" }] }
-  ]
-}
-```
-
-### Command line
-
-From a checkout (`bun install` first), `bun src/cli/main.ts <command>`:
-
-| Command | Does |
-|---|---|
-| `serve --open` | Opens the configurator |
-| `install` / `uninstall` | Turns the statusline on or off in `~/.claude/settings.json` |
-| `render --fixture src/fixtures/basic.json` | Prints the statusline for a sample session |
-| `reset` | Restarts the session's cost, token and line counters from zero (also *⋯ → Reset counters*) |
-| `doctor` | Shows the same diagnostics as *⋯ → Diagnostics* |
-
-### Your own widgets
-
-Drop a `.ts` or `.js` file in `~/.config/claude-code-super-statusline/widgets/` and restart the configurator:
-
-```ts
-export default {
-  id: "example.hello", name: "Hello", description: "Says hello", category: "misc",
-  schema: { type: "object", properties: { name: { type: "string", default: "friend" } } },
-  defaults: { name: "friend" },
-  render(ctx, opts, api) {
-    return [api.seg(`👋 ${opts.name}`, { fg: "accent" })];
-  },
-};
-```
-
-More in `examples/widgets/`, the built-ins in `src/widgets/`, and the architecture in `DESIGN.md`.
-
-### Security
-
-* The configurator only listens on `127.0.0.1` and ignores requests from other websites.
-* A project's own widgets are code, so they only load for projects you trust (*⋯ → Diagnostics → Trust this project*).
-
-### Development
-
-```bash
-bun install
-bun test
-bun run typecheck
-bun run serve:sandbox     # the configurator against throwaway copies of your settings
-bun run build:web         # rebuild web/dist (committed, so installs need no build)
-```
+* [INSTALL.md](INSTALL.md) — install, uninstall, upgrading from claude-code-ssp
+* [ADVANCED.md](ADVANCED.md) — the config file, command line, your own widgets, security, development
+* [DESIGN.md](DESIGN.md) — how it works inside
+* [CHANGELOG.md](CHANGELOG.md)
 
 ## License
 
