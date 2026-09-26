@@ -36,7 +36,7 @@ export const PRESETS: Record<PresetId, { lines: LineConfig[] }> = {
   },
   standard: {
     lines: [
-      { left: [{ widget: "project.path" }, { widget: "git.branch" }], right: [{ widget: "model.badge" }, { widget: "cost.session" }] },
+      { left: [{ widget: "project.path" }, { widget: "git.branch" }], right: [{ widget: "model.badge" }] },
       { left: [{ widget: "usage.windows" }], right: [{ widget: "context.bar" }] },
     ],
   },

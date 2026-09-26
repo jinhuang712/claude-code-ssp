@@ -80,7 +80,7 @@ export const zh: Messages = {
   presets: {
     lines: (n) => `${n} 行`,
     minimal: { name: "极简", blurb: "一行：项目 · 分支 · 模型 · 上下文" },
-    standard: { name: "标准", blurb: "两行：加上用量与费用" },
+    standard: { name: "标准", blurb: "两行：加上用量上限" },
     full: { name: "完整", blurb: "四行：再加改动行数、缓存、tokens 与速度" },
     custom: { name: "自定义", blurb: "自己搭：选组件、排行、改每个组件的选项" },
   },

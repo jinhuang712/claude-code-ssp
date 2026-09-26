@@ -114,7 +114,7 @@ const groups = (["minimal", "standard", "full"] as const).map((id) => {
   const r = render(config, { ...ctx, columns }, { fillEmpty: false });
   if (r.errors.length) throw new Error(`preset ${id}: ${r.errors.map((e) => e.message).join("; ")}`);
   // Name, line count and blurb are the configurator's own preset copy, so page and app never
-  // disagree. The blurb reads "Two lines: adds usage limits and cost"; the label keeps what follows
+  // disagree. The blurb reads "Two lines: adds usage limits"; the label keeps what follows
   // the colon, since the line count is already there.
   const preset = en.presets[id];
   const adds = preset.blurb.split(": ").slice(1).join(": ") || preset.blurb;

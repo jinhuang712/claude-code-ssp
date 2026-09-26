@@ -89,7 +89,7 @@ export const en = {
   presets: {
     lines: (n: number) => (n === 1 ? "1 line" : `${n} lines`),
     minimal: { name: "Minimal", blurb: "One line: project, branch, model, context" },
-    standard: { name: "Standard", blurb: "Two lines: adds usage limits and cost" },
+    standard: { name: "Standard", blurb: "Two lines: adds usage limits" },
     full: { name: "Full", blurb: "Four lines: adds the diff, cache, tokens and speed" },
     custom: { name: "Custom", blurb: "Build your own: pick widgets, arrange lines, set each one's options" },
   },

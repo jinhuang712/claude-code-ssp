@@ -17,6 +17,9 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
 - **An install script that also updates.** `curl -fsSL …/install.sh | bash` checks Claude Code (2.1.251+) and Bun
   (1.1+), offers to install Bun with its official installer when it is missing, and then installs the plugin — or,
   when it is already installed, updates the marketplace and the plugin. See INSTALL.md.
+- **The Standard preset no longer shows the session cost.** It is project, branch and model over usage limits and
+  context; cost is still in Full and in the tray. A statusline set up from the old Standard keeps its cost widget
+  (the panel now shows it as Custom).
 - **`/super-statusline:config` finds a Bun installed mid-session** in `~/.bun/bin`, instead of saying "bun not found"
   until Claude Code is restarted.
 
