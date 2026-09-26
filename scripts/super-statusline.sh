@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Helper used by the /super-statusline:* slash commands. Usage: super-statusline.sh <config|reset|install|render-test>
+# Helper used by the /super-statusline:config slash command. Usage: super-statusline.sh <config|install|render-test>
 set -euo pipefail
 
 ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
@@ -9,7 +9,7 @@ BUN="$(command -v bun || true)"
 [ -n "$BUN" ] || { echo "bun not found in PATH — install from https://bun.sh"; exit 1; }
 
 # Opens the configurator bound to the session that ran /super-statusline:config: Claude Code exports
-# that session's id to the slash command's shell (as for /super-statusline:reset), and the page previews that
+# that session's id to the slash command's shell, and the page previews that
 # session's data. The panel has no data picker; without the id it shows the latest live session.
 open_url() {
   local target="$URL/"
@@ -105,18 +105,9 @@ case "${1:-config}" in
   install)
     "$BUN" "$ROOT/src/cli/main.ts" install "${@:2}"
     ;;
-  reset)
-    # Claude Code exports the id of the session running /super-statusline:reset to its Bash tool calls, so reset
-    # that exact session instead of "whichever one rendered last" (wrong with several sessions open).
-    # Run by hand without it, main.ts falls back to the most recently rendered session.
-    session_args=()
-    if [ -n "${CLAUDE_CODE_SESSION_ID:-}" ]; then session_args=(--session "$CLAUDE_CODE_SESSION_ID"); fi
-    # ${arr[@]+"${arr[@]}"}: an empty array under `set -u` is an error in macOS's bash 3.2.
-    "$BUN" "$ROOT/src/cli/main.ts" reset ${session_args[@]+"${session_args[@]}"} "${@:2}"
-    ;;
   render-test)
     COLUMNS="${COLUMNS:-120}" "$BUN" "$ROOT/src/cli/main.ts" render --fixture "$ROOT/src/fixtures/basic.json"
     ;;
   *)
-    echo "usage: super-statusline.sh <config|reset|install|render-test>"; exit 2 ;;
+    echo "usage: super-statusline.sh <config|install|render-test>"; exit 2 ;;
 esac

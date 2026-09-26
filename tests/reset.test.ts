@@ -5,9 +5,9 @@ import { listLiveSamples, samplesDir } from "../src/core/capture.ts";
 import { resetsDir } from "../src/core/reset.ts";
 
 /*
-  /super-statusline:reset must zero the counters of the Claude session that ran it. Before, it picked "the
-  latest captured sample", which was wrong with several sessions open and — because fixture renders
-  were captured too — could even pick the README's fixture instead of any real session.
+  `reset` must zero the counters of the session it is given. Before, it picked "the latest captured
+  sample", which was wrong with several sessions open and — because fixture renders were captured
+  too — could even pick the README's fixture instead of any real session.
 */
 const ROOT = path.resolve(import.meta.dir, "..");
 
@@ -48,25 +48,27 @@ describe("live samples", () => {
   });
 });
 
-describe("super-statusline.sh reset", () => {
-  test("targets the Claude session that ran it (CLAUDE_CODE_SESSION_ID)", () => {
-    const r = run(["bash", "scripts/super-statusline.sh", "reset"], { CLAUDE_CODE_SESSION_ID: "session-a" });
+describe("reset", () => {
+  const reset = (...args: string[]) => run(["bun", "src/cli/main.ts", "reset", ...args]);
+
+  test("--session targets exactly that session", () => {
+    const r = reset("--session", "session-a");
     expect(r.out).toContain("session session-a");
     expect(baselineExists("session-a")).toBe(true);
     expect(baselineExists("session-b")).toBe(false);
   });
 
   test("without a session id it falls back to the most recent real session, never a fixture", () => {
-    const r = run(["bash", "scripts/super-statusline.sh", "reset"], { CLAUDE_CODE_SESSION_ID: undefined });
+    const r = reset();
     expect(r.out).toContain("session session-b");
     expect(baselineExists("session-b")).toBe(true);
     expect(baselineExists("fixture-basic")).toBe(false);
   });
 
   test("--undo clears the baseline of the named session only", () => {
-    run(["bash", "scripts/super-statusline.sh", "reset"], { CLAUDE_CODE_SESSION_ID: "session-a" });
-    run(["bash", "scripts/super-statusline.sh", "reset"], { CLAUDE_CODE_SESSION_ID: "session-b" });
-    const r = run(["bash", "scripts/super-statusline.sh", "reset", "--undo"], { CLAUDE_CODE_SESSION_ID: "session-a" });
+    reset("--session", "session-a");
+    reset("--session", "session-b");
+    const r = reset("--session", "session-a", "--undo");
     expect(r.out).toContain("session-a");
     expect(baselineExists("session-a")).toBe(false);
     expect(baselineExists("session-b")).toBe(true);

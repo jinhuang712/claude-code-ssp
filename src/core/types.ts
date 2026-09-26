@@ -132,7 +132,7 @@ export interface Ctx extends DataContext {
   theme: ThemeDef;
   /** The config's colour mode, which `api.levelColor` follows. */
   colorMode: ColorMode;
-  /** Counter baseline recorded by `/super-statusline:reset` for this session, if any. */
+  /** Counter baseline recorded by `reset` (CLI or the panel) for this session, if any. */
   reset: ResetBaseline | null;
   /** Output speed of the latest long-enough response, from the transcript tail (see response-speed.ts). */
   responseSpeed?: ResponseSpeed | null;

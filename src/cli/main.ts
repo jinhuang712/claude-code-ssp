@@ -31,7 +31,7 @@ async function cmdRender(argv: string[]): Promise<void> {
   const cwd = stdin!.workspace?.current_dir ?? stdin!.cwd;
   const { config } = loadEffectiveConfig(cwd);
   // Fixture renders (README preview, tests, `super-statusline.sh render-test`) are not a real session: capturing
-  // them would put a fake "live" session at the top of the list, which `/super-statusline:reset` and the web
+  // them would put a fake "live" session at the top of the list, which `reset` and the web
   // preview then pick as "the latest session".
   if (config.captureSamples && !fixture) captureSample(stdin);
   await loadPlugins(config, cwd);
@@ -99,7 +99,7 @@ async function main(): Promise<void> {
     }
     case "reset": {
       const { resetLatestSession, undoReset } = await import("../server/reset.js");
-      // `--session` comes from super-statusline.sh, which forwards the id of the Claude session running /super-statusline:reset.
+      // `--session` names the session to reset (the panel passes the one it previews).
       // Without it (run by hand in a terminal) both paths fall back to the most recent session.
       if (argv.includes("--undo")) {
         const { listLiveSamples } = await import("../core/capture.js");

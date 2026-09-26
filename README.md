@@ -39,7 +39,6 @@ Then, inside Claude Code:
 
 ```
 /super-statusline:config     # opens the configurator on this session's data (starts the local server if needed)
-/super-statusline:reset      # zero this session's cost / tokens / API calls / lines-changed counters
 ```
 
 Your first edit in the panel applies the statusline to `~/.claude/settings.json` (a backup is kept).
@@ -86,7 +85,7 @@ claude plugin marketplace remove claude-code-ssp
 | `serve --sandbox` | the same on `:4878`, editing throwaway copies of your config, samples and statusLine |
 | `install [--dry-run] [--replace]` | add our `statusLine` to settings.json; `--replace` is required when another statusline is set (it is kept for `uninstall`) |
 | `uninstall` | remove our `statusLine` and restore the one it replaced (never touches a statusline that isn't ours) |
-| `reset [--session ID] [--undo]` | zero the session counters from now on (`/super-statusline:reset` passes the current session) |
+| `reset [--session ID] [--undo]` | zero the session counters from now on (default: the most recent session; the panel's ⋯ → *Reset counters* does the same for the session it previews) |
 | `doctor` | the panel's *Diagnostics*, for terminals without a browser |
 
 ## Config

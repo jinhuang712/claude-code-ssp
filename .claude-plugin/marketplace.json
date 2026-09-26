@@ -11,7 +11,7 @@
     {
       "name": "super-statusline",
       "source": "./",
-      "description": "Statusline + web configurator: /super-statusline:config, /super-statusline:reset",
+      "description": "Statusline + web configurator: /super-statusline:config",
       "category": "monitoring",
       "tags": [
         "statusline",

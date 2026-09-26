@@ -12,6 +12,8 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
 - **Style → Progress bar mode.** The setting sits next to the bar glyphs, drawn as a bar in each mode's colours,
   and tries itself on in the preview like the theme and separator do. Under the gradient a widget's *Yellow at %*
   is dimmed and says it needs Thresholds.
+- **`/super-statusline:reset` is gone.** Resetting the session counters is still in the panel (*⋯ → Reset counters*,
+  for the session it previews) and in the CLI (`reset [--session ID] [--undo]`); counters already reset stay reset.
 
 ## 0.4.1 — 2026-09-24
 

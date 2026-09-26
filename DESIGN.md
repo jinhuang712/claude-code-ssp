@@ -22,7 +22,7 @@ Claude Code ≥ 2.1.251 now ships `rate_limits`, `prompt_cache`, `effort`, `cost
 | `claude-code-super-statusline serve [--port 4877] [--open]` | Bun.serve on 127.0.0.1 serving `web/dist` + JSON API. Lazy-imported. |
 | `claude-code-super-statusline serve --sandbox` | Same on `:4878` against temp copies of config, samples and statusLine (for UI work and automation). |
 | `claude-code-super-statusline install [--replace]` / `uninstall` | Atomic merge into `~/.claude/settings.json` (`.bak.<ts>` backup). Replacing a statusLine that isn't ours needs `--replace` (the panel asks); it is parked under `statusLine.previous.claude-code-super-statusline` (`…claude-code-ssp` before 0.4.0: still read, moved on the next install) and `uninstall` restores it. `uninstall` never touches a statusLine that isn't ours. |
-| `claude-code-super-statusline reset [--session ID]` | Baseline the session counters; `/super-statusline:reset` passes `$CLAUDE_CODE_SESSION_ID` so the right session is reset. |
+| `claude-code-super-statusline reset [--session ID]` | Baseline the session counters (default: the most recent session; the panel passes the one it previews). |
 | `claude-code-super-statusline doctor` | Shows effective config, layer provenance, last captured payload, render timing. |
 
 ## Layout model

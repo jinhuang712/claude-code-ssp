@@ -1,6 +1,6 @@
 {
   "name": "super-statusline",
-  "description": "Claude Code statusline with a localhost web configurator: /super-statusline:config opens it, /super-statusline:reset zeroes the session counters",
+  "description": "Claude Code statusline with a localhost web configurator: /super-statusline:config opens it",
   "version": "0.4.1",
   "author": {
     "name": "Jin Huang",
@@ -17,7 +17,6 @@
     "claude-code"
   ],
   "commands": [
-    "./commands/config.md",
-    "./commands/reset.md"
+    "./commands/config.md"
   ]
 }
