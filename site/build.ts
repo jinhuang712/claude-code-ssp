@@ -22,9 +22,17 @@ const OUT = path.join(SITE, "dist");
 const BUILD = path.join(SITE, ".build");
 /** Where the sample session claims to live; node-shims.ts reports the same home to the widgets. */
 const DEMO_HOME = "/Users/you";
-const DEMO_PROJECT = `${DEMO_HOME}/dev/webapp`;
-/** Width the presets are laid out at on the welcome page: a common terminal, and it fits the hero. */
-const PRESET_COLUMNS = 100;
+/** The sample session is spent on this very project, so the page shows super-statusline working on itself. */
+const DEMO_NAME = "claude-code-super-statusline";
+const DEMO_OWNER = "jinhuang712";
+const DEMO_PROJECT = `${DEMO_HOME}/dev/${DEMO_NAME}`;
+/**
+ * Width the presets are laid out at on the welcome page: a common terminal, and it fits the hero.
+ * At 100 the Full preset's second line (the 40-character jinhuang712/claude-code-super-statusline,
+ * branch, file counts, diff, and context on the right) no longer fits, and the engine cuts the diff;
+ * 120 leaves every line whole with room to spare. site/landing.ts scales the font to the terminal.
+ */
+const PRESET_COLUMNS = 120;
 
 // The builder's real home, read before HOME is pointed elsewhere: the leak check below needs it.
 const REAL_HOME = os.homedir();
@@ -41,13 +49,14 @@ function run(cmd: string[], cwd: string): void {
 
 /** A tiny repo on feat/login with one modified and one untracked file: `git:(feat/login*) !1 ?1`. */
 function demoRepo(): string {
-  const dir = path.join(tmp, "webapp");
+  const dir = path.join(tmp, DEMO_NAME);
   fs.mkdirSync(path.join(dir, "src"), { recursive: true });
   fs.writeFileSync(path.join(dir, "src", "login.ts"), "export function login() {\n  return true;\n}\n");
-  fs.writeFileSync(path.join(dir, "README.md"), "# webapp\n");
+  fs.writeFileSync(path.join(dir, "README.md"), `# ${DEMO_NAME}\n`);
   const git = (...args: string[]) => run(["git", "-c", "user.name=demo", "-c", "user.email=demo@example.com", "-c", "init.defaultBranch=main", ...args], dir);
   git("init", "-q");
-  git("remote", "add", "origin", "https://github.com/acme/webapp.git");
+  // Only parsed, never fetched: it gives the branch widget's link its github.com base.
+  git("remote", "add", "origin", `https://github.com/${DEMO_OWNER}/${DEMO_NAME}.git`);
   git("add", "-A");
   git("commit", "-q", "-m", "init");
   git("checkout", "-q", "-b", "feat/login");
@@ -58,7 +67,7 @@ function demoRepo(): string {
 
 /**
  * The precomputed data context, written for the demo and the presets (Dates as { $date }, temp
- * paths rewritten to ~/dev/webapp). Returns the file it wrote.
+ * paths rewritten to ~/dev/claude-code-super-statusline). Returns the file it wrote.
  */
 async function demoContext(): Promise<string> {
   // Imported after HOME is set: some modules resolve their directories on first use.
@@ -69,21 +78,25 @@ async function demoContext(): Promise<string> {
   const file = path.join(ROOT, "src/fixtures/basic.json");
   const now = Date.now();
   const payload = prepareFixture(JSON.parse(fs.readFileSync(file, "utf8")), file, now);
+  // The fixture's own project (~/dev/webapp): its transcript's tool calls name files under it.
+  const fixtureProject = payload.workspace?.project_dir ?? payload.cwd;
   payload.session_id = "demo-session";
   payload.cwd = repo;
-  payload.workspace = { ...payload.workspace, current_dir: repo, project_dir: repo };
+  // The fixture's own repo (acme/webapp) would win over the demo repo's remote in git.repo.
+  payload.workspace = { ...payload.workspace, current_dir: repo, project_dir: repo, repo: { host: "github.com", owner: DEMO_OWNER, name: DEMO_NAME } };
   const ctx = await buildContext(payload, normalizeConfig({ git: { enabled: true, cacheMs: 0 } }), { columns: 120, now, gitDeadlineMs: 10_000 });
   if (!ctx.gitStatus) throw new Error("demo repo: no git status — is git installed?");
 
   const encoded = JSON.stringify(
-    { ctx, sample: { id: "demo", sessionId: "demo-session", cwd: DEMO_PROJECT, project: "webapp", model: "Sonnet 5" } },
+    { ctx, sample: { id: "demo", sessionId: "demo-session", cwd: DEMO_PROJECT, project: DEMO_NAME, model: "Sonnet 5" } },
     function (key, value) {
       const raw = (this as Record<string, unknown>)[key];
       return raw instanceof Date ? { $date: raw.toISOString() } : value;
     },
   )
-    // The session "happened" in ~/dev/webapp, not in this machine's temp dir.
+    // The session "happened" in ~/dev/claude-code-super-statusline, not in this machine's temp dir.
     .split(repo).join(DEMO_PROJECT)
+    .split(fixtureProject).join(DEMO_PROJECT)
     .split(tmp).join(DEMO_HOME)
     .split(os.tmpdir()).join("/tmp");
   if (encoded.includes(REAL_HOME)) throw new Error("demo context mentions the builder's home directory");

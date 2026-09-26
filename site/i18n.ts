@@ -30,7 +30,7 @@ export const ZH: Record<string, string> = {
   "hero.see": "看看效果",
   "hero.label": "01 · 从预设开始",
   "hero.engine": "真实引擎渲染 · 示例会话",
-  "hero.note": "100 列宽的真实渲染。状态栏从不换行，所以这里可以左右滑动。",
+  "hero.note": "120 列宽的真实渲染。状态栏从不换行，所以这里可以左右滑动。",
   "term.aria": "三个预设在示例会话上的渲染：极简一行，标准两行，完整四行",
   "term.bar": "三个预设 · 同一个会话",
   "term.swipe": "左右滑动 →",
