@@ -7,6 +7,20 @@
 
 ## Install
 
+### With the install script
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jinhuang712/claude-code-super-statusline/main/install.sh | bash
+```
+
+It checks your Claude Code version and that Bun is installed (and offers to install Bun if it isn't), then adds
+the marketplace and installs the plugin. To install Bun without being asked, add `-s -- --yes` after `bash`. Rather
+read it first? It's [`install.sh`](install.sh) in this repo.
+
+Then, in Claude Code, run `/super-statusline:config` and pick a layout.
+
+### By hand
+
 1. Add the marketplace:
    ```bash
    claude plugin marketplace add jinhuang712/claude-code-super-statusline
@@ -21,6 +35,17 @@
    ```
    A page opens in your browser at `http://127.0.0.1:4877`, showing a preview of your current session.
 4. Pick a layout. Your statusline is now on, and every later change saves by itself.
+
+## Update
+
+Run the install script again: when the plugin is already installed, it updates it instead. By hand:
+
+```bash
+claude plugin marketplace update claude-code-super-statusline
+claude plugin update super-statusline@claude-code-super-statusline
+```
+
+Then restart Claude Code (or run `/reload-plugins` in it). Installed from a local checkout? `git pull` there.
 
 ## If you already have a statusline
 
@@ -52,7 +77,7 @@ The plugin then runs from your checkout, so a `git pull` updates it.
 
 Versions up to 0.3.x were called `ssp` (`/ssp:config`).
 
-1. Install the new plugin (steps 1–2 above).
+1. Install the new plugin (the install script, or steps 1–2 above).
 2. Run `/super-statusline:config` once. It moves your settings and widgets over.
 3. Remove the old plugin:
    ```bash

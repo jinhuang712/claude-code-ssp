@@ -13,12 +13,12 @@
 ## Install
 
 ```bash
-claude plugin marketplace add jinhuang712/claude-code-super-statusline
-claude plugin install super-statusline@claude-code-super-statusline
+curl -fsSL https://raw.githubusercontent.com/jinhuang712/claude-code-super-statusline/main/install.sh | bash
 ```
 
-Then run `/super-statusline:config` in Claude Code and pick a layout. Needs [Bun](https://bun.sh);
-see [INSTALL.md](INSTALL.md) for details, uninstalling and upgrading.
+Then run `/super-statusline:config` in Claude Code and pick a layout. The script checks for [Bun](https://bun.sh)
+(and offers to install it); run it again any time to update. Installing by hand, uninstalling and upgrading:
+[INSTALL.md](INSTALL.md).
 
 ## What you can change
 

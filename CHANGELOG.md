@@ -14,6 +14,11 @@ Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace 
   is dimmed and says it needs Thresholds.
 - **`/super-statusline:reset` is gone.** Resetting the session counters is still in the panel (*⋯ → Reset counters*,
   for the session it previews) and in the CLI (`reset [--session ID] [--undo]`); counters already reset stay reset.
+- **An install script that also updates.** `curl -fsSL …/install.sh | bash` checks Claude Code (2.1.251+) and Bun
+  (1.1+), offers to install Bun with its official installer when it is missing, and then installs the plugin — or,
+  when it is already installed, updates the marketplace and the plugin. See INSTALL.md.
+- **`/super-statusline:config` finds a Bun installed mid-session** in `~/.bun/bin`, instead of saying "bun not found"
+  until Claude Code is restarted.
 
 ## 0.4.1 — 2026-09-24
 
