@@ -117,20 +117,19 @@
         <div class="lp-head">
           <div class="lp-head-title">
             <p class="lp-label"><i style="background: #9ece6a"></i><span class="lp-desk">04</span><span class="lp-phone">03</span> · Install</p>
-            <h2 id="install-title" class="lp-h2">Two commands. Then it’s yours.</h2>
+            <h2 id="install-title" class="lp-h2">One command. Then it’s yours.</h2>
           </div>
-          <p class="lp-head-text">Needs Claude Code 2.1.251 or later and <a href="https://bun.sh">Bun</a> on your PATH.</p>
+          <p class="lp-head-text">It checks Claude Code (2.1.251 or later) and <a href="https://bun.sh">Bun</a> — offering to install Bun if it’s missing — then installs the plugin. Run it again any time to update.</p>
         </div>
         <div class="lp-install-body">
           <div class="lp-code">
             <div class="lp-code-bar">
               <span>TERMINAL</span>
-              <button class="lp-copy" type="button" data-copy="lp-cmd" aria-label="Copy the install commands">Copy</button>
+              <button class="lp-copy" type="button" data-copy="lp-cmd" aria-label="Copy the install command">Copy</button>
             </div>
-            <pre id="lp-cmd"><span class="lp-dollar" aria-hidden="true">$ </span>claude plugin marketplace add jinhuang712/claude-code-super-statusline
-<span class="lp-dollar" aria-hidden="true">$ </span>claude plugin install super-statusline@claude-code-super-statusline</pre>
+            <pre id="lp-cmd"><span class="lp-dollar" aria-hidden="true">$ </span>curl -fsSL https://raw.githubusercontent.com/jinhuang712/claude-code-super-statusline/main/install.sh | bash</pre>
           </div>
-          <p class="lp-then">Then run <code>/super-statusline:config</code> in Claude Code and pick a layout.</p>
+          <p class="lp-then">Then run <code>/super-statusline:config</code> in Claude Code and pick a layout. Rather do it by hand, or read the script first? See <a href="https://github.com/jinhuang712/claude-code-super-statusline/blob/main/INSTALL.md">INSTALL.md</a>.</p>
         </div>
       </section>
     </main>
