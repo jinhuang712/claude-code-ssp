@@ -1,6 +1,9 @@
-# claude-code-super-statusline
-
-**❯ super-statusline** — a Claude Code statusline you design in your browser, against your real session.
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="docs/images/banner-light.png">
+    <img alt="super-statusline — a Claude Code statusline you design in your browser, against your real session" src="docs/images/banner-dark.png">
+  </picture>
+</h1>
 
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="docs/images/statusline-light.png">

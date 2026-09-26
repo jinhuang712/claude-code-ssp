@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="super-statusline">
+  <!-- The favicon's mark (web/public/favicon.svg): a prompt chevron and a block cursor in clay, on the panel's slate so it reads on light and dark pages. -->
+  <rect width="128" height="128" rx="28" fill="#1f1e1c"/>
+  <g transform="translate(16 16) scale(3)">
+    <path d="M5.5 9.5 12.5 16l-7 6.5" fill="none" stroke="#d97757" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="17" y="8.5" width="8.5" height="15" rx="1.5" fill="#d97757"/>
+  </g>
+</svg>
