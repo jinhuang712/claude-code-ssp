@@ -126,24 +126,11 @@
         </p>
       </section>
 
-      <!-- On phones this section isn't shown, and the configurator isn't loaded (site/demo/entry.ts). -->
-      <section id="try" class="lp-try" aria-labelledby="try-title">
-        <div class="lp lp-head lp-wrap">
-          <div class="lp-head-title">
-            <p class="lp-label"><i style="background: #7dcfff"></i><span data-i18n="try.label">03 · Try it</span></p>
-            <h2 id="try-title" class="lp-h2" data-i18n="try.title">This is the real configurator.</h2>
-          </div>
-          <p class="lp-head-text" data-i18n="try.text">It runs right here, on a sample session — keep scrolling to go through it. Your changes stay in this browser.</p>
-        </div>
-        <div class="lp lp-live"><p class="lp-live-tag"><i></i><span data-i18n="try.tag">LIVE DEMO · SAMPLE SESSION</span></p></div>
-        <!-- The configurator itself (web/), mounted here: one page, one scroll. -->
-        <div id="root"></div>
-      </section>
-
+      <!-- Before the demo: the configurator runs a long way down, and the command shouldn't wait under it. -->
       <section id="install" class="lp lp-section lp-wrap" aria-labelledby="install-title">
         <div class="lp-head">
           <div class="lp-head-title">
-            <p class="lp-label"><i style="background: #9ece6a"></i><span class="lp-desk">04</span><span class="lp-phone">03</span> · <span data-i18n="install.label">Install</span></p>
+            <p class="lp-label"><i style="background: #7dcfff"></i><span data-i18n="install.label">03 · Install</span></p>
             <h2 id="install-title" class="lp-h2" data-i18n="install.title">One command. Then it’s yours.</h2>
           </div>
           <p class="lp-head-text" data-i18n="install.text">It checks Claude Code (2.1.251 or later) and <a href="https://bun.sh">Bun</a> — offering to install Bun if it’s missing — then installs the plugin. Run it again any time to update.</p>
@@ -158,6 +145,20 @@
           </div>
           <p class="lp-then" data-i18n="install.then">Then run <code>/super-statusline:config</code> in Claude Code and pick a layout. Rather do it by hand, or read the script first? See <a href="https://github.com/jinhuang712/claude-code-super-statusline/blob/main/INSTALL.md">INSTALL.md</a>.</p>
         </div>
+      </section>
+
+      <!-- On phones this section isn't shown, and the configurator isn't loaded (site/demo/entry.ts). -->
+      <section id="try" class="lp-try" aria-labelledby="try-title">
+        <div class="lp lp-head lp-wrap">
+          <div class="lp-head-title">
+            <p class="lp-label"><i style="background: #9ece6a"></i><span data-i18n="try.label">04 · Try it</span></p>
+            <h2 id="try-title" class="lp-h2" data-i18n="try.title">This is the real configurator.</h2>
+          </div>
+          <p class="lp-head-text" data-i18n="try.text">It runs right here, on a sample session — keep scrolling to go through it. Your changes stay in this browser.</p>
+        </div>
+        <div class="lp lp-live"><p class="lp-live-tag"><i></i><span data-i18n="try.tag">LIVE DEMO · SAMPLE SESSION</span></p></div>
+        <!-- The configurator itself (web/), mounted here: one page, one scroll. -->
+        <div id="root"></div>
       </section>
     </main>
 

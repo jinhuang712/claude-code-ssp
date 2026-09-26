@@ -48,12 +48,12 @@ export const ZH: Record<string, string> = {
   "video.caption": "录自下方的配置器",
   callout: "可交互的配置器在本页的桌面版里——换到大屏幕上就能试用。",
 
-  "try.label": "03 · 试一试",
+  "try.label": "04 · 试一试",
   "try.title": "这就是真正的配置器。",
   "try.text": "它就在这里运行，用的是示例会话——继续往下滚动即可一路体验。你的改动只保存在这个浏览器里。",
   "try.tag": "在线演示 · 示例会话",
 
-  "install.label": "安装",
+  "install.label": "03 · 安装",
   "install.title": "一条命令，就归你了。",
   "install.text": '它会检查 Claude Code（2.1.251 及以上）和 <a href="https://bun.sh">Bun</a>——缺少 Bun 时会提出帮你安装——然后安装插件。以后随时再运行一次即可更新。',
   "install.terminal": "终端",

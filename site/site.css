@@ -568,7 +568,7 @@ body {
   color: var(--lp-muted);
 }
 
-/* ---- 03 try it: the configurator itself follows, in the same scroll */
+/* ---- 04 try it, the page's last section: the configurator itself follows, in the same scroll */
 .lp-try {
   padding-top: 10rem;
 }
@@ -605,12 +605,13 @@ body {
   border-radius: 50%;
   background: #9ece6a;
 }
-/* The app's own page ends with room for its toasts; close the section with a rule under it. */
+/* The app's own page ends with room for its toasts; close the section, and the page's content,
+   with a rule under it. The footer follows straight on (see .lp-foot). */
 .lp-try #root {
   border-bottom: 1px solid var(--lp-line);
 }
 
-/* ---- 04 install: the section head, then the commands at full width (they are 72 characters) */
+/* ---- 03 install: the section head, then the commands at full width (they are 72 characters) */
 .lp-install-body {
   display: flex;
   flex-direction: column;
@@ -674,25 +675,18 @@ body {
   color: var(--lp-fg);
 }
 /* ---- footer: wordmark · the project's links, centred · credit */
+/* On a desktop it sits right under the configurator, the page's last section, whose own rule
+   (.lp-try #root) closes the page: a second rule of the footer's own, a gap further down, read as a
+   stray line. Phones, which end with Install instead, give it its own gap and rule (below). */
 .lp-foot {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 1rem;
-  margin-top: 8rem;
   padding-block: 2.5rem 3rem;
   font-size: 0.8125rem;
   color: var(--lp-muted);
-}
-/* The rule spans the content, not the gutters (a border would run into the wrap's padding). */
-.lp-foot::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 2rem;
-  right: 2rem;
-  border-top: 1px solid var(--lp-line);
 }
 .lp-brand-sm {
   font-size: 0.875rem;
@@ -797,9 +791,14 @@ body {
     gap: 1.125rem;
     margin-top: 6rem;
   }
+  /* The rule spans the content, not the gutters (a border would run into the wrap's padding). */
   .lp-foot::before {
+    content: "";
+    position: absolute;
+    top: 0;
     left: 1rem;
     right: 1rem;
+    border-top: 1px solid var(--lp-line);
   }
   .lp-foot-credit {
     justify-self: start;
