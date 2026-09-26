@@ -6,8 +6,8 @@
 </h1>
 
 <picture>
-  <source media="(prefers-color-scheme: light)" srcset="docs/images/statusline-light.png">
-  <img alt="The Full preset: project, session name, model; repo, branch, lines changed, context bar; rate-limit windows, prompt cache; cost, tokens, output speed" src="docs/images/statusline-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/presets-light.png">
+  <img alt="The three presets. Minimal: project, branch, model, context. Standard: adds rate-limit usage and cost. Full: adds the diff, prompt cache, tokens and output speed" src="docs/images/presets-dark.png">
 </picture>
 
 ## Install
@@ -20,6 +20,19 @@ Then run `/super-statusline:config` in Claude Code and pick a layout. The script
 (and offers to install it); run it again any time to update. Installing by hand, uninstalling and upgrading:
 [INSTALL.md](INSTALL.md).
 
+## Drag and drop
+
+Start from a preset, then arrange it by hand — the preview redraws as you go:
+
+* **Drag a widget** from *Unused widgets* onto any line, left or right.
+* **Drag it again** to reorder it, or to move it to another line — or focus it and press <kbd>Alt</kbd> + arrow keys.
+* **Drag it back** to the tray to remove it (or click it and choose *Remove from statusline*).
+
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/dnd-light.gif">
+  <img alt="Recording: Lines changed dragged from the tray onto line 1, Session cost moved to line 2, Last reply dragged back to the tray — the statusline preview updates after each drop" src="docs/images/dnd-dark.gif">
+</picture>
+
 ## What you can change
 
 <picture>
@@ -27,7 +40,7 @@ Then run `/super-statusline:config` in Claude Code and pick a layout. The script
   <img alt="The configurator: a live preview of the statusline, Style (theme, bar glyphs, progress bar mode, separator) and Layout presets" src="docs/images/configurator-dark.png">
 </picture>
 
-* **Layout** — *Minimal*, *Standard* or *Full*, or *Custom* to build your own lines.
+* **Layout** — *Minimal*, *Standard* or *Full*, or *Custom* to build your own lines by dragging.
 * **Color theme** — default, nord, dracula, gruvbox, tokyo-night, catppuccin, mono.
 * **Progress bars** — the bar glyphs: full block, tall, low, half, slanted, squares, line, dots.
 * **Progress bar mode** — thresholds (green → yellow → red) or a smooth gradient.
