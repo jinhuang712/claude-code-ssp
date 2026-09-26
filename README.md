@@ -7,7 +7,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="docs/images/presets-light.png">
-  <img alt="The three presets. Minimal: project, branch, model, context. Standard: adds rate-limit usage and cost. Full: adds the diff, prompt cache, tokens and output speed" src="docs/images/presets-dark.png">
+  <img alt="The three presets. Minimal: project, branch, model, context. Standard: adds rate-limit usage. Full: adds the diff, prompt cache, tokens and output speed" src="docs/images/presets-dark.png">
 </picture>
 
 ## Install
