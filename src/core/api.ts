@@ -1,4 +1,4 @@
-import type { Segment, Style, ThemeDef, WidgetApi } from "./types.js";
+import type { ColorMode, Segment, Style, ThemeDef, WidgetApi } from "./types.js";
 
 export function formatTokens(n: number): string {
   if (!Number.isFinite(n) || n < 0) return "0";
@@ -79,11 +79,12 @@ export function bar(pct: number, width: number, theme: ThemeDef): string {
   return glyphs.filled.repeat(filled) + glyphs.empty.repeat(w - filled);
 }
 
-export function createApi(theme: ThemeDef, now: number): WidgetApi {
+export function createApi(theme: ThemeDef, now: number, colorMode: ColorMode = "thresholds"): WidgetApi {
   return {
     level,
     bar: (pct, width = 10) => bar(pct, width, theme),
     gradient,
+    levelColor: (pct, lvl, okToken) => (colorMode === "gradient" ? gradient(pct) : lvl === "ok" ? okToken : lvl),
     tokens: formatTokens,
     duration: formatDuration,
     relative: (when, at = now) => formatRelative(when, at),

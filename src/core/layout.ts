@@ -37,7 +37,7 @@ function renderInstance(
   fillEmpty = false,
 ): RenderedWidget | null {
   const def = getWidget(inst.widget);
-  const api = createApi(ctx.theme, ctx.now);
+  const api = createApi(ctx.theme, ctx.now, ctx.colorMode);
   if (!def) {
     errors.push({ widget: inst.widget, message: "unknown widget" });
     const text = renderSegments([{ text: `⚠ ${inst.widget}`, style: { fg: "muted", dim: true } }], ctx.theme, level);
@@ -192,13 +192,13 @@ export function layoutLine(zones: Record<Zone, RenderedWidget>, columns: number,
   return [withRight(first!.text, first!.width), ...rest.map((r) => r.text)];
 }
 
-export function render(config: FooterConfig, ctx: Omit<Ctx, "theme">, options: RenderOptions = {}): RenderResult {
+export function render(config: FooterConfig, ctx: Omit<Ctx, "theme" | "colorMode">, options: RenderOptions = {}): RenderResult {
   const fillEmpty = options.fillEmpty === true;
   const started = performance.now();
   const base = resolveTheme(config.theme);
   const theme = config.bar?.filled && config.bar.empty ? { ...base, bar: config.bar } : base;
   const level = config.colorLevel === "auto" ? detectColorLevel() : config.colorLevel;
-  const fullCtx: Ctx = { ...ctx, theme };
+  const fullCtx: Ctx = { ...ctx, theme, colorMode: config.colorMode };
   const errors: RenderResult["errors"] = [];
   const empty: RenderResult["empty"] = [];
   const lines: string[] = [];

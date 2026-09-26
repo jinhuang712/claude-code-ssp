@@ -107,6 +107,7 @@ project with its own config file, the header lets you choose between *Your setti
 {
   "theme": "tokyo-night",              // default | nord | dracula | gruvbox | tokyo-night | catppuccin | mono | {…inline}
   "colorLevel": "auto",                // auto | truecolor | 256 | 16 | none
+  "colorMode": "thresholds",           // thresholds | gradient — how every bar and percentage is coloured
   "separator": " │ ",
   "columnsOffset": 2,                  // cells reserved for Claude Code's own footer padding
   "lines": [
@@ -125,6 +126,12 @@ Each widget instance: `{ "widget": "<id>", "options": {…}, "style": { "fg", "b
 Colors are theme tokens (`fg muted accent ok warn crit model project git usage context`), literals
 (`#rrggbb`, `208`, `red`), or `default` — the terminal's own color. Every built-in theme prints plain values in
 `default`, so they stay readable on light terminals too.
+
+`colorMode` (*Style → Progress bar mode* in the panel) applies to every percentage widget — Context usage, Context
+value, Rate-limit windows, Single rate-limit window. `thresholds` colours a value green, then yellow from the widget's
+*Warn at %* and red from its *Critical at %*; `gradient` runs grey → blue → green → yellow → orange → red with the
+percentage and ignores *Warn at %* (*Critical at %* still makes the number bold). Up to 0.4.1 this was an option on
+each widget: a config that still has those is read as `gradient` if any widget asked for it, otherwise `thresholds`.
 
 ## Security model
 
@@ -152,7 +159,9 @@ export default {
 
 An option that only matters while another one is set can say so with `"x-requires"` — e.g.
 `barWidth: { type: "integer", "x-requires": { bar: true } }` — and the panel dims it with a hint instead of
-showing a control that seems to do nothing.
+showing a control that seems to do nothing. `"x-requires-config"` does the same for a top-level config key, e.g.
+`{ "colorMode": "thresholds" }`. A widget that draws a percentage should colour it with
+`api.levelColor(pct, api.level(pct, warnAt, critAt), "fg")`, which follows the user's Progress bar mode.
 
 See `examples/widgets/hello.ts` and `src/widgets/*` for the built-ins; `DESIGN.md` for the architecture.
 Restart the configurator to see a new widget under *Unused widgets* (the statusline picks it up immediately).

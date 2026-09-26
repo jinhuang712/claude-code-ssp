@@ -175,7 +175,7 @@ describe("render", () => {
     _resetRegistry();
     registerWidget(defineWidget({ id: "boom", name: "boom", description: "", category: "misc", schema: {}, defaults: {}, render: () => { throw new Error("nope"); } }));
     registerWidget(defineWidget({ id: "ok", name: "ok", description: "", category: "misc", schema: {}, defaults: {}, render: () => "fine" }));
-    const ctx = { columns: 40, now: 0 } as unknown as Omit<Ctx, "theme">;
+    const ctx = { columns: 40, now: 0 } as unknown as Omit<Ctx, "theme" | "colorMode">;
     const out = render({ ...DEFAULT_CONFIG, colorLevel: "none", lines: [{ left: [{ widget: "ok" }, { widget: "boom" }, { widget: "missing" }] }] }, ctx);
     expect(out.lines[0]).toBe("fine │ ⚠ boom │ ⚠ missing");
     expect(out.errors.map((e) => e.widget)).toEqual(["boom", "missing"]);

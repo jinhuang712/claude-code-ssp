@@ -62,7 +62,7 @@ export function resolveColumns(env: NodeJS.ProcessEnv = process.env, offset = 0)
   return Math.max(20, cols - offset);
 }
 
-export async function buildContext(stdin: StdinData, config: FooterConfig, opts: BuildOptions = {}): Promise<Omit<Ctx, "theme">> {
+export async function buildContext(stdin: StdinData, config: FooterConfig, opts: BuildOptions = {}): Promise<Omit<Ctx, "theme" | "colorMode">> {
   const now = opts.now ?? Date.now();
   const deadline = opts.deadlineMs ?? 1500;
   const cwd = stdin.workspace?.current_dir ?? stdin.cwd;

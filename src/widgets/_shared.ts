@@ -67,24 +67,17 @@ export function labelPrefix(label: string | null): string {
   return glyph || label.endsWith("=") ? label : `${label} `;
 }
 
-export type ColorMode = "thresholds" | "gradient";
-
-/** Resolve the colour for a percentage: theme token below the thresholds, or a computed gradient hex. */
-export function pctColor(mode: ColorMode, pct: number, lvl: "ok" | "warn" | "crit", okToken: string, api: { gradient(p: number): string }): string {
-  if (mode === "gradient") return api.gradient(pct);
-  return lvl === "ok" ? okToken : lvl;
-}
-
 /**
- * Colour mode + the two thresholds. In gradient mode the colour comes from the percentage alone, so
- * warnAt does nothing there (x-requires tells the panel to dim it). critAt usually still matters:
- * widgets that bold the value at the critical level keep doing so under the gradient — pass
- * `critBolds: false` for one that doesn't, and critAt gets the same requirement.
+ * The two thresholds of a percentage widget. The colour mode itself is config-wide (`colorMode`,
+ * the panel's "Progress bar mode"; widgets colour through `api.levelColor`). Under the gradient the
+ * colour comes from the percentage alone, so warnAt does nothing (x-requires-config tells the panel
+ * to dim it). critAt usually still matters: widgets that bold the value at the critical level keep
+ * doing so under the gradient — pass `critBolds: false` for one that doesn't, and critAt gets the
+ * same requirement.
  */
 export function thresholdSchema(warn: number, crit: number, opts: { critBolds?: boolean } = {}): Record<string, JsonSchema> {
-  const thresholdsOnly = { "x-requires": { colorMode: "thresholds" } };
+  const thresholdsOnly = { "x-requires-config": { colorMode: "thresholds" } };
   return {
-    colorMode: { type: "string", enum: ["thresholds", "gradient"], default: "thresholds", title: "Colour" },
     warnAt: { type: "integer", title: "Warn at %", minimum: 0, maximum: 100, default: warn, ...thresholdsOnly },
     critAt: { type: "integer", title: "Critical at %", minimum: 0, maximum: 100, default: crit, ...(opts.critBolds === false ? thresholdsOnly : {}) },
   };

@@ -33,6 +33,8 @@ export interface FooterConfig {
   colorLevel: "auto" | "truecolor" | "256" | "16" | "none";
   separator: string;
   bar?: { filled: string; empty: string };
+  /** How every percentage widget is coloured (Style → Progress bar mode). */
+  colorMode: "thresholds" | "gradient";
   columnsOffset: number;
   lines: LineConfig[];
   git: { enabled: boolean; cacheMs: number };

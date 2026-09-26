@@ -11,7 +11,7 @@ import { buildContext } from "../src/core/context.ts";
 import { prepareFixture } from "../src/core/fixtures.ts";
 import { render } from "../src/core/layout.ts";
 import { widgetManifest } from "../src/core/registry.ts";
-import type { JsonSchema, WidgetInstance } from "../src/core/types.ts";
+import type { FooterConfig, JsonSchema, WidgetInstance } from "../src/core/types.ts";
 import { ensureBuiltins, runGit } from "./helpers.ts";
 
 export const FIXTURES_DIR = path.resolve(import.meta.dir, "../src/fixtures");
@@ -105,8 +105,9 @@ export async function sampleContexts(): Promise<SweepContext[]> {
   return out;
 }
 
-export function renderOne(inst: WidgetInstance, ctx: SweepContext["ctx"]): { raw: string; errors: string[] } {
-  const r = render(normalizeConfig({ ...BASE, lines: [{ left: [inst] }] }), ctx, { fillEmpty: false });
+/** Render one instance the way the statusline would; `config` sets top-level keys such as colorMode. */
+export function renderOne(inst: WidgetInstance, ctx: SweepContext["ctx"], config: Partial<FooterConfig> = {}): { raw: string; errors: string[] } {
+  const r = render(normalizeConfig({ ...BASE, ...config, lines: [{ left: [inst] }] }), ctx, { fillEmpty: false });
   return { raw: r.lines[0] ?? "", errors: r.errors.map((e) => e.message) };
 }
 
@@ -122,5 +123,11 @@ export function builtinWidgets() {
 /** Options a widget instance needs so that `name` can take effect (from x-requires). */
 export function requirementsOf(schema: JsonSchema): Record<string, unknown> {
   const req = schema["x-requires"];
+  return req && typeof req === "object" ? req : {};
+}
+
+/** Top-level config keys an option needs so that it can take effect (from x-requires-config). */
+export function configRequirementsOf(schema: JsonSchema): Record<string, unknown> {
+  const req = schema["x-requires-config"];
   return req && typeof req === "object" ? req : {};
 }

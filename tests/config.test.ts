@@ -26,6 +26,42 @@ describe("normalizeConfig", () => {
   test("rejects bad enum values", () => {
     expect(normalizeConfig({ colorLevel: "rainbow" as never }).colorLevel).toBe("auto");
     expect(normalizeConfig({ columnsOffset: -5 }).columnsOffset).toBe(0);
+    expect(normalizeConfig({ colorMode: "rainbow" as never }).colorMode).toBe("thresholds");
+  });
+});
+
+// Up to 0.4.1 the colour mode was a per-widget option; it is now one config-wide setting.
+describe("legacy per-widget colorMode", () => {
+  const ctxGradient = { widget: "context.bar", options: { colorMode: "gradient", showTokens: true } };
+  const usageThresholds = { widget: "usage.windows", options: { colorMode: "thresholds" } };
+
+  test("a widget that asked for the gradient makes the whole config gradient", () => {
+    expect(normalizeConfig({ lines: [{ left: [usageThresholds], right: [ctxGradient] }] }).colorMode).toBe("gradient");
+  });
+  test("only thresholds (or no colorMode at all) stays thresholds", () => {
+    expect(normalizeConfig({ lines: [{ left: [usageThresholds] }] }).colorMode).toBe("thresholds");
+    expect(normalizeConfig({ lines: [{ left: [{ widget: "context.bar" }] }] }).colorMode).toBe("thresholds");
+  });
+  test("an explicit top-level colorMode wins over the old widget options", () => {
+    expect(normalizeConfig({ colorMode: "thresholds", lines: [{ right: [ctxGradient] }] }).colorMode).toBe("thresholds");
+  });
+  test("the old widget option is dropped, the widget's other options are kept", () => {
+    const c = normalizeConfig({ lines: [{ right: [ctxGradient] }] });
+    expect(c.lines[0]!.right).toEqual([{ widget: "context.bar", options: { showTokens: true } }]);
+  });
+  // The panel saves a diff onto the layer; if only the merged config were lifted, the first save
+  // after editing the lines would write lines without the old option and no top-level key.
+  test("the layer itself is lifted as it is read, so a panel save keeps the choice", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ssp-colormode-"));
+    try {
+      const file = path.join(dir, "config.json");
+      fs.writeFileSync(file, JSON.stringify({ lines: [{ right: [ctxGradient] }] }));
+      const eff = loadEffectiveConfig(undefined, { ...process.env, CLAUDE_CODE_SUPER_STATUSLINE_CONFIG: file });
+      expect(eff.config.colorMode).toBe("gradient");
+      expect(eff.layers.find((l) => l.name === "user")!.value!.colorMode).toBe("gradient");
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 

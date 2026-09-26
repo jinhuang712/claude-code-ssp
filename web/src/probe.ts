@@ -77,14 +77,15 @@ export function probe(config: FooterConfig, sampleId: string | null): Promise<Re
 }
 
 /**
- * The config a probe renders: just this widget, on one line, with the current theme and bar glyphs.
+ * The config a probe renders: just this widget, on one line, with the current theme, bar glyphs and colour mode.
  * Colours stay on (truecolor) so samples can be drawn exactly as the terminal would.
  */
-export function probeConfig(inst: WidgetInstance, theme: FooterConfig["theme"] | undefined, bar: FooterConfig["bar"] | undefined): FooterConfig {
+export function probeConfig(inst: WidgetInstance, theme: FooterConfig["theme"] | undefined, bar: FooterConfig["bar"] | undefined, colorMode: FooterConfig["colorMode"] = "thresholds"): FooterConfig {
   return {
     version: 1,
     theme: theme ?? "default",
     ...(bar ? { bar } : {}),
+    colorMode,
     colorLevel: "truecolor",
     separator: " ",
     columnsOffset: 0,
@@ -100,11 +101,12 @@ export function useProbe(insts: WidgetInstance[]): string[] {
   const sampleId = useStore((s) => s.sampleId);
   const theme = useStore((s) => s.config?.theme);
   const bar = useStore((s) => s.config?.bar);
+  const colorMode = useStore((s) => s.config?.colorMode);
   const [out, setOut] = useState<string[]>([]);
-  const key = JSON.stringify([insts, sampleId, theme, bar]);
+  const key = JSON.stringify([insts, sampleId, theme, bar, colorMode]);
   useEffect(() => {
     let alive = true;
-    Promise.all(insts.map((inst) => probe(probeConfig(inst, theme, bar), sampleId).then((r) => r?.lines[0]?.trimEnd() ?? ""))).then((texts) => {
+    Promise.all(insts.map((inst) => probe(probeConfig(inst, theme, bar, colorMode), sampleId).then((r) => r?.lines[0]?.trimEnd() ?? ""))).then((texts) => {
       if (alive) setOut(texts);
     });
     return () => {

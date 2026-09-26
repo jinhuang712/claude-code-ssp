@@ -6,7 +6,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { adoptLegacyDir, APP_NAME, LEGACY_APP_NAME, newOrLegacy } from "../data/app-name.js";
-import type { FooterConfig, LineConfig } from "./types.js";
+import type { FooterConfig, LineConfig, WidgetInstance } from "./types.js";
 
 export const CONFIG_VERSION = 1 as const;
 
@@ -51,6 +51,7 @@ export const DEFAULT_CONFIG: FooterConfig = {
   theme: "default",
   colorLevel: "auto",
   separator: " │ ",
+  colorMode: "thresholds",
   columnsOffset: 4,
   lines: DEFAULT_LINES,
   git: { enabled: true, cacheMs: 2000 },
@@ -86,13 +87,40 @@ export function mergeConfig<T>(base: T, over: unknown): T {
   return out as T;
 }
 
+/**
+ * Up to 0.4.1 each percentage widget had its own `options.colorMode`; now it is one top-level
+ * `colorMode`. A config (or layer) that doesn't set the top-level key yet gets it from its widgets:
+ * "gradient" if any widget asked for the gradient, since that is the choice somebody made — the
+ * default was "thresholds". A config that mixed the two comes out all-gradient; that is the one
+ * look it can't keep, and the README says so.
+ *
+ * Layers are lifted as they are read, not only the merged result: the panel saves the diff between
+ * the effective configs onto the layer (web/src/layers.ts), so a value lifted only in the merge
+ * would never be written, and would be lost the first time the lines were edited and saved without
+ * the old widget options (normalizeConfig drops them).
+ */
+export function liftLegacyColorMode<T extends Partial<FooterConfig>>(value: T): T {
+  if (value.colorMode !== undefined || !Array.isArray(value.lines)) return value;
+  const gradient = value.lines.some(
+    (l) => isPlainObject(l) && (["left", "center", "right"] as const).some((z) => Array.isArray(l[z]) && l[z]!.some((w) => isPlainObject(w) && isPlainObject(w.options) && w.options.colorMode === "gradient")),
+  );
+  return gradient ? { ...value, colorMode: "gradient" } : value;
+}
+
+/** A widget instance without the pre-0.4.2 per-widget colorMode, which nothing reads any more. */
+function withoutLegacyColorMode(w: WidgetInstance): WidgetInstance {
+  if (!isPlainObject(w.options) || !("colorMode" in w.options)) return w;
+  const { colorMode: _dropped, ...options } = w.options;
+  return { ...w, options };
+}
+
 function readLayer(name: ConfigLayer["name"], filePath: string | null): ConfigLayer {
   if (!filePath) return { name, path: null, exists: false, value: null };
   try {
     const raw = fs.readFileSync(filePath, "utf8");
     const parsed = JSON.parse(raw) as unknown;
     if (!isPlainObject(parsed)) return { name, path: filePath, exists: true, value: null, error: "top-level value is not an object" };
-    return { name, path: filePath, exists: true, value: parsed as Partial<FooterConfig> };
+    return { name, path: filePath, exists: true, value: liftLegacyColorMode(parsed as Partial<FooterConfig>) };
   } catch (err) {
     const e = err as NodeJS.ErrnoException;
     if (e.code === "ENOENT") return { name, path: filePath, exists: false, value: null };
@@ -102,18 +130,20 @@ function readLayer(name: ConfigLayer["name"], filePath: string | null): ConfigLa
 
 /** Minimal shape validation; unknown keys are kept so plugins can stash settings. */
 export function normalizeConfig(input: Partial<FooterConfig>): FooterConfig {
-  const merged = mergeConfig(DEFAULT_CONFIG, input);
+  const merged = mergeConfig(DEFAULT_CONFIG, liftLegacyColorMode(input));
   const lines = Array.isArray(merged.lines) ? merged.lines.filter(isPlainObject) : DEFAULT_LINES;
+  const cleanZone = (z: WidgetInstance[] | undefined): WidgetInstance[] => (Array.isArray(z) ? z.filter((w) => isPlainObject(w) && typeof w.widget === "string").map(withoutLegacyColorMode) : []);
   const cleanLine = (l: LineConfig): LineConfig => ({
     ...l,
-    left: Array.isArray(l.left) ? l.left.filter((w) => isPlainObject(w) && typeof w.widget === "string") : [],
-    center: Array.isArray(l.center) ? l.center.filter((w) => isPlainObject(w) && typeof w.widget === "string") : [],
-    right: Array.isArray(l.right) ? l.right.filter((w) => isPlainObject(w) && typeof w.widget === "string") : [],
+    left: cleanZone(l.left),
+    center: cleanZone(l.center),
+    right: cleanZone(l.right),
   });
   return {
     ...merged,
     version: CONFIG_VERSION,
     separator: typeof merged.separator === "string" ? merged.separator : DEFAULT_CONFIG.separator,
+    colorMode: merged.colorMode === "gradient" ? "gradient" : "thresholds",
     colorLevel: ["auto", "truecolor", "256", "16", "none"].includes(merged.colorLevel as string) ? merged.colorLevel : "auto",
     columnsOffset: Number.isFinite(merged.columnsOffset) ? Math.max(0, Math.floor(Number(merged.columnsOffset))) : DEFAULT_CONFIG.columnsOffset,
     lines: lines.map(cleanLine),

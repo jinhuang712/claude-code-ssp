@@ -11,8 +11,12 @@
  * The only exceptions are options whose data can't come from a session sample; each says why.
  */
 import { describe, expect, test } from "bun:test";
+import { DEFAULT_CONFIG } from "../src/core/config.ts";
 import type { JsonSchema } from "../src/core/types.ts";
-import { BASE_OPTIONS, builtinWidgets, plain, renderOne, requirementsOf, sampleContexts, valuesFor } from "./option-sweep";
+import { BASE_OPTIONS, builtinWidgets, configRequirementsOf, plain, renderOne, requirementsOf, sampleContexts, valuesFor } from "./option-sweep";
+
+/** The values of each top-level config key an option can require (x-requires-config). */
+const CONFIG_ENUMS: Record<string, unknown[]> = { colorMode: ["thresholds", "gradient"] };
 
 /** Options the sweep can't exercise, with the reason. Keep this empty unless there is no way to. */
 const EXCEPTIONS: Record<string, string> = {};
@@ -91,7 +95,7 @@ describe("option sweep", () => {
 
   // The converse: an option that does nothing under one value of a sibling enum (but something under
   // another) must say so, or the panel offers a control that silently does nothing. This caught
-  // warnAt under the gradient colour mode.
+  // warnAt under the gradient colour mode, back when that was a sibling option (now x-requires-config, below).
   test("an option that only works under some value of a sibling enum declares x-requires", () => {
     const undeclared: string[] = [];
     for (const w of widgets) {
@@ -110,6 +114,47 @@ describe("option sweep", () => {
       }
     }
     expect(undeclared).toEqual([]);
+  });
+
+  // The same promise for requirements on the config rather than on a sibling (x-requires-config):
+  // warnAt is dimmed under the gradient, so it must really do nothing there.
+  test("an option never changes the output while its x-requires-config is unmet", () => {
+    const lying: string[] = [];
+    for (const w of widgets) {
+      for (const [name, schema] of Object.entries(w.schema.properties ?? {})) {
+        for (const [key, want] of Object.entries(configRequirementsOf(schema))) {
+          for (const other of (CONFIG_ENUMS[key] ?? []).filter((v) => v !== want)) {
+            const base = { ...BASE_OPTIONS[w.id], ...requirementsOf(schema) };
+            const cfg = { [key]: other };
+            const moved = valuesFor(w.id, name, schema, w.defaults[name]).some((v) =>
+              contexts.some((c) => renderOne({ widget: w.id, options: base }, c.ctx, cfg).raw !== renderOne({ widget: w.id, options: { ...base, [name]: v } }, c.ctx, cfg).raw),
+            );
+            if (moved) lying.push(`${w.id}.${name} changes the output with ${key}=${JSON.stringify(other)}`);
+          }
+        }
+      }
+    }
+    expect(lying).toEqual([]);
+  });
+
+  test("x-requires-config only names config keys whose values the sweep knows", () => {
+    const bad: string[] = [];
+    for (const w of widgets)
+      for (const [name, schema] of Object.entries(w.schema.properties ?? {}))
+        for (const key of Object.keys(configRequirementsOf(schema))) if (!(key in DEFAULT_CONFIG) || !CONFIG_ENUMS[key]) bad.push(`${w.id}.${name} requires config ${key}`);
+    expect(bad).toEqual([]);
+  });
+
+  // The Style panel's "Progress bar mode" is one config key; every widget with thresholds must follow it.
+  test("the config's colorMode reaches every percentage widget", () => {
+    const deaf = widgets
+      .filter((w) => "warnAt" in (w.schema.properties ?? {}))
+      .filter((w) => {
+        const inst = { widget: w.id, options: { ...BASE_OPTIONS[w.id] } };
+        return !contexts.some((c) => renderOne(inst, c.ctx, { colorMode: "thresholds" }).raw !== renderOne(inst, c.ctx, { colorMode: "gradient" }).raw);
+      })
+      .map((w) => w.id);
+    expect(deaf).toEqual([]);
   });
 
   test("x-requires only names options the widget has", () => {

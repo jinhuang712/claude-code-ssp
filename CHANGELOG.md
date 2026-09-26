@@ -2,6 +2,14 @@
 
 Versions follow the plugin manifest (`.claude-plugin/plugin.json`); marketplace installs update when it changes.
 
+## Unreleased
+
+- **One colour mode for every progress bar.** Thresholds or gradient used to be picked per widget (*Colour* on
+  Context usage, Context value and both rate-limit widgets); it is now a single `colorMode` setting that all of them
+  follow. Existing configs carry over: if any widget was set to the gradient, the whole statusline is (so a config that
+  mixed the two becomes all-gradient), otherwise it stays on thresholds. The Full preset no longer turns the gradient
+  on by itself. Plugins can colour a percentage the same way with `api.levelColor`.
+
 ## 0.4.1 — 2026-09-24
 
 - **The header carries the new name.** "Claude Code statusline" with ✻ became a wordmark: `❯ super-statusline` in mono

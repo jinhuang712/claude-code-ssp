@@ -54,6 +54,14 @@ export interface LineConfig {
 
 export type ColorLevel = "auto" | "truecolor" | "256" | "16" | "none";
 
+/**
+ * How percentage widgets (bars and their numbers) are coloured — the panel's "Progress bar mode".
+ * `thresholds`: the widget's ok token below warnAt, then warn, then crit from critAt. `gradient`: a
+ * continuous hex from the percentage alone (`gradient()` in api.ts). It is one config-wide setting;
+ * up to 0.4.1 each widget had its own, which liftLegacyColorMode (config.ts) still reads.
+ */
+export type ColorMode = "thresholds" | "gradient";
+
 export interface ThemeTokens {
   fg: Color;
   muted: Color;
@@ -106,6 +114,8 @@ export interface FooterConfig {
   separator: string;
   /** Overrides the theme's bar glyphs, e.g. { filled: "▮", empty: "▯" }. */
   bar?: { filled: string; empty: string };
+  /** How every percentage widget is coloured; see ColorMode. */
+  colorMode: ColorMode;
   /** Cells subtracted from $COLUMNS to leave room for Claude Code's own footer padding. */
   columnsOffset: number;
   lines: LineConfig[];
@@ -120,6 +130,8 @@ export interface Ctx extends DataContext {
   columns: number;
   now: number;
   theme: ThemeDef;
+  /** The config's colour mode, which `api.levelColor` follows. */
+  colorMode: ColorMode;
   /** Counter baseline recorded by `/super-statusline:reset` for this session, if any. */
   reset: ResetBaseline | null;
   /** Output speed of the latest long-enough response, from the transcript tail (see response-speed.ts). */
@@ -135,6 +147,12 @@ export interface WidgetApi {
   bar(pct: number, width?: number): string;
   /** Hex colour for a 0–100 value on a continuous spectrum: white → blue → green → yellow → orange → red → deep red. */
   gradient(pct: number): string;
+  /**
+   * The colour for a 0–100 value under the user's colour mode: `gradient(pct)` in gradient mode,
+   * else `okToken` / "warn" / "crit" by `lvl` (from `level()`). A plugin that draws a percentage
+   * should use this, so it follows the panel's "Progress bar mode" like the built-ins do.
+   */
+  levelColor(pct: number, lvl: "ok" | "warn" | "crit", okToken: Color): Color;
   /** 12345 → "12k", 1_234_567 → "1.2M". */
   tokens(n: number): string;
   /** Milliseconds → "3h 41m". */
@@ -161,6 +179,11 @@ export interface JsonSchema {
    * says what it needs; the option sweep test only exercises it with the requirement met.
    */
   "x-requires"?: Record<string, unknown>;
+  /**
+   * Like x-requires, but on top-level config keys instead of sibling options: warnAt needs
+   * `{ colorMode: "thresholds" }`, since the gradient ignores it. The panel dims it the same way.
+   */
+  "x-requires-config"?: Record<string, unknown>;
   [k: string]: unknown;
 }
 

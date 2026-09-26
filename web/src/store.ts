@@ -57,10 +57,10 @@ export const PRESETS: Record<PresetId, { lines: LineConfig[] }> = {
           { widget: "git.branch", options: { showFileStats: true } },
           { widget: "git.linesChanged", style: { bold: true }, options: { source: "worktree" } },
         ],
-        right: [{ widget: "context.bar", options: { colorMode: "gradient", showTokens: true } }],
+        right: [{ widget: "context.bar", options: { showTokens: true } }],
       },
       {
-        left: [{ widget: "usage.windows", options: { resetFormat: "absolute", bar: true, colorMode: "gradient" } }],
+        left: [{ widget: "usage.windows", options: { resetFormat: "absolute", bar: true } }],
         right: [{ widget: "context.promptCache", options: { showHitRatio: true } }],
       },
       {

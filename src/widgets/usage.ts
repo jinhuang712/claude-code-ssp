@@ -1,5 +1,5 @@
 import { defineWidget } from "../core/types.js";
-import { labelSchema, stdin, thresholdSchema, withLabel, pctColor, type ColorMode } from "./_shared.js";
+import { labelSchema, stdin, thresholdSchema, withLabel } from "./_shared.js";
 
 type Window = { key: "5h" | "7d" | "spend"; pct: number | null; resetsAt: number | null };
 
@@ -38,7 +38,7 @@ export const usageWindows = defineWidget<{
   barWidth: number;
   showReset: boolean;
   resetFormat: "relative" | "absolute";
-  colorMode: ColorMode;
+ 
   value: "used" | "remaining";
   warnAt: number;
   critAt: number;
@@ -63,7 +63,7 @@ export const usageWindows = defineWidget<{
       ...thresholdSchema(70, 90),
     },
   },
-  defaults: { label: "Usage", show5h: true, show7d: true, showSpend: true, bar: false, barWidth: 8, showReset: true, resetFormat: "relative", value: "used", colorMode: "thresholds", warnAt: 70, critAt: 90 },
+  defaults: { label: "Usage", show5h: true, show7d: true, showSpend: true, bar: false, barWidth: 8, showReset: true, resetFormat: "relative", value: "used", warnAt: 70, critAt: 90 },
   numeric: (ctx) => {
     const ws = windows(ctx).map((w) => w.pct ?? 0);
     return ws.length ? Math.max(...ws) : null;
@@ -93,15 +93,15 @@ export const usageWindows = defineWidget<{
         segs.push(api.seg(o.resetFormat === "absolute" ? `resets ${resetTxt}` : `resets in ${resetTxt}`, { fg: "crit", bold: true }));
         return;
       }
-      if (o.bar) segs.push(api.seg(api.bar(pct, o.barWidth) + " ", { fg: pctColor(o.colorMode, pct, lvl, "usage", api) }));
-      segs.push(api.seg(`${shown}%`, { fg: pctColor(o.colorMode, pct, lvl, "fg", api), bold: lvl === "crit" }));
+      if (o.bar) segs.push(api.seg(api.bar(pct, o.barWidth) + " ", { fg: api.levelColor(pct, lvl, "usage") }));
+      segs.push(api.seg(`${shown}%`, { fg: api.levelColor(pct, lvl, "fg"), bold: lvl === "crit" }));
       if (o.showReset && resetTxt) segs.push(api.seg(` (${resetTxt})`, { fg: "muted" }));
     });
     return segs;
   },
 });
 
-export const usageSingle = defineWidget<{ window: "5h" | "7d"; label: string | null; bar: boolean; barWidth: number; showReset: boolean; resetFormat: "relative" | "absolute"; colorMode: ColorMode; warnAt: number; critAt: number }>({
+export const usageSingle = defineWidget<{ window: "5h" | "7d"; label: string | null; bar: boolean; barWidth: number; showReset: boolean; resetFormat: "relative" | "absolute"; warnAt: number; critAt: number }>({
   id: "usage.single",
   name: "Single rate-limit window",
   description: "Just one window as compact text, e.g. for a narrow zone.",
@@ -119,7 +119,7 @@ export const usageSingle = defineWidget<{ window: "5h" | "7d"; label: string | n
       ...thresholdSchema(70, 90),
     },
   },
-  defaults: { window: "5h", label: null, bar: false, barWidth: 8, showReset: false, resetFormat: "relative", colorMode: "thresholds", warnAt: 70, critAt: 90 },
+  defaults: { window: "5h", label: null, bar: false, barWidth: 8, showReset: false, resetFormat: "relative", warnAt: 70, critAt: 90 },
   render(ctx, o, api) {
     const w = windows(ctx).find((x) => x.key === o.window);
     if (!w) return null;
@@ -135,8 +135,8 @@ export const usageSingle = defineWidget<{ window: "5h" | "7d"; label: string | n
       segs.push(api.seg(o.resetFormat === "absolute" ? `resets ${resetTxt}` : `resets in ${resetTxt}`, { fg: "crit", bold: true }));
       return segs;
     }
-    if (o.bar) segs.push(api.seg(api.bar(pct, o.barWidth) + " ", { fg: pctColor(o.colorMode, pct, lvl, "usage", api) }));
-    segs.push(api.seg(`${pct}%`, { fg: pctColor(o.colorMode, pct, lvl, "fg", api), bold: lvl === "crit" }));
+    if (o.bar) segs.push(api.seg(api.bar(pct, o.barWidth) + " ", { fg: api.levelColor(pct, lvl, "usage") }));
+    segs.push(api.seg(`${pct}%`, { fg: api.levelColor(pct, lvl, "fg"), bold: lvl === "crit" }));
     if (o.showReset && resetTxt) segs.push(api.seg(` (${resetTxt})`, { fg: "muted" }));
     return segs;
   },
