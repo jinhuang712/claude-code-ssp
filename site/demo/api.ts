@@ -1,6 +1,6 @@
 /**
  * The demo's server, in the browser. The configurator is the real app (web/), built unchanged except
- * for this module, which web/vite.demo.config.ts loads before it: it answers the app's `/api/*`
+ * for this module, which site/demo/entry.ts loads before it: it answers the app's `/api/*`
  * fetches the way src/server/serve.ts does, with the real render engine and widgets, against one
  * sample session precomputed at build time (site/build.ts). Edits are kept in localStorage.
  *

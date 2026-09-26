@@ -87,5 +87,6 @@ scripts/ui-smoke.sh       # headless browser check of the configurator (playwrig
 bun run site              # build the GitHub Pages site into site/dist and serve it on :4880
 ```
 
-The site is a welcome page plus `/demo/`: the real configurator, built by `web/vite.demo.config.ts` with its API
-running in the browser (`site/demo/api.ts`) against a sample session precomputed by `site/build.ts`.
+The site is one page: the three presets rendered by the real engine, the drag-and-drop recording, and the real
+configurator mounted inside it (desktop only), built by `web/vite.demo.config.ts` with its API running in the browser
+(`site/demo/api.ts`) against a sample session precomputed by `site/build.ts`.

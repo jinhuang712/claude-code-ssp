@@ -7,3 +7,12 @@ declare module "virtual:demo-context" {
   };
   export default demo;
 }
+
+/**
+ * The configurator's entry, web/src/main.tsx (mounts into #root). Resolved by
+ * web/vite.demo.config.ts; typed as a side-effect module here, since the site's tsconfig has no JSX.
+ */
+declare module "virtual:app-main" {}
+
+/** Stylesheets imported for their side effect; Vite bundles them. */
+declare module "*.css" {}

@@ -1,9 +1,8 @@
 /**
- * Builds the GitHub Pages site into site/dist:
- *   /        the welcome page (site/index.html + site/site.css): the three presets rendered by the real
- *            engine, then the configurator itself, embedded
- *   /demo/   the real configurator (web/), built with web/vite.demo.config.ts so its API runs in the
- *            browser (site/demo/api.ts) against one precomputed sample session
+ * Builds the GitHub Pages site into site/dist: one page (site/index.html, site/site.css,
+ * site/landing.ts) — the three presets rendered by the real engine, the drag-and-drop recording,
+ * and the real configurator (web/) mounted inside it, its API running in the browser
+ * (site/demo/api.ts) against one precomputed sample session. web/vite.demo.config.ts builds it.
  *
  *   bun site/build.ts            build
  *   bun site/build.ts --serve    build, then serve site/dist on http://127.0.0.1:4880
@@ -101,24 +100,28 @@ function presetsHtml(contextFile: string): string {
   return r.stdout.toString();
 }
 
-function copyDir(from: string, to: string): void {
-  fs.mkdirSync(to, { recursive: true });
-  fs.cpSync(from, to, { recursive: true });
+/** The recordings the page plays and their posters (site/landing.ts picks one per scheme); the rest of docs/images is README-only. */
+const VIDEOS = ["dnd-dark.mp4", "dnd-light.mp4", "dnd-dark-poster.jpg", "dnd-light-poster.jpg"];
+
+/** Every file of the built site, for the leak check. */
+function walk(dir: string): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]));
 }
 
 async function main(): Promise<void> {
   try {
     const presets = presetsHtml(await demoContext());
-    fs.rmSync(OUT, { recursive: true, force: true });
+    // The page Vite builds (web/vite.demo.config.ts reads it): the template with the presets in.
+    fs.writeFileSync(path.join(BUILD, "index.html"), fs.readFileSync(path.join(SITE, "index.html"), "utf8").replace("<!-- PRESETS -->", presets));
     run(["bun", "x", "vite", "build", "--config", "vite.demo.config.ts", "--logLevel", "warn"], path.join(ROOT, "web"));
-    const page = fs.readFileSync(path.join(SITE, "index.html"), "utf8").replace("<!-- PRESETS -->", presets);
-    if (page.includes(REAL_HOME)) throw new Error("welcome page mentions the builder's home directory");
-    fs.writeFileSync(path.join(OUT, "index.html"), page);
-    fs.copyFileSync(path.join(SITE, "site.css"), path.join(OUT, "site.css"));
-    fs.copyFileSync(path.join(ROOT, "web/public/favicon.svg"), path.join(OUT, "favicon.svg"));
-    copyDir(path.join(ROOT, "docs/images"), path.join(OUT, "images"));
+    fs.mkdirSync(path.join(OUT, "images"), { recursive: true });
+    for (const v of VIDEOS) fs.copyFileSync(path.join(ROOT, "docs/images", v), path.join(OUT, "images", v));
     // GitHub Pages runs Jekyll unless told not to; plain files need no processing.
     fs.writeFileSync(path.join(OUT, ".nojekyll"), "");
+    // The page and its bundle (which carries the demo session) must not mention the builder's home.
+    for (const f of walk(OUT).filter((f) => /\.(html|js|css|json)$/.test(f))) {
+      if (fs.readFileSync(f, "utf8").includes(REAL_HOME)) throw new Error(`${path.relative(ROOT, f)} mentions the builder's home directory`);
+    }
     console.log(`site → ${path.relative(ROOT, OUT)}/`);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });

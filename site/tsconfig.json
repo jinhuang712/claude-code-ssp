@@ -1,8 +1,8 @@
 {
-  // The site's build script (Bun) and the demo's in-browser API (DOM). Run by `bun run typecheck`.
+  // The site's build scripts (Bun) and its browser code — the page, the in-browser API (DOM). Run by `bun run typecheck`.
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "resolveJsonModule": true
   },
   "include": ["build.ts", "presets.ts", "demo"]

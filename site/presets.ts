@@ -104,18 +104,31 @@ function ansiToHtml(line: string): string {
   return out;
 }
 
+/** Each preset's dot: the tray's category colour of what it adds (project, git, context). */
+const DOT = { minimal: "#e0af68", standard: "#bb9af7", full: "#9ece6a" } as const;
+
 registerBuiltinWidgets();
 const ctx = (revive(JSON.parse(fs.readFileSync(file, "utf8"))) as { ctx: Omit<Ctx, "theme" | "colorMode"> }).ctx;
-const blocks = (["minimal", "standard", "full"] as const).map((id) => {
+const groups = (["minimal", "standard", "full"] as const).map((id) => {
   const config = normalizeConfig({ lines: PRESETS[id].lines, colorLevel: "truecolor" });
   const r = render(config, { ...ctx, columns }, { fillEmpty: false });
   if (r.errors.length) throw new Error(`preset ${id}: ${r.errors.map((e) => e.message).join("; ")}`);
-  // Name and blurb are the configurator's own preset copy, so the page and the app never disagree.
+  // Name, line count and blurb are the configurator's own preset copy, so page and app never
+  // disagree. The blurb reads "Two lines: adds usage limits and cost"; the label keeps what follows
+  // the colon, since the line count is already there.
   const preset = en.presets[id];
-  const rows = r.lines.map((l) => `<span class="row">${ansiToHtml(l)}</span>`).join("\n");
-  return `<figure class="preset">
-  <figcaption><b>${escapeHtml(preset.name)}</b> <span>${escapeHtml(preset.blurb)}</span></figcaption>
-  <pre class="term">${rows}</pre>
-</figure>`;
+  const adds = preset.blurb.split(": ").slice(1).join(": ") || preset.blurb;
+  const rows = r.lines.map((l) => `<span class="lp-row">${ansiToHtml(l)}</span>`).join("\n");
+  return `<div class="lp-preset">
+  <div class="lp-preset-label"><i style="background: ${DOT[id]}"></i><span><b>${escapeHtml(preset.name)}</b> · ${escapeHtml(en.presets.lines(r.lines.length))} · ${escapeHtml(adds)}</span><i class="lp-rule"></i></div>
+  <pre class="lp-rows">${rows}</pre>
+</div>`;
 });
-process.stdout.write(`<div class="presets" aria-label="The three presets">\n${blocks.join("\n")}\n</div>\n`);
+// One terminal, all three presets (hero option B): each group is a labelled render at `columns`.
+process.stdout.write(`<div class="lp-term" role="img" aria-label="The three presets rendered on a sample session: Minimal on one line, Standard on two, Full on four">
+<div class="lp-term-bar" aria-hidden="true"><span>three presets · one session</span><span class="lp-desk">~/dev/webapp — claude</span><span class="lp-phone">swipe →</span></div>
+<div class="lp-term-body">
+${groups.join("\n")}
+</div>
+</div>
+`);

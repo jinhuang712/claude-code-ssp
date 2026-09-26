@@ -1,123 +1,153 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark light" />
-    <title>super-statusline — a Claude Code statusline you design in your browser</title>
-    <meta name="description" content="A Claude Code statusline you design in your browser: pick a preset, then drag widgets into place. Try the real configurator right on this page." />
-    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <link rel="stylesheet" href="site.css" />
+    <title>super-statusline — design your Claude Code statusline in the browser</title>
+    <meta name="description" content="A Claude Code statusline you design in your browser: start from a preset, drag widgets into place, and try the real configurator right on this page." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      // The configurator's own rule (web/index.html, src/theme.ts), before first paint: the page and
+      // the configurator embedded in it share one scheme, and its appearance switch changes both.
+      (function () {
+        var pref = "system";
+        try {
+          pref = localStorage.getItem("ssp.theme") || "system";
+        } catch (e) {}
+        var light = pref === "light" || (pref !== "dark" && window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches);
+        document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
+      })();
+    </script>
   </head>
   <body>
-    <a class="skip" href="#try">Skip to the configurator</a>
-    <header class="top">
-      <a class="brand mono" href="./" aria-label="super-statusline home">
-        <svg class="brand-prompt" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.2 1.6 7.8 6l-5.6 4.4" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
-        <span><span class="brand-super">super</span>-statusline</span>
+    <a class="lp lp-skip" href="#presets">Skip to content</a>
+
+    <header class="lp lp-top lp-wrap">
+      <a class="lp-brand" href="#presets" aria-label="super-statusline">
+        <svg class="lp-prompt" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.2 1.6 7.8 6l-5.6 4.4" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        <span class="lp-brand-word">
+          <span><span class="lp-super">super</span>-statusline</span>
+          <!-- The configurator header's hairline: three left-zone segments, a gap, one right-zone segment. -->
+          <span class="lp-hairline" aria-hidden="true"><i style="width: 2.6em; background: #e0af68"></i><i style="width: 1.3em; background: #bb9af7"></i><i style="width: 0.8em; background: #7dcfff"></i><i class="lp-gap"></i><i style="width: 1.75em; background: #9ece6a"></i></span>
+        </span>
       </a>
-      <nav aria-label="Site">
-        <a href="#try">Try it</a>
-        <a href="https://github.com/jinhuang712/claude-code-super-statusline/blob/main/INSTALL.md">Install</a>
-        <a href="https://github.com/jinhuang712/claude-code-super-statusline">GitHub</a>
+      <nav class="lp-nav" aria-label="Site">
+        <a class="lp-desk" href="#presets">Presets</a>
+        <a class="lp-desk" href="#arrange">Drag &amp; drop</a>
+        <a class="lp-desk" href="#try">Try it</a>
+        <a href="https://github.com/jinhuang712/claude-code-super-statusline">GitHub<svg class="lp-ext" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2h6v6M10 2 2.5 9.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
+        <a class="lp-btn" href="#install">Install</a>
       </nav>
     </header>
 
     <main>
-      <section class="hero" aria-labelledby="hero-title">
-        <h1 id="hero-title" class="wordmark mono">
-          <svg class="brand-prompt" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.2 1.6 7.8 6l-5.6 4.4" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
-          <span class="wordmark-word">
-            <span><span class="brand-super">super</span>-statusline<span class="cursor" aria-hidden="true"></span></span>
-            <!-- The configurator header's hairline: three left-zone segments, a gap, one right-zone segment. -->
-            <span class="hairline" aria-hidden="true"><i style="width: 2.6em; background: #e0af68"></i><i style="width: 1.3em; background: #bb9af7"></i><i style="width: 0.8em; background: #7dcfff"></i><i class="gap"></i><i style="width: 1.75em; background: #9ece6a"></i></span>
-          </span>
-        </h1>
-        <p class="tagline">A Claude Code statusline you design in your browser. Start from a preset, then drag widgets where you want them.</p>
-
-        <div class="install">
-          <div class="code">
-            <pre><code id="cmd-install">claude plugin marketplace add jinhuang712/claude-code-super-statusline
-claude plugin install super-statusline@claude-code-super-statusline</code></pre>
-            <button class="copy" type="button" data-copy="cmd-install" aria-label="Copy the install commands">Copy</button>
-          </div>
-          <p class="note">Then run <code>/super-statusline:config</code> in Claude Code. Needs <a href="https://bun.sh">Bun</a>.</p>
+      <section id="presets" class="lp lp-hero lp-wrap" aria-labelledby="hero-title">
+        <p class="lp-kicker">A Claude Code plugin · open source, MIT</p>
+        <h1 id="hero-title" class="lp-h1">Design your Claude Code<br class="lp-desk" /> statusline <em>in the browser.</em></h1>
+        <p class="lp-lead">Pick a preset, drag widgets where you want them, and watch the real statusline redraw against your own session — no JSON to hand-edit.</p>
+        <div class="lp-cta">
+          <a class="lp-btn lp-btn-primary lp-btn-lg lp-desk" href="#try">Try the configurator<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2v10M2.5 7.5 7 12l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
+          <a class="lp-btn lp-btn-lg lp-install-cta" href="#install">Install</a>
+          <a class="lp-btn lp-btn-lg lp-phone" href="#arrange">See it in action</a>
         </div>
 
+        <div class="lp-label-row">
+          <p class="lp-label"><i style="background: #e0af68"></i>01 · Start from a preset</p>
+          <p class="lp-label lp-desk">real engine output · sample session</p>
+        </div>
         <!-- The three presets, rendered by the real engine at build time (site/presets.ts). -->
 <!-- PRESETS -->
-        <a class="scroll-cue" href="#try">Try it below <span aria-hidden="true">↓</span></a>
+        <p class="lp-note lp-phone">Real engine output at 100 columns. A statusline never wraps, so it scrolls sideways here.</p>
       </section>
 
-      <section id="try" class="try" aria-labelledby="try-title">
-        <div class="try-head">
-          <div>
-            <h2 id="try-title">Try it — this is the real configurator</h2>
-            <ul class="dnd" aria-label="Drag and drop">
-              <li><b>Drag a widget</b> from <em>Unused widgets</em> onto any line, left or right.</li>
-              <li><b>Drag it again</b> to reorder, or move it to another line — or focus it and press <kbd>Alt</kbd> + arrow keys.</li>
-              <li><b>Drag it back</b> to the tray to remove it.</li>
-            </ul>
+      <section id="arrange" class="lp lp-section lp-wrap" aria-labelledby="arrange-title">
+        <div class="lp-head">
+          <div class="lp-head-title">
+            <p class="lp-label"><i style="background: #bb9af7"></i>02 · Arrange</p>
+            <h2 id="arrange-title" class="lp-h2">Then drag it into shape.</h2>
           </div>
-          <!-- A recording of the demo below (one per scheme; the CSS shows the matching one). -->
-          <figure class="dnd-video">
-            <video class="dark-only" src="images/dnd-dark.mp4" muted loop playsinline autoplay aria-label="Recording: three widgets dragged — onto line 1, to line 2, and back to the tray — while the preview updates"></video>
-            <video class="light-only" src="images/dnd-light.mp4" muted loop playsinline autoplay aria-label="Recording: three widgets dragged — onto line 1, to line 2, and back to the tray — while the preview updates"></video>
+          <p class="lp-head-text">Every widget is a chip. Drag chips between lines and zones — the preview redraws on every drop.</p>
+        </div>
+        <div class="lp-arrange">
+          <ol class="lp-steps">
+            <li>
+              <span class="lp-step-n" style="color: #e0af68">01</span>
+              <h3>Drag from the tray</h3>
+              <p>Pull any of the 39 widgets onto a line, into its left or right zone.</p>
+            </li>
+            <li>
+              <span class="lp-step-n" style="color: #bb9af7">02</span>
+              <h3>Drag to rearrange</h3>
+              <p>Reorder within a line or move to another. From the keyboard: focus a chip, then <kbd>Alt</kbd> + arrow keys.</p>
+            </li>
+            <li>
+              <span class="lp-step-n" style="color: #7dcfff">03</span>
+              <h3>Drag back to remove</h3>
+              <p>Drop it on the tray and it leaves the statusline.</p>
+            </li>
+          </ol>
+          <figure class="lp-video">
+            <!-- src and poster are set by site/landing.ts: the recording that matches the page's scheme. -->
+            <video muted loop playsinline autoplay preload="metadata" data-dark="images/dnd-dark.mp4" data-light="images/dnd-light.mp4" data-dark-poster="images/dnd-dark-poster.jpg" data-light-poster="images/dnd-light-poster.jpg" aria-label="Recording of the configurator: Lines changed dragged from the tray onto line 1, Session cost moved to line 2, Last reply dragged back to the tray, the statusline preview redrawing after each drop"></video>
+            <figcaption class="lp-desk">recorded from the configurator below</figcaption>
           </figure>
         </div>
-        <!-- Same origin: the demo keeps your edits in this browser's localStorage. -->
-        <iframe class="app" src="demo/" title="The super-statusline configurator, running on a sample session"></iframe>
-        <p class="note try-note">A sample session — your edits stay in this browser. <a href="https://github.com/jinhuang712/claude-code-super-statusline/blob/main/INSTALL.md">Install it</a> to design yours against your real Claude Code session.</p>
+        <p class="lp-callout lp-phone">
+          <svg viewBox="0 0 18 18" aria-hidden="true"><rect x="2" y="3" width="14" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4" /><path d="M6.5 16h5M9 13v3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" /></svg>
+          <span>The live configurator is on the desktop version of this page — open it on a larger screen to try it.</span>
+        </p>
+      </section>
+
+      <!-- On phones this section isn't shown, and the configurator isn't loaded (site/demo/entry.ts). -->
+      <section id="try" class="lp-try" aria-labelledby="try-title">
+        <div class="lp lp-head lp-wrap">
+          <div class="lp-head-title">
+            <p class="lp-label"><i style="background: #7dcfff"></i>03 · Try it</p>
+            <h2 id="try-title" class="lp-h2">This is the real configurator.</h2>
+          </div>
+          <p class="lp-head-text">It runs right here, on a sample session — keep scrolling to go through it. Your changes stay in this browser.</p>
+        </div>
+        <div class="lp lp-live"><p class="lp-live-tag"><i></i>LIVE DEMO · SAMPLE SESSION</p></div>
+        <!-- The configurator itself (web/), mounted here: one page, one scroll. -->
+        <div id="root"></div>
+      </section>
+
+      <section id="install" class="lp lp-section lp-wrap" aria-labelledby="install-title">
+        <div class="lp-head">
+          <div class="lp-head-title">
+            <p class="lp-label"><i style="background: #9ece6a"></i><span class="lp-desk">04</span><span class="lp-phone">03</span> · Install</p>
+            <h2 id="install-title" class="lp-h2">Two commands. Then it’s yours.</h2>
+          </div>
+          <p class="lp-head-text">Needs Claude Code 2.1.251 or later and <a href="https://bun.sh">Bun</a> on your PATH.</p>
+        </div>
+        <div class="lp-install-body">
+          <div class="lp-code">
+            <div class="lp-code-bar">
+              <span>TERMINAL</span>
+              <button class="lp-copy" type="button" data-copy="lp-cmd" aria-label="Copy the install commands">Copy</button>
+            </div>
+            <pre id="lp-cmd"><span class="lp-dollar" aria-hidden="true">$ </span>claude plugin marketplace add jinhuang712/claude-code-super-statusline
+<span class="lp-dollar" aria-hidden="true">$ </span>claude plugin install super-statusline@claude-code-super-statusline</pre>
+          </div>
+          <p class="lp-then">Then run <code>/super-statusline:config</code> in Claude Code and pick a layout.</p>
+          <p class="lp-links">
+            <a href="https://github.com/jinhuang712/claude-code-super-statusline/blob/main/INSTALL.md">INSTALL.md</a>
+            <a href="https://github.com/jinhuang712/claude-code-super-statusline#readme">README</a>
+            <a href="https://github.com/jinhuang712/claude-code-super-statusline">GitHub</a>
+          </p>
+        </div>
       </section>
     </main>
 
-    <footer class="foot">
-      <p>MIT · <a href="https://github.com/jinhuang712/claude-code-super-statusline">GitHub</a> · data layer derived from <a href="https://github.com/jarrodwatts/claude-hud">claude-hud</a></p>
+    <footer class="lp lp-foot lp-wrap">
+      <span class="lp-brand lp-brand-sm">
+        <svg class="lp-prompt" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.2 1.6 7.8 6l-5.6 4.4" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        <span><span class="lp-super">super</span>-statusline</span>
+      </span>
+      <p>MIT · data layer derived from <a href="https://github.com/jarrodwatts/claude-hud">claude-hud</a></p>
     </footer>
 
-    <script>
-      // On a screen narrower than a preset's rows, shrink them to fit its box (the box is as wide as
-      // its rows otherwise — see .presets). Between 11 and 15px; below that the box scrolls
-      // sideways (a wrapped statusline would be misleading).
-      function fitTerms() {
-        for (const term of document.querySelectorAll(".term")) {
-          term.style.fontSize = "";
-          const style = getComputedStyle(term);
-          const avail = term.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-          const widest = Math.max(...[...term.querySelectorAll(".row")].map((r) => r.getBoundingClientRect().width));
-          if (!(widest > 0)) continue;
-          const size = (parseFloat(style.fontSize) * avail) / widest;
-          term.style.fontSize = `${Math.min(15, Math.max(11, Math.floor(size * 10) / 10))}px`;
-        }
-      }
-      // Reduced motion: the recordings don't play by themselves; controls let the viewer start them.
-      if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        for (const v of document.querySelectorAll(".dnd-video video")) {
-          v.removeAttribute("autoplay");
-          v.pause();
-          v.controls = true;
-        }
-      }
-
-      // Measure with the real font, not the fallback it replaces.
-      document.fonts.ready.then(fitTerms);
-      addEventListener("resize", fitTerms);
-
-      // Copy buttons. Clipboard access can be refused (insecure context, permissions): then the
-      // command is selected instead, so a manual copy is one keystroke.
-      for (const btn of document.querySelectorAll("button[data-copy]")) {
-        btn.addEventListener("click", async () => {
-          const code = document.getElementById(btn.dataset.copy);
-          try {
-            await navigator.clipboard.writeText(code.textContent);
-            btn.textContent = "Copied";
-          } catch {
-            getSelection().selectAllChildren(code);
-            btn.textContent = "Selected";
-          }
-          setTimeout(() => (btn.textContent = "Copy"), 1600);
-        });
-      }
-    </script>
+    <script type="module" src="/@demo-entry"></script>
   </body>
 </html>
