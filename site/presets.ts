@@ -108,11 +108,22 @@ function ansiToHtml(line: string): string {
 /** Each preset's dot: the tray's category colour of what it adds (project, git, context). */
 const DOT = { minimal: "#e0af68", standard: "#bb9af7", full: "#9ece6a" } as const;
 
+/**
+ * The model each preset is shown with: one family each (Sonnet → Opus → Fable), so the hero also
+ * shows the model badge following whatever the session runs. Only the stdin model changes; the
+ * rest of the sample session is the same for all three.
+ */
+const MODEL = {
+  minimal: { id: "claude-sonnet-5", display_name: "Sonnet 5" },
+  standard: { id: "claude-opus-5-5", display_name: "Opus 5.5" },
+  full: { id: "claude-fable-5-1", display_name: "Fable 5.1" },
+} as const;
+
 registerBuiltinWidgets();
 const ctx = (revive(JSON.parse(fs.readFileSync(file, "utf8"))) as { ctx: Omit<Ctx, "theme" | "colorMode"> }).ctx;
 const groups = (["minimal", "standard", "full"] as const).map((id) => {
   const config = normalizeConfig({ lines: PRESETS[id].lines, colorLevel: "truecolor" });
-  const r = render(config, { ...ctx, columns }, { fillEmpty: false });
+  const r = render(config, { ...ctx, columns, stdin: { ...ctx.stdin, model: MODEL[id] } }, { fillEmpty: false });
   if (r.errors.length) throw new Error(`preset ${id}: ${r.errors.map((e) => e.message).join("; ")}`);
   // Name, line count and blurb are the configurator's own preset copy, so page and app never
   // disagree. The blurb reads "Two lines: adds usage limits"; the label keeps what follows
